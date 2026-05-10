@@ -180,6 +180,11 @@ struct RenderPass {
     usize count;
 };
 
+struct RenderPassResult {
+    std::vector<RenderCommand> commands;
+    RenderPassDescriptor descriptor;
+};
+
 class RenderPassRecorder {
 public:
     explicit RenderPassRecorder(const RenderPassDescriptor& descriptor);
@@ -247,7 +252,7 @@ public:
     auto draw_indexed(u32 index_count, u32 first_index) noexcept -> void;
 
     /** @brief Consumes the RenderPassRecorder. Result should be passed into @ref RenderCommandRecorder. */
-    auto finish() -> std::pair<std::vector<RenderCommand>&&, RenderPassDescriptor>;
+    auto finish() -> RenderPassResult;
 
 private:
     /** @brief Descriptor of the pass. */
@@ -281,7 +286,7 @@ public:
     /** @brief Begins a render pass. */
     [[nodiscard]] auto begin_render_pass(const RenderPassDescriptor& descriptor) const noexcept -> RenderPassRecorder;
     /** @brief Consumes the result of a @ref RenderPassRecorder. */
-    auto consume_render_pass(std::pair<std::vector<RenderCommand>&&, RenderPassDescriptor> commands) noexcept -> void;
+    auto consume_render_pass(const RenderPassResult& commands) noexcept -> void;
 
     /** @brief Consumes the internal data of the RenderCommandBuffer ready for execution. */
     [[nodiscard]] auto finish() noexcept -> RenderCommandBuffer;

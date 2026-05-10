@@ -157,8 +157,8 @@ auto RenderPassRecorder::draw_indexed(const u32 index_count, const u32 first_ind
     );
 }
 
-auto RenderPassRecorder::finish() -> std::pair<std::vector<RenderCommand>&&, RenderPassDescriptor> {
-    return std::pair{ std::move(m_commands), m_descriptor };
+auto RenderPassRecorder::finish() -> RenderPassResult {
+    return { std::move(m_commands), m_descriptor };
 }
 
 // ============================================================================
@@ -171,22 +171,18 @@ auto RenderCommandRecorder::begin_render_pass(
     return RenderPassRecorder{ std::move(descriptor) };
 }
 
-auto RenderCommandRecorder::consume_render_pass(
-    std::pair<std::vector<RenderCommand>&&, RenderPassDescriptor> commands
-) noexcept -> void {
+auto RenderCommandRecorder::consume_render_pass(const RenderPassResult& commands) noexcept -> void {
     m_render_passes.emplace_back(
         RenderPass{
-            .descriptor = commands.second,
+            .descriptor = commands.descriptor,
             .start = m_commands.size(),
-            .count = commands.first.size(),
+            .count = commands.commands.size(),
         }
     );
 
-    m_commands.insert(
-        m_commands.end(),
-        std::make_move_iterator(commands.first.begin()),
-        std::make_move_iterator(commands.first.end())
-    );
+    for (const auto& cmd : commands.commands) {
+        m_commands.emplace_back(cmd);
+    }
 }
 
 auto RenderCommandRecorder::finish() noexcept -> RenderCommandBuffer {

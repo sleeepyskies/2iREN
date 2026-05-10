@@ -99,6 +99,7 @@ auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
         }
     );
 
+    log::trace("Created buffer with handle {}", buffer_handle.packed());
     return Buffer{ this, buffer_handle };
 }
 
