@@ -1,0 +1,192 @@
+#pragma once
+
+#include <unordered_map>
+#include <glad/gl.h>
+
+#include "2iren/resources/fwd.hpp"
+#include "2iren/render_thread.hpp"
+#include "2iren/device.hpp"
+#include "2iren/resources/framebuffer.hpp"
+#include "2iren/resources/graphics_pipeline.hpp"
+#include "2iren/resources/sampler.hpp"
+#include "2iren/resources/shader.hpp"
+
+
+namespace siren {
+
+/**
+ * @brief Encapsulates a mapped buffer pointer. This is used in streamed @ref Buffer's.
+ */
+struct MappedBufferPtr {
+    /** @brief The mapped pointer. */
+    void* ptr = nullptr;
+    /** @brief The size of the buffer. */
+    usize size = 0;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref Buffer's
+ */
+struct GlBufferDetails {
+    /** @brief The descriptor of the @ref Buffer. */
+    BufferDescriptor descriptor;
+    /** @brief A mapped region of storage. Used iff the buffer type is BufferUsage::Stream. */
+    MappedBufferPtr buffer_ptr;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref Image's
+ */
+struct GlImageDetails {
+    /** @brief The descriptor of the @ref Image. */
+    ImageDescriptor descriptor;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref Sampler's
+ */
+struct GlSamplerDetails {
+    /** @brief The descriptor of the @ref Sampler. */
+    SamplerDescriptor descriptor;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref Framebuffer's
+ */
+struct GlFramebufferDetails {
+    /** @brief The descriptor of the @ref Framebuffer. */
+    FramebufferDescriptor descriptor;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref Shader's
+ */
+struct GlShaderDetails {
+    /** @brief The descriptor of the @ref Shader. */
+    ShaderDescriptor descriptor;
+    /** @brief The uniforms of the shader cached. */
+    std::unordered_map<std::string, GLint> uniform_cache;
+};
+
+/**
+ * @brief Information needed by the OpenGL backend for @ref GraphicPipeline's
+ */
+struct GlGraphicsPipelineDetails {
+    /** @brief The descriptor of the @ref GraphicsPipeline. */
+    GraphicsPipelineDescriptor descriptor;
+    /** @brief The cached shader program ID. Avoids performing @ref AssetServer lookups during rendering. */
+    GLuint shader_program_handle;
+};
+
+/**
+ * @struct RenderResourceState
+ * @brief Encapsulates all @ref RenderResource state for the OpenGL backend.
+ */
+struct RenderResourceState {
+    /** @brief Buffer handle storage. */
+    RenderResourceTable<GLuint, Buffer, GlBufferDetails> buffer_table;
+    /** @brief Image handle storage. */
+    RenderResourceTable<GLuint, Image, GlImageDetails> image_table;
+    /** @brief Sampler handle storage. */
+    RenderResourceTable<GLuint, Sampler, GlSamplerDetails> sampler_table;
+    /** @brief Framebuffer handle storage. */
+    RenderResourceTable<GLuint, Framebuffer, GlFramebufferDetails> framebuffer_table;
+    /** @brief Shader handle storage. */
+    RenderResourceTable<GLuint, Shader, GlShaderDetails> shader_table;
+    /**
+     * @brief GraphicsPipeline handle storage.
+     * @note The GLuint stored here is not of the Pipeline, but rather the vertex array.
+     * This is because OpenGL has no notion of a Pipeline, but we use a VA in the pipeline.
+     */
+    RenderResourceTable<GLuint, GraphicsPipeline, GlGraphicsPipelineDetails> graphics_pipeline_table;
+};
+
+class GlDevice final : public Device {
+public:
+    explicit GlDevice(GLFWwindow* window);
+    ~GlDevice() override;
+
+    auto wait_until_idle() const noexcept -> void override;
+
+    auto present() const noexcept -> void override;
+
+    [[nodiscard]] auto create_buffer(const BufferDescriptor& descriptor) -> Buffer override;
+    auto destroy_buffer(BufferHandle handle) -> void override;
+
+    [[nodiscard]] auto create_image(const ImageDescriptor& descriptor) -> Image override;
+    auto destroy_image(ImageHandle handle) -> void override;
+
+    [[nodiscard]] auto create_sampler(const SamplerDescriptor& descriptor) -> Sampler override;
+    auto destroy_sampler(SamplerHandle handle) -> void override;
+
+    [[nodiscard]] auto create_framebuffer(const FramebufferDescriptor& descriptor) -> Framebuffer override;
+    auto destroy_framebuffer(FramebufferHandle handle) -> void override;
+
+    [[nodiscard]] auto create_shader(const ShaderDescriptor& descriptor) -> Shader override;
+    auto destroy_shader(ShaderHandle handle) -> void override;
+
+    [[nodiscard]] auto create_graphics_pipeline(
+        const GraphicsPipelineDescriptor& descriptor
+    ) -> GraphicsPipeline override;
+    auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void override;
+
+    auto flush_delete_queue() -> void override;
+
+    [[nodiscard]] auto record_resource_commands() -> ResourceCommandRecorder override;
+    [[nodiscard]] auto record_render_commands() -> RenderCommandRecorder override;
+    auto submit(ResourceCommandBuffer&& command_buffer) -> void override;
+    auto submit(RenderCommandBuffer&& command_buffer) -> void override;
+
+    [[nodiscard]] auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& override;
+    [[nodiscard]] auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& override;
+    [[nodiscard]] auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& override;
+    [[nodiscard]] auto framebuffer_descriptor(FramebufferHandle handle) const -> const FramebufferDescriptor& override;
+    [[nodiscard]] auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& override;
+    [[nodiscard]] auto graphics_pipeline_descriptor(
+        GraphicsPipelineHandle handle
+    ) const -> const GraphicsPipelineDescriptor& override;
+
+    /** @todo: Implement some way to query this ig */
+    [[nodiscard]] auto limits() const -> Limits override;
+
+private:
+    /**
+     * @brief Enum listing all OpenGL GPU objects used.
+     * @note We do not define a global enum for this, as different backends
+     * may have a different way of doing things and not use the same GPU
+     * objects.
+     */
+    enum class ResourceType {
+        /** @brief A @ref Buffer. */
+        Buffer,
+        /** @brief An @ref Image. */
+        Image,
+        /** @brief A @ref Sampler. */
+        Sampler,
+        /** @brief A @ref Framebuffer. */
+        Framebuffer,
+        /** @brief A @ref Shader. */
+        Shader,
+        /** @brief A @ref GraphicsPipeline. */
+        GraphicsPipeline,
+    };
+
+    /** @brief The main worker thread for all rendering work. */
+    RenderThread m_render_thread;
+
+    /** @brief Describes a Delete that has been requested of a GPU object. */
+    struct DeleteRequest {
+        /** @brief The native OpenGL object handle. */
+        GLuint handle;
+        /** @brief The resource type of the object to be deleted. */
+        ResourceType type;
+    };
+
+    /** @brief The state of @ref RenderResource's. */
+    RenderResourceState m_state;
+
+    /** @brief All objects queued for cleanup. */
+    std::vector<DeleteRequest> m_delete_queue;
+};
+
+} // namespace siren
