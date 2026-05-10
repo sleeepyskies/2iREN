@@ -1,11 +1,12 @@
 #pragma once
 
 #include <iostream>
-#include <libenvpp/env.hpp>
+#include <toml++/toml.hpp>
 #include <libassert/assert.hpp>
 #include <optional>
 #include <source_location>
 #include <type_traits>
+#include <format>
 
 #include "string_utils.hpp"
 
@@ -43,21 +44,8 @@ struct Level {
         }
     }
 
-    /** @brief Returns the string representation of this Level instance with equal string lengths. */
-    constexpr auto to_string_sized() const -> std::string_view {
-        switch (this->value) {
-            case Trace: return "Trace";
-            case Debug: return "Debug";
-            case Info: return "Info ";
-            case Warn: return "Warn ";
-            case Error: return "Error";
-            case None: return "None ";
-            default: UNREACHABLE();
-        }
-    }
-
     /** @brief Factory method to create a new @ref Level instance from a string. */
-    static auto from_string(const std::string& str) -> std::optional<Level> {
+    static auto from_string(const std::string_view str) -> std::optional<Level> {
         if (str::equals_ignore_case(str, "trace")) return Trace;
         if (str::equals_ignore_case(str, "debug")) return Debug;
         if (str::equals_ignore_case(str, "info")) return Info;
@@ -70,22 +58,45 @@ struct Level {
 };
 
 /** @brief The globally configured minimum logging level. Defaults to Info. */
-inline Level log_level{ Level::Info };
+inline Level log_level{ Level::None };
 
 /**
  * @brief Initializes the logging system by reading the `2IREN_LOG_LEVEL` environment variable.
  * @note Panics if the environment variables cannot be parsed.
  */
 inline auto init() -> void {
-    env::prefix prefix{ "2IREN" };
-    const auto log_lvl = prefix.register_required_variable<std::string>("LOG_LEVEL");
-    const auto env     = prefix.parse_and_validate();
+    try {
+        const auto config = toml::parse_file("config.toml");
 
-    if (!env.ok()) {
-        PANIC("Could not read environment variables successfully.");
+        const auto log_lvl = config["log_level"].value<std::string>();
+
+        if (!log_lvl) {
+            PANIC("Missing config value: log_level");
+        }
+
+        log_level = Level::from_string(*log_lvl).value_or(Level::Info);
     }
+    catch (const toml::parse_error& err) {
+        PANIC(std::string("Failed to parse config.toml: ") + err.description().data());
+    }
+}
 
-    log_level = Level::from_string(env.get(log_lvl)).value_or(Level::Info);
+/**
+ * @brief Inits the siren logger with the provided level.
+ * @param level The desired log level.
+ */
+inline auto init(const Level level) -> void {
+    log_level = level;
+}
+
+/**
+ * @brief Inits the siren logger with the provided level.
+ * @param level The desired log level as a string.
+ */
+inline auto init(const std::string_view level) -> void {
+    const auto level_ = Level::from_string(level);
+    ASSERT(level_.has_value(), "Passed invalid level to siren::log::init()");
+    log_level = level_.value();
 }
 
 /**
@@ -108,7 +119,7 @@ inline void log(
             std::format(
                 "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
                 color_code,
-                level.to_string_sized(),
+                level.to_string(),
                 loc.file_name(),
                 loc.line(),
                 loc.column(),
