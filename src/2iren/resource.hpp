@@ -36,11 +36,13 @@ struct ResourceHandle {
     using IndexType      = u16;
     using GenerationType = u16;
 
-    static constexpr IdType IndexMask = bit(16) - 1; // 0xffff
+    static constexpr IdType INDEX_MASK = bit(16) - 1; // 0xffff
 
-    ResourceHandle() : packed_id(0) { }
+    static constexpr IdType INVALID_ID = std::numeric_limits<IdType>::max();
+
+    ResourceHandle() : packed_id(INVALID_ID) { }
     ResourceHandle(const IndexType idx, const GenerationType gen)
-        : packed_id(static_cast<IdType>(gen << 16) | (idx & IndexMask)) { }
+        : packed_id(static_cast<IdType>(gen << 16) | (idx & INDEX_MASK)) { }
 
     ResourceHandle(const ResourceHandle&)            = default;
     ResourceHandle& operator=(const ResourceHandle&) = default;
@@ -55,7 +57,7 @@ struct ResourceHandle {
     [[nodiscard]] constexpr auto packed() const noexcept -> IdType { return packed_id; }
     /** @brief Returns the index of this id. */
     [[nodiscard]] constexpr auto index() const noexcept -> IndexType {
-        return static_cast<IndexType>(packed_id & IndexMask);
+        return static_cast<IndexType>(packed_id & INDEX_MASK);
     }
     /** @brief Returns the generation of this id. */
     [[nodiscard]] constexpr auto generation() const noexcept -> GenerationType {
@@ -63,7 +65,7 @@ struct ResourceHandle {
     }
 
     /** @brief Checks if the handle is valid aka has a non 0 inner value. */
-    [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return packed_id != 0; }
+    [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return packed_id != INVALID_ID; }
     /** @brief Kills the handle by zeroing its value. */
     constexpr auto invalidate() noexcept -> void { packed_id = 0; }
     /** @copydoc is_valid */
