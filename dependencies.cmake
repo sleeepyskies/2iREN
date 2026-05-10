@@ -4,6 +4,7 @@ find_package(libassert REQUIRED)
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(libenvpp REQUIRED)
+find_package(tomlplusplus REQUIRED)
 
 target_link_libraries(2iren
         glad::glad
@@ -12,4 +13,5 @@ target_link_libraries(2iren
         glm::glm
         glfw
         libenvpp::libenvpp
+        tomlplusplus::tomlplusplus
 )

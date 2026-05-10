@@ -10,4 +10,10 @@ add_executable(
         main.cpp
 )
 
+configure_file(
+    ${CMAKE_SOURCE_DIR}/examples/basic_test/config.toml
+    ${CMAKE_CURRENT_BINARY_DIR}/config.toml
+    COPYONLY
+)
+
 target_link_libraries(basic_test PRIVATE 2iren)
