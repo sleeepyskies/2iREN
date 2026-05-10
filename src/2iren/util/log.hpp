@@ -58,7 +58,7 @@ struct Level {
 };
 
 /** @brief The globally configured minimum logging level. Defaults to Info. */
-inline Level log_level{ Level::None };
+inline Level level{ Level::None };
 
 /**
  * @brief Initializes the logging system by reading the `2IREN_LOG_LEVEL` environment variable.
@@ -74,7 +74,7 @@ inline auto init() -> void {
             PANIC("Missing config value: log_level");
         }
 
-        log_level = Level::from_string(*log_lvl).value_or(Level::Info);
+        level = Level::from_string(*log_lvl).value_or(Level::Info);
     }
     catch (const toml::parse_error& err) {
         PANIC(std::string("Failed to parse config.toml: ") + err.description().data());
@@ -83,43 +83,43 @@ inline auto init() -> void {
 
 /**
  * @brief Inits the siren logger with the provided level.
- * @param level The desired log level.
+ * @param lvl The desired log level.
  */
-inline auto init(const Level level) -> void {
-    log_level = level;
+inline auto init(const Level lvl) -> void {
+    level = lvl;
 }
 
 /**
  * @brief Inits the siren logger with the provided level.
- * @param level The desired log level as a string.
+ * @param lvl The desired log level as a string.
  */
-inline auto init(const std::string_view level) -> void {
-    const auto level_ = Level::from_string(level);
+inline auto init(const std::string_view lvl) -> void {
+    const auto level_ = Level::from_string(lvl);
     ASSERT(level_.has_value(), "Passed invalid level to siren::log::init()");
-    log_level = level_.value();
+    level = level_.value();
 }
 
 /**
  * @brief Internal function to format and output log messages.
- * @param level The severity of the message.
+ * @param lvl The severity of the message.
  * @param color_code The terminal color code to print the message with.
  * @param loc The source code location of the log call.
  * @param fmt The format string.
  * @param args The type-erased format arguments.
  */
 inline void log(
-    const Level level,
+    const Level lvl,
     const u32 color_code,
     const std::source_location& loc,
     const std::string_view fmt,
     const std::format_args args
 ) {
-    if (level < log_level) { return; }
+    if (lvl < level) { return; }
     std::cout <<
             std::format(
                 "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
                 color_code,
-                level.to_string(),
+                lvl.to_string(),
                 loc.file_name(),
                 loc.line(),
                 loc.column(),

@@ -4,6 +4,7 @@
 
 int main() {
     siren::log::init();
+    siren::log::info("Using log level {}", siren::log::level.to_string());
 
     glfwInit();
     if (!glfwInit()) {
