@@ -3,10 +3,8 @@
 #include <stdfloat>
 #include <cstdint>
 #include <cstddef>
+#include <ranges>
 
-
-/** @brief The main namespace of the 2iren renderer. */
-namespace siren { }
 
 namespace siren {
 
@@ -14,7 +12,7 @@ namespace ranges = std::ranges;
 namespace views = std::ranges::views;
 
 /** @brief Toggles single threaded mode in siren. */
-inline constexpr bool single_threaded = false;
+inline constexpr bool single_threaded = true;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
