@@ -1,12 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include <toml++/toml.hpp>
-#include <libassert/assert.hpp>
 #include <optional>
 #include <source_location>
 #include <type_traits>
 #include <format>
+#include <libassert/assert.hpp>
 
 #include "string_utils.hpp"
 
@@ -59,27 +58,6 @@ struct Level {
 
 /** @brief The globally configured minimum logging level. Defaults to Info. */
 inline Level level{ Level::None };
-
-/**
- * @brief Initializes the logging system by reading the `2IREN_LOG_LEVEL` environment variable.
- * @note Panics if the environment variables cannot be parsed.
- */
-inline auto init() -> void {
-    try {
-        const auto config = toml::parse_file("config.toml");
-
-        const auto log_lvl = config["log_level"].value<std::string>();
-
-        if (!log_lvl) {
-            PANIC("Missing config value: log_level");
-        }
-
-        level = Level::from_string(*log_lvl).value_or(Level::Info);
-    }
-    catch (const toml::parse_error& err) {
-        PANIC(std::string("Failed to parse config.toml: ") + err.description().data());
-    }
-}
 
 /**
  * @brief Inits the siren logger with the provided level.

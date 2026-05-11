@@ -1,5 +1,6 @@
 #pragma once
 
+#include "2iren/init.hpp"
 #include "2iren/base.hpp"
 #include "2iren/device.hpp"
 

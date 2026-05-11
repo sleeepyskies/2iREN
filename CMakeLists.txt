@@ -21,6 +21,7 @@ add_library(2iren STATIC
     src/2iren/resource_command.cpp
     src/2iren/vertex_layout.cpp
     src/2iren/device.cpp
+    src/2iren/init.cpp
 
     src/2iren/resources/buffer.cpp
     src/2iren/resources/framebuffer.cpp

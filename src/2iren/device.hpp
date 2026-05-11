@@ -35,6 +35,8 @@ struct CreateDeviceParams {
     Backend backend;
     /** @brief The window 2iren will be rendering to. */
     GLFWwindow* window;
+    /** @brief Whether to set up validation/debug layers. */
+    bool debug;
 };
 
 /**

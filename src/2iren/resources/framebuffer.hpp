@@ -32,11 +32,10 @@ struct FramebufferDescriptor {
  * Is essentially a collection of @ref Image's for color, depth and stencil attachments.
  * @todo: store images in the backend instead?
  */
-class Framebuffer final : RenderResource<Framebuffer> {
-    using Base = RenderResource<Framebuffer>;
-
+class Framebuffer final : public RenderResource<Framebuffer> {
 public:
-    explicit Framebuffer(
+    using Base = RenderResource<Framebuffer>;
+    Framebuffer(
         Device* device,
         FramebufferHandle handle,
         std::vector<Image>&& colors,

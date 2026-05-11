@@ -109,6 +109,7 @@ auto GlDevice::destroy_buffer(const BufferHandle handle) -> void {
         m_delete_queue.push_back({ api_handle, ResourceType::Buffer });
     }
     m_state.buffer_table.release(handle);
+    log::trace("Queued buffer with handle {} for cleanup", handle.packed());
 }
 
 auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
@@ -175,6 +176,7 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
         }
     );
 
+    log::trace("Created image with handle {}", image_handle.packed());
     return Image{ this, image_handle };
 }
 
@@ -184,6 +186,7 @@ auto GlDevice::destroy_image(const ImageHandle handle) -> void {
         m_delete_queue.push_back({ api_handle, ResourceType::Image });
     }
     m_state.image_table.release(handle);
+    log::trace("Queued image with handle {} for cleanup", handle.packed());
 }
 
 auto GlDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
@@ -234,6 +237,7 @@ auto GlDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
         }
     );
 
+    log::trace("Created sampler with handle {}", sampler_handle.packed());
     return Sampler{ this, sampler_handle };
 }
 
@@ -243,11 +247,8 @@ auto GlDevice::destroy_sampler(const SamplerHandle handle) -> void {
         m_delete_queue.push_back({ api_handle, ResourceType::Sampler });
     }
     m_state.sampler_table.release(handle);
+    log::trace("Queued sampler with handle {} for cleanup", handle.packed());
 }
-
-inline constexpr auto collect = []<std::ranges::viewable_range R> (R&& r){
-    return std::forward<R>(r) | ranges::to<std::vector>();
-};
 
 auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Framebuffer {
     ASSERT(descriptor.width > 0, "Framebuffer must have a width of at least 1 pixel.");
@@ -346,6 +347,7 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
         }
     );
 
+    log::trace("Created framebuffer with handle {}", fb_handle.packed());
     return Framebuffer{
         this,
         fb_handle,
@@ -360,6 +362,7 @@ auto GlDevice::destroy_framebuffer(const FramebufferHandle handle) -> void {
         m_delete_queue.push_back({ api_handle, ResourceType::Sampler });
     }
     m_state.framebuffer_table.release(handle);
+    log::trace("Queued framebuffer with handle {} for cleanup", handle.packed());
 }
 
 auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
@@ -469,6 +472,7 @@ auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
         }
     );
 
+    log::trace("Created shader with handle {}", shader_handle.packed());
     return Shader{ this, shader_handle };
 }
 
@@ -478,6 +482,7 @@ auto GlDevice::destroy_shader(const ShaderHandle handle) -> void {
         m_delete_queue.push_back({ api_handle, ResourceType::Shader });
     }
     m_state.shader_table.release(handle);
+    log::trace("Queued shader with handle {} for cleanup", handle.packed());
 }
 
 auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor) -> GraphicsPipeline {
@@ -512,9 +517,8 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
                     vertex_array,
                     static_cast<GLuint>(index),
                     static_cast<GLint>(attribute.size),
-                    attribute.type,
-                    // attribute.normalized,
-                    false,
+                    gl::siren_datatype_to_gl(attribute.type),
+                    false, // attribute.normalized,
                     static_cast<GLuint>(attribute.offset)
                 );
 
@@ -535,6 +539,7 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
         }
     );
 
+    log::trace("Created graphics pipeline with handle {}", pipeline_handle.packed());
     return GraphicsPipeline{ this, pipeline_handle };
 }
 
@@ -544,6 +549,7 @@ auto GlDevice::destroy_graphics_pipeline(const GraphicsPipelineHandle handle) ->
         m_delete_queue.push_back({ api_handle, ResourceType::GraphicsPipeline });
     }
     m_state.graphics_pipeline_table.release(handle);
+    log::trace("Queued graphics pipeline with handle {} for cleanup", handle.packed());
 }
 
 auto GlDevice::flush_delete_queue() -> void {
@@ -608,29 +614,29 @@ auto GlDevice::submit(RenderCommandBuffer&& command_buffer) -> void {
 }
 
 auto GlDevice::buffer_descriptor(const BufferHandle handle) const -> const BufferDescriptor& {
-    return m_state.buffer_table.extra(handle)->get().descriptor;
+    return m_state.buffer_table.extra(handle).descriptor;
 }
 
 auto GlDevice::image_descriptor(const ImageHandle handle) const -> const ImageDescriptor& {
-    return m_state.image_table.extra(handle)->get().descriptor;
+    return m_state.image_table.extra(handle).descriptor;
 }
 
 auto GlDevice::sampler_descriptor(const SamplerHandle handle) const -> const SamplerDescriptor& {
-    return m_state.sampler_table.extra(handle)->get().descriptor;
+    return m_state.sampler_table.extra(handle).descriptor;
 }
 
 auto GlDevice::framebuffer_descriptor(const FramebufferHandle handle) const -> const FramebufferDescriptor& {
-    return m_state.framebuffer_table.extra(handle)->get().descriptor;
+    return m_state.framebuffer_table.extra(handle).descriptor;
 }
 
 auto GlDevice::shader_descriptor(const ShaderHandle handle) const -> const ShaderDescriptor& {
-    return m_state.shader_table.extra(handle)->get().descriptor;
+    return m_state.shader_table.extra(handle).descriptor;
 }
 
 auto GlDevice::graphics_pipeline_descriptor(
     const GraphicsPipelineHandle handle
 ) const -> const GraphicsPipelineDescriptor& {
-    return m_state.graphics_pipeline_table.extra(handle)->get().descriptor;
+    return m_state.graphics_pipeline_table.extra(handle).descriptor;
 }
 
 auto GlDevice::limits() const -> Limits { return Limits{ }; }

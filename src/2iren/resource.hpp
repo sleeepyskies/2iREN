@@ -215,19 +215,17 @@ public:
     }
 
     /** @brief Gets the extra data associated with this proxy. */
-    [[nodiscard]] auto extra(const HandleType proxy_handle) noexcept -> std::optional<std::reference_wrapper<Extra>> {
+    [[nodiscard]] auto extra(const HandleType handle) noexcept -> Extra& {
         auto inner = m_inner.read();
-        if (!is_valid_id(proxy_handle, *inner)) { return std::nullopt; }
-        return std::ref(inner->table[proxy_handle.index()].extra);
+        ASSERT(is_valid_id(handle, *inner), "Invalid handle: {}", handle.packed());
+        return inner->table[handle.index()].extra;
     }
 
     /** @brief Gets the extra data associated with this proxy. */
-    [[nodiscard]] auto extra(
-        const HandleType proxy_handle
-    ) const noexcept -> std::optional<std::reference_wrapper<const Extra>> {
+    [[nodiscard]] auto extra(const HandleType handle) const noexcept -> const Extra& {
         auto inner = m_inner.read();
-        if (!is_valid_id(proxy_handle, *inner)) { return std::nullopt; }
-        return std::cref(inner->table[proxy_handle.index()].extra);
+        ASSERT(is_valid_id(handle, *inner), "Invalid handle: {}", handle.packed());
+        return inner->table[handle.index()].extra;
     }
 
 private:

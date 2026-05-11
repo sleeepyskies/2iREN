@@ -46,4 +46,12 @@ concept IsCallable = std::is_invocable_v<F>;
 template <typename F>
 concept IsPredicate = std::is_invocable_v<F> && std::is_convertible_v<decltype(std::declval<F>()()), bool>;
 
+
+/**
+ * @brief Ensures a type is copyable.
+ * @tparam T The type to check
+ */
+template <typename T>
+concept IsCopyable = std::is_trivially_copyable_v<T>;
+
 } // namespace siren

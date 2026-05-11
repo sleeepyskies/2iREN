@@ -228,8 +228,8 @@ constexpr auto img_to_target_gl(const ImageExtent extent, const ImageDimension d
         case ImageDimension::D3: return GL_TEXTURE_3D;
         // 6 layers = 1 cube. > 6 layers = Array of cubes.
         case ImageDimension::Cube: return (extent.depth_or_layers > 6)
-                                                    ? GL_TEXTURE_CUBE_MAP_ARRAY
-                                                    : GL_TEXTURE_CUBE_MAP;
+                                              ? GL_TEXTURE_CUBE_MAP_ARRAY
+                                              : GL_TEXTURE_CUBE_MAP;
         default: UNREACHABLE();
     }
 }
@@ -323,6 +323,30 @@ constexpr auto index_format_to_gl(const IndexFormat format) -> GLenum {
         case IndexFormat::Byte8: return GL_UNSIGNED_BYTE;
         case IndexFormat::Short16: return GL_UNSIGNED_SHORT;
         case IndexFormat::Uint32: return GL_UNSIGNED_INT;
+        default: UNREACHABLE();
+    }
+}
+
+/**
+ * Converts a @ref DataType value to its OpenGL equivalent.
+ * @param type The @ref DataType to convert.
+ * @return A GLenum converted DataType.
+ */
+constexpr auto siren_datatype_to_gl(const DataType type) -> GLenum {
+    switch (type) {
+        case DataType::Int8: return GL_BYTE;
+        case DataType::Int16: return GL_SHORT;
+        case DataType::Int32: return GL_INT;
+        case DataType::Int64: return GL_INT64_ARB;
+
+        case DataType::UInt8: return GL_UNSIGNED_BYTE;
+        case DataType::UInt16: return GL_UNSIGNED_SHORT;
+        case DataType::UInt32: return GL_UNSIGNED_INT;
+        case DataType::UInt64: return GL_UNSIGNED_INT64_ARB;
+
+        case DataType::Float16: return GL_HALF_FLOAT;
+        case DataType::Float32: return GL_FLOAT;
+        case DataType::Float64: return GL_DOUBLE;
         default: UNREACHABLE();
     }
 }

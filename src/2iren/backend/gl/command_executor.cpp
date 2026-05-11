@@ -80,7 +80,7 @@ auto GlCommandExecutor::execute_image_upload(
 ) const -> void {
     // just upload it all in one go, this should be fine even for cube maps
     const auto gl_handle = m_state.image_table.fetch(cmd.image_handle);
-    const auto& desc     = m_state.image_table.extra(cmd.image_handle)->get().descriptor;
+    const auto& desc     = m_state.image_table.extra(cmd.image_handle).descriptor;
 
     glTextureSubImage3D(
         gl_handle,
@@ -107,7 +107,7 @@ auto GlCommandExecutor::execute_buffer_upload(
     const std::span<const u8> data_slice
 ) const -> void {
     const auto gl_handle = m_state.buffer_table.fetch(cmd.buffer_handle);
-    const auto& desc     = m_state.buffer_table.extra(cmd.buffer_handle)->get().descriptor;
+    const auto& desc     = m_state.buffer_table.extra(cmd.buffer_handle).descriptor;
 
     switch (desc.usage) {
         case BufferUsage::Static: {
@@ -139,7 +139,7 @@ auto GlCommandExecutor::execute_buffer_upload(
             break;
         }
         case BufferUsage::Stream: {
-            const auto [ptr, size] = m_state.buffer_table.extra(cmd.buffer_handle)->get().buffer_ptr;
+            const auto [ptr, size] = m_state.buffer_table.extra(cmd.buffer_handle).buffer_ptr;
             ASSERT(ptr != nullptr, "Stream Buffer mapped pointer is null!");
             ASSERT(
                 size - cmd.dest_offset >= data_slice.size(),
@@ -169,7 +169,7 @@ auto GlCommandExecutor::execute_pass(
     const std::span<const RenderCommand> commands
 ) const -> void {
     const auto fb_handle      = m_state.framebuffer_table.fetch(descriptor.target);
-    const auto& fb_descriptor = m_state.framebuffer_table.extra(descriptor.target)->get().descriptor;
+    const auto& fb_descriptor = m_state.framebuffer_table.extra(descriptor.target).descriptor;
 
     // first setup pass
     if (descriptor.begin_operation == BeginOperation::Clear) {
@@ -231,8 +231,8 @@ auto GlCommandExecutor::execute_pass(
 auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {
     auto& gp_table           = m_state.graphics_pipeline_table;
     const auto va_handle     = gp_table.fetch(bind.pipeline_handle);
-    const auto shader_handle = gp_table.extra(bind.pipeline_handle)->get().shader_program_handle;
-    const auto& desc         = gp_table.extra(bind.pipeline_handle)->get().descriptor;
+    const auto shader_handle = gp_table.extra(bind.pipeline_handle).shader_program_handle;
+    const auto& desc         = gp_table.extra(bind.pipeline_handle).descriptor;
 
     m_tracked_state.active_pipeline = bind.pipeline_handle;
     m_tracked_state.active_vao      = va_handle;
@@ -290,7 +290,7 @@ auto GlCommandExecutor::set_viewport(
 ) const -> void {
     // 2iren uses top left as origin, OpenGL uses bottom left, so we must convert
     // we need the fb size for conversion
-    const auto fb_height = m_state.framebuffer_table.extra(fb_handle)->get().descriptor.height;
+    const auto fb_height = m_state.framebuffer_table.extra(fb_handle).descriptor.height;
 
     const auto x      = set_viewport.x;
     const auto y      = fb_height - (set_viewport.y + set_viewport.height);
@@ -308,8 +308,7 @@ auto GlCommandExecutor::bind_vertex_buffer(
     const BindVertexBuffer& bind_vertex_buffer
 ) const -> void {
     const auto vbo            = m_state.buffer_table.fetch(bind_vertex_buffer.vertex_buffer);
-    const auto& pipeline_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline)->get().
-                                        descriptor;
+    const auto& pipeline_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline).descriptor;
     glVertexArrayVertexBuffer(
         m_tracked_state.active_vao,
         bind_vertex_buffer.slot,
@@ -337,7 +336,7 @@ auto GlCommandExecutor::bind_uniform_buffer(
 auto GlCommandExecutor::draw_arrays(
     const DrawArrays& draw_arrays
 ) const -> void {
-    const auto& pl_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline)->get().descriptor;
+    const auto& pl_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
 
     glDrawArrays(
@@ -350,7 +349,7 @@ auto GlCommandExecutor::draw_arrays(
 auto GlCommandExecutor::draw_indexed(
     const DrawIndexed& draw_indexed
 ) const -> void {
-    const auto& pl_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline)->get().descriptor;
+    const auto& pl_desc = m_state.graphics_pipeline_table.extra(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
     const auto type     = gl::index_format_to_gl(m_tracked_state.active_ibo.index_format);
 

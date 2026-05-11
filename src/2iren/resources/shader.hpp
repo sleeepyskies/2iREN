@@ -70,10 +70,10 @@ struct ShaderStageData {
  * @brief Describes a @ref Shader to be created.
  */
 struct ShaderDescriptor {
-    /** @brief The source code for each stage of the Shader. */
-    std::unordered_map<ShaderStage, ShaderStageData> source;
     /** @brief The optional label of the shader. */
     std::optional<std::string> label;
+    /** @brief The source code for each stage of the Shader. */
+    std::unordered_map<ShaderStage, ShaderStageData> source;
 };
 
 /**
