@@ -67,7 +67,7 @@ struct ResourceHandle {
     /** @brief Checks if the handle is valid aka has a non 0 inner value. */
     [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return packed_id != INVALID_ID; }
     /** @brief Kills the handle by zeroing its value. */
-    constexpr auto invalidate() noexcept -> void { packed_id = 0; }
+    constexpr auto invalidate() noexcept -> void { packed_id = INVALID_ID; }
     /** @copydoc is_valid */
     [[nodiscard]] constexpr explicit operator bool() const noexcept { return is_valid(); }
 
@@ -224,7 +224,7 @@ public:
     /** @brief Gets the extra data associated with this proxy. */
     [[nodiscard]] auto extra(const HandleType handle) const noexcept -> const Extra& {
         auto inner = m_inner.read();
-        ASSERT(is_valid_id(handle, *inner), "Invalid handle: {}", handle.packed());
+        ASSERT(is_valid_id(handle, *inner), std::format("Invalid handle: {}", handle.packed()));
         return inner->table[handle.index()].extra;
     }
 

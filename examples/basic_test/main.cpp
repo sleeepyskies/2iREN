@@ -15,11 +15,11 @@ const siren::ShaderStageData vertex_shader{
     .label = std::nullopt,
     .source = R"(
         #version 460
-        layout(location = 0) in vec3 aPos;
-        layout(location = 1) in vec4 aColor;
+        layout(location = 0) in vec3 a_pos;
+        layout(location = 1) in vec4 a_color;
 
         void main() {
-            gl_Position = vec4(aPos, 1.0);
+            gl_Position = vec4(a_pos, 1.0);
         })",
 };
 
@@ -98,12 +98,14 @@ int main() {
         .topology = siren::PrimitiveTopology::Triangles,
         .alpha_mode = siren::AlphaMode::Opaque,
         .depth_function = siren::DepthFunction::Less,
-        .back_face_culling = true,
-        .depth_test = true,
+        .back_face_culling = false,
+        .depth_test = false,
         .depth_write = true,
     });
 
     while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
         auto cmds = device->record_render_commands();
         {
             auto pass = cmds.begin_render_pass({
@@ -120,6 +122,8 @@ int main() {
             cmds.consume_render_pass(pass.finish());
         }
         device->submit(cmds.finish());
+        // device->wait_until_idle();
+        glfwSwapBuffers(window);
         device->flush_delete_queue();
     }
 

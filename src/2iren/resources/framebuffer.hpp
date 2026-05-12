@@ -60,4 +60,5 @@ private:
     /** @brief The optional depth_stencil attachment. */
     std::optional<Image> m_depth_stencil;
 };
+
 } // namespace siren

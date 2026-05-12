@@ -70,13 +70,11 @@ auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
             const auto flags = gl::buffer_usage_to_flags_gl(descriptor.usage);
 
             // if data was passed, directly upload it
+            const u8* data = nullptr;
             if (descriptor.data.has_value()) {
-                glNamedBufferStorage(
-                    buf, static_cast<GLsizeiptr>(descriptor.size), descriptor.data.value().data(), flags
-                );
-            } else {
-                glNamedBufferStorage(buf, static_cast<GLsizeiptr>(descriptor.size), nullptr, flags);
+                data = descriptor.data.value().data();
             }
+            glNamedBufferStorage(buf, static_cast<GLsizeiptr>(descriptor.size), data, flags);
 
             // if the buffer is streamed, we also need to store a mapping pointer
             MappedBufferPtr mapped_buffer;
@@ -168,7 +166,7 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                         static_cast<GLsizei>(ext.depth_or_layers)
                     );
                     break;
-                default: ASSERT(false, "Unsupported texture target");
+                default: PANIC("Unsupported texture target");
             }
 
             // assign the proxy handle to the real handle
@@ -336,7 +334,7 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
 
             // check everything worked
             if (glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                ASSERT(false, "Framebuffer could not be created.");
+                PANIC("Framebuffer could not be created.");
             }
 
             this->m_state.framebuffer_table.link(

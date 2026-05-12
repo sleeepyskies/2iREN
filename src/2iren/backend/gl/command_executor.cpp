@@ -59,7 +59,7 @@ auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge
                 );
                 break;
             }
-            default: ASSERT(false, "Invalid ResourceCommandType encountered");
+            default: PANIC("Invalid ResourceCommandType encountered");
         }
     }
 }

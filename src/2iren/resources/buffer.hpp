@@ -53,7 +53,7 @@ struct BufferDescriptor {
      * @todo remove this? idk
      */
     std::optional<std::vector<u8>> data;
-    /** @brief The initial size of the buffer. */
+    /** @brief The initial size of the buffer in bytes. */
     usize size;
     /** @brief The intended use of the buffer. */
     BufferUsage usage;
