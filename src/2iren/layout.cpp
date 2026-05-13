@@ -1,4 +1,4 @@
-#include "vertex_layout.hpp"
+#include "layout.hpp"
 
 
 namespace siren {
@@ -43,21 +43,21 @@ constexpr auto DataType::to_string() const -> std::string {
     }
 }
 
-auto VertexLayoutBuilder::start() -> VertexLayoutBuilder { return VertexLayoutBuilder{ }; }
+auto LayoutBuilder::start() -> LayoutBuilder { return LayoutBuilder{ }; }
 
-auto VertexLayoutBuilder::finish() -> VertexLayout {
-    return VertexLayout{
+auto LayoutBuilder::finish() -> Layout {
+    return Layout{
         .attributes = std::move(m_attributes),
         .stride = m_offset,
     };
 }
 
-auto VertexLayoutBuilder::add(
+auto LayoutBuilder::add(
     const Component component,
     const u32 count,
     const DataType type
-) -> VertexLayoutBuilder& {
-    const VertexAttribute attr{
+) -> LayoutBuilder& {
+    const Attribute attr{
         .component = component,
         .size = count,
         .type = type,

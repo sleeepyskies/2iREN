@@ -1,15 +1,12 @@
-#include "device.hpp"
+#include "debug.hpp"
 
-#include <glad/gl.h>
+#include <string>
+#include <unordered_map>
 
-#include "backend/gl/device.hpp"
-#include "util/platform.hpp"
-#include "util/log.hpp"
+#include "2iren/base.hpp"
+#include "2iren/util/log.hpp"
 
-
-namespace siren {
-
-// todo: move to gl/debug.cpp or something
+namespace siren::gl {
 
 static auto source_to_string(const GLenum source) -> std::string {
     switch (source) {
@@ -46,7 +43,7 @@ static auto severity_to_string(const GLenum severity) -> std::string {
     }
 }
 
-static auto gl_debug_callback(
+auto debug_callback(
     const GLenum source,
     const GLenum type,
     const GLuint id,
@@ -109,33 +106,4 @@ static auto gl_debug_callback(
     }
 }
 
-static auto create_gl_device(const CreateDeviceParams& params) -> std::unique_ptr<Device> {
-    log::info("Creating an OpenGlDevice.");
-
-    gladLoadGL(glfwGetProcAddress);
-
-    if (params.debug) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(gl_debug_callback, nullptr);
-    }
-
-    return std::make_unique<GlDevice>(params.window);
-}
-
-auto Device::create(const CreateDeviceParams& params) -> std::unique_ptr<Device> {
-    switch (params.backend) {
-        case Backend::Auto: {
-            if constexpr (platform::current == platform::Windows) {
-                return create_gl_device(params);
-            } else {
-                PANIC("Unsupported platform");
-            }
-        }
-        case Backend::OpenGL: {
-            return create_gl_device(params);
-        }
-        default: UNREACHABLE();
-    }
-}
-
-} // namespace siren
+} // namespace siren::gl

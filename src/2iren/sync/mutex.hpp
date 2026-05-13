@@ -8,12 +8,17 @@
 namespace siren {
 
 /**
+ * @brief Type alias for a lock held on a mutex.
+ */
+using UniqueMutexLock = std::unique_lock<std::mutex>;
+
+/**
  * @brief Handle to a locked @ref Mutex resource.
  * @details Uses RAII to ensure the underlying mutex is released when the guard
  * goes out of scope. Provides pointer-like access to the wrapped data.
  */
 template <typename T>
-using UniqueGuard = Guard<T, std::unique_lock<std::mutex>>;
+using UniqueGuard = Guard<T, UniqueMutexLock>;
 
 /** @brief Lists all possible error codes possible for the @ref Mutex. */
 enum class MutexError {
@@ -29,8 +34,8 @@ enum class MutexError {
 template <typename T>
 class Mutex {
 public:
-    using GuardType = UniqueGuard<T>;
-    using LockType = GuardType::LockType;
+    using GuardType    = UniqueGuard<T>;
+    using LockType     = GuardType::LockType;
     using ExpectedType = std::expected<GuardType, MutexError>;
 
     /** @brief Constructs T using its default constructor. */
@@ -117,6 +122,58 @@ public:
 
 private:
     T m_data;
+    mutable std::mutex m_mutex;
+};
+
+/**
+ * @brief Template specialization for a void @ref Mutex.
+ * Provides unique access to void. May be useful in situations where
+ * no resource guarding is needed, by synchronization is still a requirement.
+ */
+template <>
+class Mutex<void> {
+public:
+    using LockType     = UniqueMutexLock;
+    using ExpectedType = std::expected<LockType, MutexError>;
+
+    /** @brief Constructs a new void mutex. */
+    Mutex() = default;
+
+    Mutex(const Mutex&)             = delete;
+    Mutex(Mutex&&)                  = delete;
+    Mutex& operator=(const Mutex&)  = delete;
+    Mutex& operator=(const Mutex&&) = delete;
+
+    /**
+     * @brief Blocks current thread until access is acquired.
+     * @return A @ref UniqueGuard providing access to the data.
+     * @note This is a blocking operation.
+     */
+    [[nodiscard]]
+    auto lock() const -> LockType { return LockType{ m_mutex }; }
+
+    /**
+     * @brief Attempts to acquire exclusive access without blocking.
+     * @return A @ref UniqueGuard on success, or @ref MutexError if locked.
+     */
+    [[nodiscard]]
+    auto try_lock() const noexcept -> ExpectedType {
+        LockType lock{ m_mutex, std::try_to_lock };
+        if (!lock.owns_lock()) { return std::unexpected(MutexError::ResourceLocked); }
+        return lock;
+    }
+
+    /**
+     * @brief Executes a callable with a reference to the protected data.
+     * @return The result of the callable.
+     */
+    template <typename Function>
+    auto run(Function&& func) const noexcept -> std::invoke_result_t<Function> {
+        auto lock = this->lock();
+        return func();
+    }
+
+private:
     mutable std::mutex m_mutex;
 };
 

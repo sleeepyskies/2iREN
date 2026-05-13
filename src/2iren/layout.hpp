@@ -43,8 +43,8 @@ struct DataType {
     constexpr auto to_string() const -> std::string;
 };
 
-/** @brief Represents a single attribute inside a vertex buffer. */
-struct VertexAttribute {
+/** @brief Represents a single attribute inside a buffer. */
+struct Attribute {
     /** @brief The type of this attribute. */
     Component component;
     /** @brief The number of components per vertex attribute */
@@ -58,27 +58,27 @@ struct VertexAttribute {
 };
 
 /** @brief Describes the layout of a vertex buffer. */
-struct VertexLayout {
+struct Layout {
     /** @brief The various attributes within this buffer. */
-    std::vector<VertexAttribute> attributes;
+    std::vector<Attribute> attributes;
     /** @brief The total stride of a single vertex inside the buffer. */
     usize stride;
 };
 
 /**
- * @class VertexLayoutBuilder
+ * @class LayoutBuilder
  * @brief Utility class for building a @ref VertexLayout.
  */
-class VertexLayoutBuilder {
+class LayoutBuilder {
 public:
     /**
      * @brief Entry function for creating a @ref VertexLayout.
      * @return A newly created @ref VertexLayoutBuilder.
      */
-    static auto start() -> VertexLayoutBuilder;
+    static auto start() -> LayoutBuilder;
 
     /** @brief Finishes the construction and returns a @ref VertexLayout instance. */
-    auto finish() -> VertexLayout;
+    auto finish() -> Layout;
 
     /**
      * @param component The @ref Component to add.
@@ -95,12 +95,12 @@ public:
         Component component,
         u32 count,
         DataType type
-    ) -> VertexLayoutBuilder&;
+    ) -> LayoutBuilder&;
 
 private:
-    VertexLayoutBuilder() = default;
+    LayoutBuilder() = default;
 
-    std::vector<VertexAttribute> m_attributes{ };
+    std::vector<Attribute> m_attributes{ };
     usize m_offset{ 0 };
 };
 

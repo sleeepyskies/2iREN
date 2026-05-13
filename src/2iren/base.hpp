@@ -11,8 +11,19 @@ namespace siren {
 namespace ranges = std::ranges;
 namespace views = std::ranges::views;
 
+/**
+ * @brief The backend to initialize 2iren with.
+ */
+enum class Backend {
+    /** @brief Let 2iren handle selecting the best rendering API. */
+    Auto,
+    /** @brief Use OpenGL 4.6. */
+    OpenGL,
+};
+
+
 /** @brief Toggles single threaded mode in siren. */
-inline constexpr bool single_threaded = true;
+inline constexpr bool single_threaded = false;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
@@ -50,5 +61,20 @@ using usize = std::size_t;
 
 /** @brief @todo do this. */
 #define bit(x) (1u << (x))
+
+/**
+ * @brief Creates a range.
+ * @param end The exclusive end point of the range.
+ * @return A range from [0, end).
+ */
+inline auto range(const u32 end) { return views::iota(0u, end); }
+
+/**
+ * @brief Creates a range.
+ * @param start The inclusive start point of the range.
+ * @param end The exclusive end point of the range.
+ * @return A range from [start, end).
+ */
+inline auto range(const u32 start, const u32 end) { return views::iota(start, end); }
 
 } // namespace siren

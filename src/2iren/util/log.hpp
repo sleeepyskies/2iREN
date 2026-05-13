@@ -7,11 +7,18 @@
 #include <format>
 #include <libassert/assert.hpp>
 
+#include "2iren/sync/mutex.hpp"
 #include "string_utils.hpp"
 
-/// @todo: global config instead if env expands more
+/// @todo: log functions show error msg in my IDE but still compile and run... fix that prolly
 
 namespace siren::log {
+
+namespace detail {
+/** @brief Global mutex used by the logger. */
+inline Mutex<void> log_mutex{ };
+}
+
 
 /**
  * @struct Level
@@ -74,7 +81,7 @@ inline auto init(const Level lvl) -> void {
 inline auto init(const std::string_view lvl) -> void {
     const auto level_ = Level::from_string(lvl);
     ASSERT(level_.has_value(), "Passed invalid level to siren::log::init()");
-    level = level_.value();
+    init(level_.value());
 }
 
 /**
@@ -93,16 +100,22 @@ inline void log(
     const std::format_args args
 ) {
     if (lvl < level) { return; }
-    std::cout <<
-            std::format(
-                "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
-                color_code,
-                lvl.to_string(),
-                loc.file_name(),
-                loc.line(),
-                loc.column(),
-                std::vformat(fmt, args)
-            ) << std::endl;
+
+    const auto msg = std::format(
+        "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
+        color_code,
+        lvl.to_string(),
+        loc.file_name(),
+        loc.line(),
+        loc.column(),
+        std::vformat(fmt, args)
+    );
+
+    if constexpr (single_threaded) {
+        std::cout << msg << std::endl;
+    } else {
+        detail::log_mutex.run([msg = std::move(msg)]{ std::cout << msg << std::endl; });
+    }
 }
 
 template <typename... Args>
