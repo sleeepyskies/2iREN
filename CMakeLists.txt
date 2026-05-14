@@ -39,7 +39,5 @@ add_library(2iren STATIC
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 include(dependencies.cmake)
-
-# add any examples
-add_subdirectory(examples/basic_test)
+include(examples.cmake)
 

@@ -1,0 +1,2 @@
+add_subdirectory(examples/rainbow_triangle)
+add_subdirectory(examples/spinning_cube)

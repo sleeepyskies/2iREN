@@ -1,21 +1,24 @@
 #include "resource_command.hpp"
 
+#include "util/byte_buffer.hpp"
+
 
 namespace siren {
 
 auto ResourceCommandRecorder::upload_to_buffer(
     const BufferHandle buffer_handle,
-    std::span<const u8> data,
+    const ByteBuffer& data,
     const u32 dest_offset
 ) -> void {
     const UploadBuffer upload{
         .buffer_handle = buffer_handle,
         .blob_offset = m_blob.size(),
         .dest_offset = dest_offset,
-        .data_size = data.size(),
+        .data_size = data.size_bytes(),
     };
 
-    m_blob.insert(m_blob.end(), data.begin(), data.end());
+    const auto raw = data.raw();
+    m_blob.insert(m_blob.end(), raw, raw + data.size_bytes());
 
     m_commands.emplace_back(
         ResourceCommand{

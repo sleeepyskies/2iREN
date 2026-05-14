@@ -1,0 +1,168 @@
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/quaternion_transform.hpp>
+
+#include "2iren/2iren.hpp"
+#include "2iren/util/byte_buffer.hpp"
+
+struct Vertex {
+    siren::f32 x, y, z;
+};
+
+struct UboData {
+    glm::mat4 rot;
+};
+
+const siren::ShaderStageData vertex_shader{
+    .label = std::nullopt,
+    .source = R"(
+        #version 460
+        layout(location = 0) in vec3 a_pos;
+        layout(location = 0) out vec3 v_pos;
+
+        layout(binding = 0) uniform UBO {
+            mat4 rot;
+        };
+
+        void main() {
+            gl_Position = rot * vec4(a_pos, 1.0);
+            v_pos = a_pos;
+        })",
+};
+const siren::ShaderStageData fragment_shader{
+    .label = std::nullopt,
+    .source = R"(
+        #version 460
+        layout(location = 0) in vec3 v_pos;
+
+        layout(location = 0) out vec4 FragColor;
+
+        void main() {
+            FragColor = vec4(v_pos + 0.5, 1.0);
+        })"
+};
+
+const std::unordered_map<siren::ShaderStage, siren::ShaderStageData> shaders = {
+    { siren::ShaderStage::Vertex,  vertex_shader },
+    { siren::ShaderStage::Fragment, fragment_shader },
+};
+const siren::ByteBuffer vertices {
+    Vertex{-0.5f, -0.5f,  0.5f}, Vertex{ 0.5f, -0.5f,  0.5f}, // front bottom
+    Vertex{ 0.5f,  0.5f,  0.5f}, Vertex{-0.5f,  0.5f,  0.5f}, // front top
+    Vertex{-0.5f, -0.5f, -0.5f}, Vertex{ 0.5f, -0.5f, -0.5f}, // back bottom
+    Vertex{ 0.5f,  0.5f, -0.5f}, Vertex{-0.5f,  0.5f, -0.5f}  // back top
+};
+const siren::ByteBuffer indices = []{
+    siren::ByteBuffer buf;
+    buf.append<siren::u32>({
+        0, 1, 2, 2, 3, 0, // front
+        1, 5, 6, 6, 2, 1, // right
+        7, 6, 5, 5, 4, 7, // back
+        4, 0, 3, 3, 7, 4, // left
+        4, 5, 1, 1, 0, 4, // bottom
+        3, 2, 6, 6, 7, 3  // top
+    });
+    return buf;
+}();
+
+int main() {
+    // init siren
+    siren::Context ctx{{
+        .debug = true,
+        .level = siren::log::Level::Trace,
+        .backend = siren::Backend::Auto
+    }};
+
+    siren::Window window({
+        .title = "2iren",
+        .width = 1280,
+        .height = 800,
+        .fullscreen = false,
+        .vsync = true,
+        .decorated = true,
+        .resizable = true,
+        .transparent = false,
+    });
+
+    auto device = ctx.create_device(window);
+    auto swapchain = device->create_swapchain({
+        .label = std::nullopt,
+    });
+
+    const auto vertex_buffer = device->create_buffer({
+        .label = "cube_buffer",
+        .data = vertices.data(),
+        .size = vertices.size_bytes(),
+        .usage = siren::BufferUsage::Static,
+    });
+    const auto index_buffer = device->create_buffer({
+        .label = "cube_indices",
+        .data = indices.data(),
+        .size = indices.size_bytes(),
+        .usage = siren::BufferUsage::Static,
+    });
+    const auto uniform_buffer = device->create_buffer({
+        .label = "uniform_buffer",
+        .data = std::nullopt,
+        .size = sizeof(UboData),
+        .usage = siren::BufferUsage::Dynamic,
+    });
+    const auto layout = siren::LayoutBuilder::start()
+           .add(siren::Component::Position, 3, siren::DataType::Float32)
+           .finish();
+
+    const auto shader = device->create_shader({
+        .label = std::nullopt,
+        .source = shaders,
+    });
+    const auto pipeline = device->create_graphics_pipeline({
+        .label = std::nullopt,
+        .layout = layout,
+        .shader = shader.handle(),
+        .topology = siren::PrimitiveTopology::Triangles,
+        .alpha_mode = siren::AlphaMode::Opaque,
+        .depth_function = siren::DepthFunction::Less,
+        .back_face_culling = true,
+        .depth_test = true,
+        .depth_write = true,
+    });
+
+    siren::u32 cnt{ 0 };
+    while (!window.should_close()) {
+        window.poll_events();
+
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)cnt * 0.01f, glm::vec3{0.5f, 1.0f, 0.0f});
+        glm::mat4 view  = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, -2.0f});
+        glm::mat4 proj  = glm::perspective(glm::radians(45.0f), 1280.0f/800.0f, 0.1f, 10.0f);
+        const UboData ubodata { .rot = proj * view * model };
+        siren::ByteBuffer ubo{ ubodata };
+
+        auto resource_cmds = device->record_resource_commands();
+        resource_cmds.upload_to_buffer(uniform_buffer.handle(), ubo, 0);
+        device->submit(resource_cmds.finish());
+
+        auto render_cmds = device->record_render_commands();
+        {
+            auto pass = render_cmds.begin_render_pass({
+                .label = std::nullopt,
+                .target = swapchain.current_framebuffer(),
+                .begin_operation = siren::BeginOperation::Clear,
+                .clear_color = siren::RGBA::black(),
+            });
+            pass.bind_graphics_pipeline(pipeline.handle());
+            pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
+            pass.bind_index_buffer(index_buffer.handle(), siren::IndexFormat::Uint32);
+            pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
+            pass.draw_indexed((siren::u32)indices.size_as<siren::u32>(), 0);
+
+            render_cmds.consume_render_pass(pass.finish());
+        }
+        device->submit(render_cmds.finish());
+        device->present(swapchain.handle());
+        device->flush_delete_queue();
+        // device->wait_until_idle();
+        cnt++;
+    }
+
+    return 0;
+}
