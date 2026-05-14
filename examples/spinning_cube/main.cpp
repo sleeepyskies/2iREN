@@ -160,9 +160,9 @@ int main() {
         device->submit(render_cmds.finish());
         device->present(swapchain.handle());
         device->flush_delete_queue();
-        // device->wait_until_idle();
         cnt++;
     }
 
+    device->wait_until_idle();
     return 0;
 }

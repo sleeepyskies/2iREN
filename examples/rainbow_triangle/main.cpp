@@ -118,8 +118,8 @@ int main() {
         device->submit(cmds.finish());
         device->present(swapchain.handle());
         device->flush_delete_queue();
-        // device->wait_until_idle();
     }
 
+    device->wait_until_idle();
     return 0;
 }

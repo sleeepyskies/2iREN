@@ -2,6 +2,7 @@
 
 #include <string>
 #include <format>
+#include <glm/glm.hpp>
 
 #define DEFINE_RGBA(name, r, g, b, a) \
     [[nodiscard]] static constexpr auto name() noexcept -> RGBA { return {r, g, b, a}; }
