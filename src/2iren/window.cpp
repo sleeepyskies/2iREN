@@ -12,19 +12,11 @@
 ///       but maybe would be better to have a context or something that manages lifetime
 
 namespace siren {
+
 Window::Window(const WindowDescriptor& descriptor)  {
     GLFWmonitor* monitor = nullptr;
     if (descriptor.fullscreen) {
         monitor = glfwGetPrimaryMonitor();
-    }
-
-    if (descriptor.is_opengl) {
-        // opengl requires special hints since it has a context
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    } else {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
 
     if (descriptor.decorated) {
@@ -52,9 +44,8 @@ Window::Window(const WindowDescriptor& descriptor)  {
 
     // don't set vsync here, render thread should do this since its context dependent
 
-    glfwSetWindowUserPointer(m_handle, this);
-
     log::info("Window created successfully: {}x{}", descriptor.width, descriptor.height);
+    glfwDefaultWindowHints();
     glfwMakeContextCurrent(nullptr);
 }
 

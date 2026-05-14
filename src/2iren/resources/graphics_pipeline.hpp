@@ -4,7 +4,7 @@
 #include <string>
 
 #include "fwd.hpp"
-#include "2iren/vertex_layout.hpp"
+#include "2iren/layout.hpp"
 
 
 namespace siren {
@@ -62,7 +62,7 @@ struct GraphicsPipelineDescriptor {
     /** @brief An optional label for the @ref GraphicsPipeline. Mainly used for debugging. */
     std::optional<std::string> label;
     /** @brief How the shader interprets vertex data. */
-    VertexLayout layout;
+    Layout layout;
     /** @brief The shader to use. */
     ShaderHandle shader;
     /** @brief How to draw vertex data. */

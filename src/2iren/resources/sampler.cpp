@@ -11,7 +11,7 @@ Sampler::Sampler(
 ) : Base(device, handle) { }
 
 Sampler::~Sampler() {
-    if (m_device && m_handle.is_valid()) {
+    if (m_device && m_handle.valid()) {
         m_device->destroy_sampler(m_handle);
     }
 }
@@ -22,7 +22,7 @@ Sampler::Sampler(Sampler&& other) noexcept
 Sampler& Sampler::operator=(Sampler&& other) noexcept {
     if (this != &other) {
         // cleanup old sampler
-        if (m_device && m_handle.is_valid()) {
+        if (m_device && m_handle.valid()) {
             m_device->destroy_sampler(m_handle);
         }
 

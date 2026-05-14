@@ -19,9 +19,9 @@ add_library(2iren STATIC
     src/2iren/render_command.cpp
     src/2iren/render_thread.cpp
     src/2iren/resource_command.cpp
-    src/2iren/vertex_layout.cpp
-    src/2iren/device.cpp
-    src/2iren/init.cpp
+    src/2iren/layout.cpp
+    src/2iren/context.cpp
+    src/2iren/window.cpp
 
     src/2iren/resources/buffer.cpp
     src/2iren/resources/framebuffer.cpp
@@ -29,9 +29,11 @@ add_library(2iren STATIC
     src/2iren/resources/image.cpp
     src/2iren/resources/sampler.cpp
     src/2iren/resources/shader.cpp
+    src/2iren/resources/swapchain.cpp
 
     src/2iren/backend/gl/device.cpp
     src/2iren/backend/gl/command_executor.cpp
+    src/2iren/backend/gl/debug.cpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

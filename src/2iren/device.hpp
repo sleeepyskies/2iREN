@@ -4,8 +4,6 @@
 #include "resource_command.hpp"
 #include "render_command.hpp"
 
-struct GLFWwindow;
-
 
 namespace siren {
 
@@ -15,28 +13,6 @@ namespace siren {
  */
 struct Limits {
     u32 max_buffer_slots;
-};
-
-/**
- * @brief The backend to initialize 2iren with.
- */
-enum class Backend {
-    /** @brief Let 2iren handle selecting the best rendering API. */
-    Auto,
-    /** @brief Use OpenGL 4.6. */
-    OpenGL,
-};
-
-/**
- * @brief Parameters used to create the @ref Device.
- */
-struct CreateDeviceParams {
-    /** @brief The backend rendering API to select. */
-    Backend backend;
-    /** @brief The window 2iren will be rendering to. */
-    GLFWwindow* window;
-    /** @brief Whether to set up validation/debug layers. */
-    bool debug;
 };
 
 /**
@@ -51,17 +27,8 @@ class Device {
 public:
     virtual ~Device() = default;
 
-    /**
-     * @brief Creates a new device.
-     * @return A device instance for the selected backend.
-     */
-    static auto create(const CreateDeviceParams& params) -> std::unique_ptr<Device>;
-
     /** @brief Blocks the calling thread until there is no GPU work left to be done. */
     virtual auto wait_until_idle() const noexcept -> void = 0;
-
-    /** @brief Presents the back buffer to the screen. */
-    virtual auto present() const noexcept -> void = 0;
 
     /** @brief Creates and returns a new @ref Buffer given a @ref BufferDescriptor. */
     [[nodiscard]] virtual auto create_buffer(const BufferDescriptor& descriptor) -> Buffer = 0;
@@ -95,6 +62,11 @@ public:
     /** @brief Queues the given @ref GraphicsPipeline for deletion. */
     virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void = 0;
 
+    /** @brief Creates and returns a new @ref Swapchain given a @ref SwapchainDescriptor. */
+    [[nodiscard]] virtual auto create_swapchain(const SwapchainDescriptor& descriptor) -> Swapchain = 0;
+    /** @brief Queues the given @ref Swapchain for deletion. */
+    virtual auto destroy_swapchain(SwapchainHandle handle) -> void = 0;
+
     /** @brief Flushes the delete queue of the device. Must be called once a frame. */
     virtual auto flush_delete_queue() -> void = 0;
 
@@ -123,6 +95,17 @@ public:
     [[nodiscard]] virtual auto graphics_pipeline_descriptor(
         GraphicsPipelineHandle handle
     ) const -> const GraphicsPipelineDescriptor& = 0;
+    /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
+    [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;
+
+    /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
+    [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> FramebufferHandle = 0;
+
+    /** @brief @todo DOCS. */
+    virtual auto present(SwapchainHandle handle) const -> void = 0;
+
+    /** @brief @todo DOCS. */
+    virtual auto framebuffer_attachments(FramebufferHandle handle) const -> const FramebufferAttachments& = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> Limits = 0;

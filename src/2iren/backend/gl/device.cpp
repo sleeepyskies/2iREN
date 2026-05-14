@@ -13,9 +13,11 @@
 #include "2iren/resources/image.hpp"
 #include "2iren/resources/sampler.hpp"
 #include "2iren/resources/shader.hpp"
+#include "2iren/resources/swapchain.hpp"
 
 #include "2iren/util/log.hpp"
 #include "util.hpp"
+#include "2iren/window.hpp"
 
 
 namespace siren {
@@ -35,17 +37,11 @@ static auto make_label(
     return std::nullopt;
 }
 
-GlDevice::GlDevice(GLFWwindow* window) : Device(), m_render_thread(window) { }
+GlDevice::GlDevice(const Window& window) : m_primary_window(window), m_render_thread(window) { }
 
 GlDevice::~GlDevice() { }
 
 auto GlDevice::wait_until_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
-
-auto GlDevice::present() const noexcept -> void {
-    m_render_thread.spawn([](){
-        // TODO
-    });
-}
 
 auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
     ASSERT(descriptor.size > 0, "Cannot legally allocate empty buffer (sorry).");
@@ -283,22 +279,19 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
             .format = ImageFormat::DepthStencil,
             .extent = { descriptor.width, descriptor.height, 1 },
             .dimension = ImageDimension::D2,
-            .mipmap_levels = 1, // todo: we just hardcoded 1, maybe we need a variable amount? idk
+            .mipmap_levels = 1, /// @todo: we just hardcoded 1, maybe we need a variable amount? idk
         });
     }();
     // @formatter:on
-
-    const auto color_handles        = colors | views::transform(&Image::handle) | ranges::to<std::vector>();
-    const auto depth_stencil_handle = depth_stencil.transform(&Image::handle);
 
     m_render_thread.spawn(
         [
             fb_handle,
             descriptor,
-            color_handles = std::move(color_handles),
-            depth_stencil_handle = std::move(depth_stencil_handle),
+            colors = std::move(colors),
+            depth_stencil = std::move(depth_stencil),
             this
-        ]{
+        ] mutable{
             GLuint framebuffer;
             glCreateFramebuffers(1, &framebuffer);
 
@@ -313,21 +306,21 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
             }
 
             // setup color attachments
-            for (auto [index, handle] : color_handles | views::enumerate) {
+            for (auto [index, color] : colors | views::enumerate) {
                 glNamedFramebufferTexture(
                     framebuffer,
                     static_cast<GLenum>(static_cast<usize>(GL_COLOR_ATTACHMENT0) + static_cast<usize>(index)),
-                    this->m_state.image_table.fetch(handle),
+                    this->m_state.image_table.fetch(color.handle()),
                     0
                 );
             }
 
             // setup depth stencil attachment
-            if (descriptor.has_depth_stencil && depth_stencil_handle.has_value()) {
+            if (descriptor.has_depth_stencil && depth_stencil.has_value()) {
                 glNamedFramebufferTexture(
                     framebuffer,
                     GL_DEPTH_STENCIL_ATTACHMENT,
-                    this->m_state.image_table.fetch(depth_stencil_handle.value()),
+                    this->m_state.image_table.fetch(depth_stencil->handle()),
                     0
                 );
             }
@@ -340,18 +333,19 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
             this->m_state.framebuffer_table.link(
                 fb_handle,
                 framebuffer,
-                GlFramebufferDetails{ .descriptor = std::move(descriptor) }
+                GlFramebufferDetails{
+                    .descriptor = std::move(descriptor),
+                    .attachments = {
+                        .colors = std::move(colors),
+                        .depth_stencil = std::move(depth_stencil)
+                    }
+                }
             );
         }
     );
 
     log::trace("Created framebuffer with handle {}", fb_handle.packed());
-    return Framebuffer{
-        this,
-        fb_handle,
-        std::move(colors),
-        std::move(depth_stencil)
-    };
+    return Framebuffer{ this, fb_handle };
 }
 
 auto GlDevice::destroy_framebuffer(const FramebufferHandle handle) -> void {
@@ -483,15 +477,36 @@ auto GlDevice::destroy_shader(const ShaderHandle handle) -> void {
     log::trace("Queued shader with handle {} for cleanup", handle.packed());
 }
 
-auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor) -> GraphicsPipeline {
-    // check the shader exists
-    auto program_handle = m_state.shader_table.fetch(descriptor.shader);
-    ASSERT(program_handle != 0, "Cannot create GraphicsPipeline with invalid Shader.");
+auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapchain {
+    // so opengl doesn't really have a swapchain, and it's not rlly possible to do
+    // since opengl manages this for us. our swapchain here is just the default framebuffer.
+    const auto handle = m_state.swapchain_table.reserve();
+    m_state.swapchain_table.link(
+        handle,
+        nullptr,
+        GlSwapchainDetails{
+            .descriptor = descriptor,
+            .native_handle = m_primary_window.handle()
+        }
+    );
+    log::trace("Created Swapchain");
+    return Swapchain{ this, handle };
+}
 
+auto GlDevice::destroy_swapchain(const SwapchainHandle handle) -> void {
+    m_state.swapchain_table.release(handle);
+    log::trace("Queued swapchain with handle {} for cleanup", handle.packed());
+}
+
+auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor) -> GraphicsPipeline {
     const auto pipeline_handle = m_state.graphics_pipeline_table.reserve();
 
     m_render_thread.spawn(
-        [pipeline_handle, descriptor, this, program_handle]{
+        [pipeline_handle, descriptor, this]{
+            // check the shader exists
+            const auto program_handle = this->m_state.shader_table.fetch(descriptor.shader);
+            ASSERT(program_handle != 0, "Cannot create GraphicsPipeline with invalid Shader.");
+
             GLuint vertex_array;
             glCreateVertexArrays(1, &vertex_array);
 
@@ -612,29 +627,50 @@ auto GlDevice::submit(RenderCommandBuffer&& command_buffer) -> void {
 }
 
 auto GlDevice::buffer_descriptor(const BufferHandle handle) const -> const BufferDescriptor& {
-    return m_state.buffer_table.extra(handle).descriptor;
+    return m_state.buffer_table.details(handle).descriptor;
 }
 
 auto GlDevice::image_descriptor(const ImageHandle handle) const -> const ImageDescriptor& {
-    return m_state.image_table.extra(handle).descriptor;
+    return m_state.image_table.details(handle).descriptor;
 }
 
 auto GlDevice::sampler_descriptor(const SamplerHandle handle) const -> const SamplerDescriptor& {
-    return m_state.sampler_table.extra(handle).descriptor;
+    return m_state.sampler_table.details(handle).descriptor;
 }
 
 auto GlDevice::framebuffer_descriptor(const FramebufferHandle handle) const -> const FramebufferDescriptor& {
-    return m_state.framebuffer_table.extra(handle).descriptor;
+    return m_state.framebuffer_table.details(handle).descriptor;
 }
 
 auto GlDevice::shader_descriptor(const ShaderHandle handle) const -> const ShaderDescriptor& {
-    return m_state.shader_table.extra(handle).descriptor;
+    return m_state.shader_table.details(handle).descriptor;
 }
 
 auto GlDevice::graphics_pipeline_descriptor(
     const GraphicsPipelineHandle handle
 ) const -> const GraphicsPipelineDescriptor& {
-    return m_state.graphics_pipeline_table.extra(handle).descriptor;
+    return m_state.graphics_pipeline_table.details(handle).descriptor;
+}
+
+auto GlDevice::swapchain_descriptor(const SwapchainHandle handle) const -> const SwapchainDescriptor& {
+    return m_state.swapchain_table.details(handle).descriptor;
+}
+
+auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const -> FramebufferHandle {
+    return m_state.swapchain_table.details(handle).framebuffer_handle;
+}
+
+auto GlDevice::present(const SwapchainHandle handle) const -> void {
+    auto window = m_state.swapchain_table.details(handle).native_handle;
+    m_render_thread.spawn(
+        [window]{
+            glfwSwapBuffers(window);
+        }
+    );
+}
+
+auto GlDevice::framebuffer_attachments(const FramebufferHandle handle) const -> const FramebufferAttachments& {
+    return m_state.framebuffer_table.details(handle).attachments;
 }
 
 auto GlDevice::limits() const -> Limits { return Limits{ }; }

@@ -11,3 +11,5 @@ add_executable(
 )
 
 target_link_libraries(basic_test PRIVATE 2iren)
+
+target_compile_definitions(2iren PUBLIC GLFW_INCLUDE_NONE)

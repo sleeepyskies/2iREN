@@ -26,6 +26,13 @@ struct FramebufferDescriptor {
     bool has_depth_stencil;
 };
 
+struct FramebufferAttachments {
+    /** @brief List of all color attachments. */
+    std::vector<Image> colors;
+    /** @brief The optional depth_stencil attachment. */
+    std::optional<Image> depth_stencil;
+};
+
 /**
  * @class Framebuffer
  * @brief Represents a GPU framebuffer object along with its associated attachments.
@@ -35,12 +42,7 @@ struct FramebufferDescriptor {
 class Framebuffer final : public RenderResource<Framebuffer> {
 public:
     using Base = RenderResource<Framebuffer>;
-    Framebuffer(
-        Device* device,
-        FramebufferHandle handle,
-        std::vector<Image>&& colors,
-        std::optional<Image>&& depth_stencil
-    );
+    Framebuffer(Device* device,FramebufferHandle handle);
     ~Framebuffer();
 
     Framebuffer(Framebuffer&& other) noexcept;
@@ -51,14 +53,10 @@ public:
 
     /** @brief Returns the color attachment of this Framebuffer. */
     [[nodiscard]] auto color_attachment(usize index) const noexcept -> const Image*;
+    /** @brief Returns all color attachments of this Framebuffer. */
+    [[nodiscard]] auto color_attachments() const noexcept -> const std::vector<Image>&;
     /** @brief Returns the depth_stencil attachment of this Framebuffer. */
     [[nodiscard]] auto depth_stencil_attachment() const noexcept -> const Image*;
-
-private:
-    /** @brief List of all color attachments. */
-    std::vector<Image> m_colors;
-    /** @brief The optional depth_stencil attachment. */
-    std::optional<Image> m_depth_stencil;
 };
 
 } // namespace siren

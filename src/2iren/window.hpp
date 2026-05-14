@@ -47,8 +47,6 @@ struct WindowDescriptor {
     bool resizable = true;
     /** @brief If the window is transparent. */
     bool transparent = false;
-    /** @brief Separate flag for OpenGL as it requires extra glfw hints on init. */
-    bool is_opengl = true;
 };
 
 /**
@@ -128,7 +126,6 @@ private:
     Mutex<glm::ivec2> m_position;
     Mutex<std::string> m_title;
     Mutex<std::vector<WindowRequest>> m_requests;
-    // SwapChain m_swapchain;
 };
 
 } // namespace siren

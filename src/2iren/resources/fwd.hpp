@@ -10,6 +10,7 @@ struct BufferDescriptor;
 using BufferHandle = ResourceHandle<Buffer>;
 
 class Framebuffer;
+struct FramebufferAttachments;
 struct FramebufferDescriptor;
 using FramebufferHandle = ResourceHandle<Framebuffer>;
 
@@ -28,5 +29,9 @@ using SamplerHandle = ResourceHandle<Sampler>;
 class Shader;
 struct ShaderDescriptor;
 using ShaderHandle = ResourceHandle<Shader>;
+
+class Swapchain;
+struct SwapchainDescriptor;
+using SwapchainHandle = ResourceHandle<Swapchain>;
 
 } // namespace siren {

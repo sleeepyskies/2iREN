@@ -11,7 +11,7 @@ Shader::Shader(
 ) : Base(device, handle) { }
 
 Shader::~Shader() {
-    if (m_device && m_handle.is_valid()) {
+    if (m_device && m_handle.valid()) {
         m_device->destroy_shader(m_handle);
     }
 }
@@ -20,7 +20,7 @@ Shader::Shader(Shader&& other) noexcept : Base(std::move(other)) { }
 
 Shader& Shader::operator=(Shader&& other) noexcept {
     if (this != &other) {
-        if (m_device && m_handle.is_valid()) {
+        if (m_device && m_handle.valid()) {
             m_device->destroy_shader(m_handle);
         }
 

@@ -10,9 +10,12 @@
 #include "2iren/resources/graphics_pipeline.hpp"
 #include "2iren/resources/sampler.hpp"
 #include "2iren/resources/shader.hpp"
+#include "2iren/resources/swapchain.hpp"
 
 
 namespace siren {
+
+const inline auto DEFAULT_FRAMEBUFFER = FramebufferHandle{ 0, 0 };
 
 /**
  * @brief Encapsulates a mapped buffer pointer. This is used in streamed @ref Buffer's.
@@ -56,6 +59,8 @@ struct GlSamplerDetails {
 struct GlFramebufferDetails {
     /** @brief The descriptor of the @ref Framebuffer. */
     FramebufferDescriptor descriptor;
+    /** @brief The attachments that belong to this framebuffer. */
+    FramebufferAttachments attachments;
 };
 
 /**
@@ -76,6 +81,15 @@ struct GlGraphicsPipelineDetails {
     GraphicsPipelineDescriptor descriptor;
     /** @brief The cached shader program ID. Avoids performing @ref AssetServer lookups during rendering. */
     GLuint shader_program_handle;
+};
+
+struct GlSwapchainDetails {
+    /** @brief The descriptor of the @ref Swapchain. */
+    SwapchainDescriptor descriptor;
+    /** @brief Raw handle to the window this @ref Framebuffer is associated with. */
+    GLFWwindow* native_handle;
+    /** @brief Essentially a proxy fb. Represents to use the default fb to cmd executor. */
+    FramebufferHandle framebuffer_handle = DEFAULT_FRAMEBUFFER;
 };
 
 /**
@@ -99,16 +113,19 @@ struct RenderResourceState {
      * This is because OpenGL has no notion of a Pipeline, but we use a VA in the pipeline.
      */
     RenderResourceTable<GLuint, GraphicsPipeline, GlGraphicsPipelineDetails> graphics_pipeline_table;
+    /**
+     * @brief Swapchain handle storage.
+     * @note GL doesn't have an exposed concept of a swapchain, so we store a meaningless void* here.
+     */
+    RenderResourceTable<void*, Swapchain, GlSwapchainDetails> swapchain_table;
 };
 
 class GlDevice final : public Device {
 public:
-    explicit GlDevice(GLFWwindow* window);
+    explicit GlDevice(const Window& window);
     ~GlDevice() override;
 
     auto wait_until_idle() const noexcept -> void override;
-
-    auto present() const noexcept -> void override;
 
     [[nodiscard]] auto create_buffer(const BufferDescriptor& descriptor) -> Buffer override;
     auto destroy_buffer(BufferHandle handle) -> void override;
@@ -124,6 +141,9 @@ public:
 
     [[nodiscard]] auto create_shader(const ShaderDescriptor& descriptor) -> Shader override;
     auto destroy_shader(ShaderHandle handle) -> void override;
+
+    [[nodiscard]] auto create_swapchain(const SwapchainDescriptor& descriptor) -> Swapchain override;
+    auto destroy_swapchain(SwapchainHandle handle) -> void override;
 
     [[nodiscard]] auto create_graphics_pipeline(
         const GraphicsPipelineDescriptor& descriptor
@@ -145,11 +165,25 @@ public:
     [[nodiscard]] auto graphics_pipeline_descriptor(
         GraphicsPipelineHandle handle
     ) const -> const GraphicsPipelineDescriptor& override;
+    [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
+
+    [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> FramebufferHandle override;
+    auto present(SwapchainHandle handle) const -> void override;
+
+    [[nodiscard]] auto framebuffer_attachments(
+        FramebufferHandle handle
+    ) const -> const FramebufferAttachments& override;
 
     /** @todo: Implement some way to query this ig */
     [[nodiscard]] auto limits() const -> Limits override;
 
 private:
+    /**
+     * @brief Window used to init the device.
+     * @todo Kinda sucks we need this, maybe we can add some hidden default window?
+     */
+    const Window& m_primary_window;
+
     /**
      * @brief Enum listing all OpenGL GPU objects used.
      * @note We do not define a global enum for this, as different backends

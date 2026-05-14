@@ -24,7 +24,7 @@ enum class BufferUsage {
 /** @brief Defines the index format of an index buffer. */
 class IndexFormat {
 public:
-    enum Enum : u8 { Byte8, Short16, Uint32 } value;
+    enum Value : u8 { Byte8, Short16, Uint32 } value;
 
     /** @brief Returns the size of this format in bytes. */
     [[nodiscard]] constexpr auto size_bytes() const -> usize {
@@ -36,8 +36,8 @@ public:
         }
     }
 
-    IndexFormat(const Enum v) : value(v) { } // NOLINT(*-explicit-constructor)
-    constexpr operator Enum() const { return value; } // NOLINT(*-explicit-constructor)
+    IndexFormat(const Value v) : value(v) { }
+    constexpr operator Value() const { return value; }
 };
 
 /**
@@ -70,7 +70,6 @@ public:
 
     Buffer(Device* device, BufferHandle handle);
     ~Buffer();
-
     Buffer(Buffer&& other) noexcept;
     Buffer& operator=(Buffer&& other) noexcept;
 

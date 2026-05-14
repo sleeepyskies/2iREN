@@ -1,8 +1,5 @@
-#include <GLFW/glfw3.h>
-
 #include "2iren/2iren.hpp"
-#include "2iren/resources/shader.hpp"
-#include "2iren/util/buf.hpp"
+#include "2iren/util/byte_buffer.hpp"
 
 /// @todo: window abstraction + swapchain + surface or something
 
@@ -44,30 +41,29 @@ const siren::ByteBuffer vertices {
 };
 
 int main() {
-    siren::init({
-        .level = siren::log::Level::Trace
-    });
-
-    if (!glfwInit()) {
-        siren::log::error("Could not init glfw");
-        return -1;
-    }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    auto window = glfwCreateWindow(1280, 800, "hi", nullptr, nullptr);
-    if (!window) {
-        siren::log::error("Could not create a window.");
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    const auto device = siren::Device::create({
-        .backend = siren::Backend::Auto,
-        .window = window,
+    // init siren
+    siren::Context ctx{{
         .debug = true,
+        .level = siren::log::Level::Trace,
+        .backend = siren::Backend::Auto
+    }};
+
+    siren::Window window({
+        .title = "2iren",
+        .width = 1280,
+        .height = 800,
+        .fullscreen = false,
+        .vsync = true,
+        .decorated = true,
+        .resizable = true,
+        .transparent = false,
     });
+
+    auto device = ctx.create_device(window);
+    auto swapchain = device->create_swapchain({
+        .label = std::nullopt,
+    });
+
     const auto buffer           = device->create_buffer({
         .label = "sample_buffer",
         .data = vertices.data(),
@@ -75,18 +71,11 @@ int main() {
         .usage = siren::BufferUsage::Static,
     });
     const auto layout =
-            siren::VertexLayoutBuilder::start()
+            siren::LayoutBuilder::start()
            .add(siren::Component::Position, 3, siren::DataType::Float32)
            .add(siren::Component::Color, 4, siren::DataType::Float32)
            .finish();
 
-    const auto target = device->create_framebuffer({
-        .label = std::nullopt,
-        .width = 1280,
-        .height = 800,
-        .num_colors = 1,
-        .has_depth_stencil = false,
-    });
     const auto shader = device->create_shader({
         .label = std::nullopt,
         .source = shaders,
@@ -103,14 +92,14 @@ int main() {
         .depth_write = true,
     });
 
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+    while (!window.should_close()) {
+        window.poll_events();
 
         auto cmds = device->record_render_commands();
         {
             auto pass = cmds.begin_render_pass({
                 .label = std::nullopt,
-                .target = target.handle(),
+                .target = swapchain.current_framebuffer(),
                 .begin_operation = siren::BeginOperation::Clear,
                 .clear_color = siren::RGBA::black(),
             });
@@ -122,13 +111,10 @@ int main() {
             cmds.consume_render_pass(pass.finish());
         }
         device->submit(cmds.finish());
-        // device->wait_until_idle();
-        glfwSwapBuffers(window);
+        device->present(swapchain.handle());
         device->flush_delete_queue();
+        // device->wait_until_idle();
     }
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
 
     return 0;
 }

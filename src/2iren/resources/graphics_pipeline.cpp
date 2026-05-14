@@ -10,7 +10,7 @@ GraphicsPipeline::GraphicsPipeline(
 ) : Base(device, handle) { }
 
 GraphicsPipeline::~GraphicsPipeline() {
-    if (m_device && m_handle.is_valid()) {
+    if (m_device && m_handle.valid()) {
         m_device->destroy_graphics_pipeline(m_handle);
     }
 }
@@ -21,7 +21,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
 GraphicsPipeline& GraphicsPipeline::operator=(GraphicsPipeline&& other) noexcept {
     if (this != &other) {
         // cleanup old buffer
-        if (m_device && m_handle.is_valid()) {
+        if (m_device && m_handle.valid()) {
             m_device->destroy_graphics_pipeline(m_handle);
         }
 

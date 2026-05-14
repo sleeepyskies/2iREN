@@ -1,16 +1,26 @@
 #include "render_thread.hpp"
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
+
+#include "window.hpp"
+
 
 namespace siren {
 
-RenderThread::RenderThread(GLFWwindow* window) {
+static auto load_gl_function_pointers(GLFWwindow* window) -> void {
+    glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
+}
+
+RenderThread::RenderThread(const Window& window) {
     if constexpr (single_threaded) {
+        load_gl_function_pointers(window.handle());
         return;
     }
 
     auto inner    = m_inner.lock();
-    inner->thread = std::thread{ &RenderThread::run, this, window};
+    inner->thread = std::thread{ &RenderThread::run, this, window.handle()};
 }
 
 RenderThread::~RenderThread() { { }
@@ -50,8 +60,8 @@ auto RenderThread::wait_until_idle() const noexcept -> void {
     }
 }
 
-auto RenderThread::run(GLFWwindow* window) -> void {
-    glfwMakeContextCurrent(window);
+auto RenderThread::run(GLFWwindow* window) const -> void {
+    load_gl_function_pointers(window);
 
     while (true) {
         std::queue<RenderTask> local_tasks;

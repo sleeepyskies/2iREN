@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #include "2iren/sync.hpp"
+#include "2iren/fwd.hpp"
 
 struct GLFWwindow;
 
@@ -21,13 +22,14 @@ public:
     /** @brief A command to be computed on the RenderThread. */
     using RenderTask = std::move_only_function<void()>;
 
+    explicit RenderThread(const Window& window);
+    ~RenderThread();
+
     RenderThread(const RenderThread&)            = delete;
     RenderThread(RenderThread&&)                 = delete;
     RenderThread& operator=(const RenderThread&) = delete;
     RenderThread& operator=(RenderThread&&)      = delete;
 
-    explicit RenderThread(GLFWwindow* window);
-    ~RenderThread();
 
     /**
      * @brief Spawns a new task to be computed on the RenderThread.
@@ -40,7 +42,7 @@ public:
 
 private:
     /** @brief Main worker loop. */
-    auto run(GLFWwindow* window) -> void;
+    auto run(GLFWwindow* window) const -> void;
 
     /** @brief Holds inner data. */
     struct Inner {

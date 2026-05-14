@@ -65,11 +65,11 @@ struct ResourceHandle {
     }
 
     /** @brief Checks if the handle is valid aka has a non 0 inner value. */
-    [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return packed_id != INVALID_ID; }
+    [[nodiscard]] constexpr auto valid() const noexcept -> bool { return packed_id != INVALID_ID; }
     /** @brief Kills the handle by zeroing its value. */
     constexpr auto invalidate() noexcept -> void { packed_id = INVALID_ID; }
-    /** @copydoc is_valid */
-    [[nodiscard]] constexpr explicit operator bool() const noexcept { return is_valid(); }
+    /** @copydoc valid */
+    [[nodiscard]] constexpr explicit operator bool() const noexcept { return valid(); }
 
     /** @brief Default comparison operator. */
     friend bool operator==(const ResourceHandle&, const ResourceHandle&) = default;
@@ -119,7 +119,10 @@ protected:
     HandleType m_handle;
 };
 
+namespace detail {
 struct Nothing { };
+}
+
 
 /**
  * @class RenderResourceTable
@@ -127,11 +130,11 @@ struct Nothing { };
  * graphics API's handles.
  * @tparam ApiHandle The API's handle type aka GLuint or VkBuffer etc.
  * @tparam Resource The 2iren resource being managed.
- * @tparam Extra Some additional data to store with each resource.
+ * @tparam Details Some additional data to store with each resource.
  * @note We store some resource related items in the table since they
  * are API specific, and thus the 2iren objects would need to be specialized.
  */
-template <typename ApiHandle, typename Resource, typename Extra = Nothing>
+template <typename ApiHandle, typename Resource, typename Details = detail::Nothing>
 class RenderResourceTable {
 public:
     using ApiHandleType = ApiHandle;
@@ -148,10 +151,10 @@ private:
         /** @brief The generation of this resource's slot. */
         GenerationType generation = 0;
         /** @brief Some extra data that the user may define. */
-        Extra extra = { };
+        Details details = { };
 
         // @formatter:off
-        void kill() { ++generation; api_handle = 0; extra = Extra{ }; }
+        void kill() { ++generation; api_handle = 0; details = Details{ }; }
         // @formatter:on
     };
 
@@ -189,13 +192,13 @@ public:
     auto link(
         const HandleType proxy_handle,
         const ApiHandleType api_handle,
-        const Extra& extra
+        Details&& details
     ) -> void {
         auto inner = m_inner.write();
         ASSERT(is_valid_id(proxy_handle, *inner), "Passed an invalid ProxyHandleType: {}", proxy_handle);
         auto& table_entry      = inner->table[proxy_handle.index()];
         table_entry.api_handle = api_handle;
-        table_entry.extra      = extra;
+        table_entry.details      = std::move(details);
     }
 
     /** @brief Frees the proxy handle. */
@@ -215,17 +218,17 @@ public:
     }
 
     /** @brief Gets the extra data associated with this proxy. */
-    [[nodiscard]] auto extra(const HandleType handle) noexcept -> Extra& {
+    [[nodiscard]] auto details(const HandleType handle) noexcept -> Details& {
         auto inner = m_inner.read();
         ASSERT(is_valid_id(handle, *inner), "Invalid handle: {}", handle.packed());
-        return inner->table[handle.index()].extra;
+        return inner->table[handle.index()].details;
     }
 
     /** @brief Gets the extra data associated with this proxy. */
-    [[nodiscard]] auto extra(const HandleType handle) const noexcept -> const Extra& {
+    [[nodiscard]] auto details(const HandleType handle) const noexcept -> const Details& {
         auto inner = m_inner.read();
         ASSERT(is_valid_id(handle, *inner), std::format("Invalid handle: {}", handle.packed()));
-        return inner->table[handle.index()].extra;
+        return inner->table[handle.index()].details;
     }
 
 private:
@@ -235,7 +238,7 @@ private:
      * or at least no assert this condition.
      */
     auto is_valid_id(const HandleType proxy_handle, const Inner& inner) const -> bool {
-        if (proxy_handle.index() >= inner.table.size() || !proxy_handle.is_valid()) { return false; }
+        if (proxy_handle.index() >= inner.table.size() || !proxy_handle.valid()) { return false; }
         const auto& entry = inner.table[proxy_handle.index()];
         return entry.generation == proxy_handle.generation();
     }
