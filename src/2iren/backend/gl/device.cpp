@@ -489,6 +489,11 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
             .native_handle = m_primary_window.handle()
         }
     );
+    m_render_thread.spawn(
+        [vsync = descriptor.vsync](){
+            glfwSwapInterval(vsync);
+        }
+    );
     log::trace("Created Swapchain");
     return Swapchain{ this, handle };
 }

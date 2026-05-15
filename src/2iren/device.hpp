@@ -101,10 +101,10 @@ public:
     /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
     [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> FramebufferHandle = 0;
 
-    /** @brief @todo DOCS. */
+    /** @brief Presents the back buffer of the given swapchain to the screen. */
     virtual auto present(SwapchainHandle handle) const -> void = 0;
 
-    /** @brief @todo DOCS. */
+    /** @brief Returns all the attachments belonging to the given @ref Framebuffer.. */
     virtual auto framebuffer_attachments(FramebufferHandle handle) const -> const FramebufferAttachments& = 0;
 
     /** @brief Returns the hardware limits of the current backend. */

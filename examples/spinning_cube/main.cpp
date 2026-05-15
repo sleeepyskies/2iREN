@@ -10,7 +10,7 @@ struct Vertex {
 };
 
 struct UboData {
-    glm::mat4 rot;
+    glm::mat4 mat;
 };
 
 const siren::ShaderStageData vertex_shader{
@@ -87,6 +87,7 @@ int main() {
     auto device = ctx.create_device(window);
     auto swapchain = device->create_swapchain({
         .label = std::nullopt,
+        .vsync = true,
     });
 
     const auto vertex_buffer = device->create_buffer({
@@ -134,7 +135,7 @@ int main() {
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)cnt * 0.01f, glm::vec3{0.5f, 1.0f, 0.0f});
         glm::mat4 view  = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, -2.0f});
         glm::mat4 proj  = glm::perspective(glm::radians(45.0f), 1280.0f/800.0f, 0.1f, 10.0f);
-        const UboData ubodata { .rot = proj * view * model };
+        const UboData ubodata { .mat = proj * view * model };
         siren::ByteBuffer ubo{ ubodata };
 
         auto resource_cmds = device->record_resource_commands();
