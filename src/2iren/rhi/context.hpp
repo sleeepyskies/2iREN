@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "util/log.hpp"
-#include "base.hpp"
+#include "2iren/util/log.hpp"
+#include "2iren/base.hpp"
 #include "fwd.hpp"
 
 

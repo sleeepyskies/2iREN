@@ -5,8 +5,8 @@
 #include <queue>
 #include <GLFW/glfw3.h>
 
-#include "2iren/sync.hpp"
-#include "2iren/fwd.hpp"
+#include "2iren/sync/sync.hpp"
+#include "2iren/rhi/fwd.hpp"
 
 struct GLFWwindow;
 

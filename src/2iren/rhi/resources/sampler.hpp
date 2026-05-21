@@ -1,7 +1,6 @@
 #pragma once
 
 #include <optional>
-#include <glm/glm.hpp>
 
 #include "fwd.hpp"
 #include "2iren/util/color.hpp"

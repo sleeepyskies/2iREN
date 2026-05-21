@@ -11,7 +11,4 @@ class Device;
 struct WindowDescriptor;
 class Window;
 
-struct SwapchainDescriptor;
-class Swapchain;
-
 } // namespace siren

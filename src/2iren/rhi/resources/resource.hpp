@@ -4,8 +4,8 @@
 #include <vector>
 #include <libassert/assert.hpp>
 
-#include "base.hpp"
-#include "sync/rw_lock.hpp"
+#include "2iren/base.hpp"
+#include "2iren/sync/sync.hpp"
 
 
 namespace siren {

@@ -1,6 +1,6 @@
 #include "resource_command.hpp"
 
-#include "util/byte_buffer.hpp"
+#include "2iren/util/byte_buffer.hpp"
 
 
 namespace siren {

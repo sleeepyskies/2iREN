@@ -1,6 +1,6 @@
 #include "framebuffer.hpp"
 
-#include "2iren/device.hpp"
+#include "../device.hpp"
 
 
 namespace siren {

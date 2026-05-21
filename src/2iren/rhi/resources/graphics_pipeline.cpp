@@ -1,6 +1,6 @@
 #include "graphics_pipeline.hpp"
 
-#include "2iren/device.hpp"
+#include "2iren/rhi/device.hpp"
 
 
 namespace siren {

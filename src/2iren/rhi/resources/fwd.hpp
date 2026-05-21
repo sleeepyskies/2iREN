@@ -1,6 +1,6 @@
 #pragma once
 
-#include "2iren/resource.hpp"
+#include "resource.hpp"
 
 
 namespace siren {

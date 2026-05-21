@@ -7,7 +7,7 @@
 
 #include "2iren/base.hpp"
 #include "2iren/sync/mutex.hpp"
-#include "fwd.hpp"
+#include "rhi/fwd.hpp"
 
 
 namespace siren {

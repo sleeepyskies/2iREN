@@ -4,7 +4,7 @@
 
 #include "resources/buffer.hpp"
 #include "resources/image.hpp"
-#include "util/byte_buffer.hpp"
+#include "../util/byte_buffer.hpp"
 
 
 namespace siren {

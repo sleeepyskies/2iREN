@@ -1,8 +1,7 @@
 #include "swapchain.hpp"
 
-#include "2iren/device.hpp"
+#include "2iren/rhi/device.hpp"
 #include "2iren/window.hpp"
-#include "image.hpp"
 
 
 namespace siren {

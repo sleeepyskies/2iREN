@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <libassert/assert.hpp>
 
-#include "context.hpp"
+#include "rhi/context.hpp"
 #include "util/log.hpp"
 
 /// @todo:

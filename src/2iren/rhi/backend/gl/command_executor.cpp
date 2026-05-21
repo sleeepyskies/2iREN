@@ -4,7 +4,7 @@
 #include <glad/gl.h>
 
 #include "2iren/base.hpp"
-#include "2iren/render_thread.hpp"
+#include "render_thread.hpp"
 #include "util.hpp"
 #include "2iren/util/color.hpp"
 

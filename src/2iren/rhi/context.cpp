@@ -2,7 +2,7 @@
 
 #include "device.hpp"
 #include "backend/gl/device.hpp"
-#include "util/platform.hpp"
+#include "2iren/util/platform.hpp"
 
 
 namespace siren {

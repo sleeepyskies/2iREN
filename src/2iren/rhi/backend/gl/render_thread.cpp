@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
-#include "window.hpp"
+#include "2iren/window.hpp"
 
 
 namespace siren {

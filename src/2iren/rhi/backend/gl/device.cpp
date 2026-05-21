@@ -3,17 +3,17 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <libassert/assert.hpp>
 
-#include "2iren/resource_command.hpp"
-#include "2iren/render_thread.hpp"
+#include "2iren/rhi/resource_command.hpp"
+#include "render_thread.hpp"
 #include "command_executor.hpp"
 
-#include "2iren/resources/buffer.hpp"
-#include "2iren/resources/framebuffer.hpp"
-#include "2iren/resources/graphics_pipeline.hpp"
-#include "2iren/resources/image.hpp"
-#include "2iren/resources/sampler.hpp"
-#include "2iren/resources/shader.hpp"
-#include "2iren/resources/swapchain.hpp"
+#include "2iren/rhi/resources/buffer.hpp"
+#include "2iren/rhi/resources/framebuffer.hpp"
+#include "2iren/rhi/resources/graphics_pipeline.hpp"
+#include "2iren/rhi/resources/image.hpp"
+#include "2iren/rhi/resources/sampler.hpp"
+#include "2iren/rhi/resources/shader.hpp"
+#include "2iren/rhi/resources/swapchain.hpp"
 
 #include "2iren/util/log.hpp"
 #include "util.hpp"

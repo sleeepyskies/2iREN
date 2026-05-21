@@ -4,7 +4,7 @@
 #include <string>
 
 #include "fwd.hpp"
-#include "2iren/layout.hpp"
+#include "2iren/rhi/layout.hpp"
 
 
 namespace siren {
