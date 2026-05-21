@@ -3,6 +3,7 @@
 #include "device.hpp"
 #include "backend/gl/device.hpp"
 #include "2iren/util/platform.hpp"
+#include "2iren/util/time.hpp"
 
 
 namespace siren {
@@ -34,6 +35,8 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     );
 
     ASSERT(glfwInit(), "Could not initialize GLFW.");
+
+    time::init();
 
     // select backend
     switch (descriptor.backend) {

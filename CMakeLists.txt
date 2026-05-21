@@ -37,6 +37,8 @@ add_library(
         src/2iren/rhi/resource_command.cpp
 
         src/2iren/window.cpp
+
+        src/2iren/util/time.cpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
