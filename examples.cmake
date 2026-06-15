@@ -1,2 +1,2 @@
-add_subdirectory(examples/rainbow_triangle)
-add_subdirectory(examples/spinning_cube)
+add_subdirectory(examples/01_rainbow_triangle)
+add_subdirectory(examples/02_spinning_cube)

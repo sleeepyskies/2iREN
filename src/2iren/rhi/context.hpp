@@ -5,6 +5,7 @@
 #include "2iren/util/log.hpp"
 #include "2iren/base.hpp"
 #include "fwd.hpp"
+#include "2iren/asset/asset_server.hpp"
 
 
 namespace siren {
@@ -31,9 +32,11 @@ public:
     Context& operator=(Context&&)      = delete;
 
     [[nodiscard]] auto create_device(const Window& window) const -> std::unique_ptr<Device>;
+    [[nodiscard]] auto assets() -> asset::AssetServer&;
 
 private:
     ContextDescriptor m_descriptor;
+    asset::AssetServer m_asset_server;
 };
 
 } // namespace siren

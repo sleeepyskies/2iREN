@@ -11,7 +11,7 @@ Image::Image(
 ) : Base(device, handle) { }
 
 Image::~Image() {
-    if (m_device && m_handle.valid()) {
+    if (m_device && m_handle.is_valid()) {
         m_device->destroy_image(m_handle);
     }
 }
@@ -22,7 +22,7 @@ Image::Image(Image&& other) noexcept
 Image& Image::operator=(Image&& other) noexcept {
     if (this != &other) {
         // cleanup old buffer
-        if (m_device && m_handle.valid()) {
+        if (m_device && m_handle.is_valid()) {
             m_device->destroy_image(m_handle);
         }
 

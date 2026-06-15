@@ -13,7 +13,7 @@ struct UboData {
     glm::mat4 mat;
 };
 
-const siren::ShaderStageData vertex_shader{
+const siren::ShaderData vertex_shader{
     .label = std::nullopt,
     .source = R"(
         #version 460
@@ -29,7 +29,7 @@ const siren::ShaderStageData vertex_shader{
             v_pos = a_pos;
         })",
 };
-const siren::ShaderStageData fragment_shader{
+const siren::ShaderData fragment_shader{
     .label = std::nullopt,
     .source = R"(
         #version 460
@@ -42,7 +42,7 @@ const siren::ShaderStageData fragment_shader{
         })"
 };
 
-const std::unordered_map<siren::ShaderStage, siren::ShaderStageData> shaders = {
+const std::unordered_map<siren::ShaderStage, siren::ShaderData> shaders = {
     { siren::ShaderStage::Vertex,  vertex_shader },
     { siren::ShaderStage::Fragment, fragment_shader },
 };

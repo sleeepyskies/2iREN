@@ -36,9 +36,14 @@ add_library(
         src/2iren/rhi/render_command.cpp
         src/2iren/rhi/resource_command.cpp
 
+        src/2iren/sync/thread_pool.cpp
+
+        src/2iren/asset/asset_path.cpp
+
         src/2iren/window.cpp
 
         src/2iren/util/time.cpp
+        src/2iren/util/filesystem.cpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

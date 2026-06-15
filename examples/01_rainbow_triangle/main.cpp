@@ -8,7 +8,7 @@ struct Vertex {
     siren::f32 r, g, b, a;
 };
 
-const siren::ShaderStageData vertex_shader{
+const siren::ShaderData vertex_shader{
     .label = std::nullopt,
     .source = R"(
         #version 460
@@ -22,7 +22,7 @@ const siren::ShaderStageData vertex_shader{
             v_color = a_color;
         })",
 };
-const siren::ShaderStageData fragment_shader{
+const siren::ShaderData fragment_shader{
     .label = std::nullopt,
     .source = R"(
         #version 460
@@ -35,7 +35,7 @@ const siren::ShaderStageData fragment_shader{
         })"
 };
 
-const std::unordered_map<siren::ShaderStage, siren::ShaderStageData> shaders = {
+const std::unordered_map<siren::ShaderStage, siren::ShaderData> shaders = {
     { siren::ShaderStage::Vertex,  vertex_shader },
     { siren::ShaderStage::Fragment, fragment_shader },
 };
@@ -67,6 +67,7 @@ int main() {
     auto device = ctx.create_device(window);
     auto swapchain = device->create_swapchain({
         .label = std::nullopt,
+        .vsync = true,
     });
 
     const auto buffer           = device->create_buffer({

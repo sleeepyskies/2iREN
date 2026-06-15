@@ -7,11 +7,6 @@
 
 namespace siren {
 
-/** @brief Enum listing all error codes within the @ref RwLock. */
-enum class RwlockError {
-    ResourceLocked,
-};
-
 /** @brief The guard type returned by a @ref RwLock for reading. */
 template <typename T>
 using ReadGuard = Guard<T, std::shared_lock<std::shared_mutex>>;
@@ -19,6 +14,12 @@ using ReadGuard = Guard<T, std::shared_lock<std::shared_mutex>>;
 /** @brief The guard type returned by a @ref RwLock for writing. */
 template <typename T>
 using WriteGuard = Guard<T, std::unique_lock<std::shared_mutex>>;
+
+/** @brief Enum listing all error codes within the @ref RwLock. */
+enum class RwlockError {
+    /** @brief The @ref RwLock was already held by another thread. */
+    ResourceLocked,
+};
 
 /**
  * @class RwLock
@@ -31,15 +32,29 @@ using WriteGuard = Guard<T, std::unique_lock<std::shared_mutex>>;
 template <typename T>
 class RwLock {
 public:
-    RwLock() : m_data(T()) { }
+    /** @brief Constructs T using its default constructor. */
+    RwLock()
+        requires(std::is_default_constructible_v<T>)
+        : m_data(T()) { }
+
+    /**
+     * @brief Constructs T in-place using provided arguments.
+     * @param args Arguments forwarded to the constructor of T.
+     */
     template <typename... Args>
-    explicit RwLock(Args&&... args) : m_data(T(std::move(args...))) { }
+        requires (!std::is_same_v<std::remove_cvref_t<Args>, RwLock> && ...)
+    explicit RwLock(Args... args) : m_data(std::forward<Args>(args)...) { }
+
+    /** @brief Moves an existing T into the protected container. */
     explicit RwLock(T&& t) : m_data(std::move(t)) { }
 
+    /** @brief Copies an existing T into the protected container. */
+    explicit RwLock(const T& t) : m_data(t) { }
+
     RwLock(const RwLock&)            = delete;
-    RwLock(RwLock&&)                 = default;
+    RwLock(RwLock&&)                 = delete;
     RwLock& operator=(const RwLock&) = delete;
-    RwLock& operator=(RwLock&&)      = default;
+    RwLock& operator=(RwLock&&)      = delete;
 
     /**
      * @brief Perform a blocking read. If the resource is currently
@@ -55,7 +70,7 @@ public:
     [[nodiscard]]
     auto try_read() const -> std::expected<ReadGuard<T>, RwlockError> {
         typename ReadGuard<T>::LockType lock{ m_mutex, std::try_to_lock };
-        if (!lock.owns_lock()) { return RwlockError::ResourceLocked; }
+        if (!lock.owns_lock()) { return std::unexpected(RwlockError::ResourceLocked); }
         return ReadGuard<T>{ std::move(lock), m_data };
     }
 
@@ -75,6 +90,30 @@ public:
         typename WriteGuard<T>::LockType lock{ m_mutex, std::try_to_lock };
         if (!lock.owns_lock()) { return std::unexpected(RwlockError::ResourceLocked); }
         return WriteGuard<T>{ std::move(lock), m_data };
+    }
+
+    /**
+     * @brief Runs the given lambda with a non-exclusive guard.
+     * @tparam Function A lambda that takes the guard as an argument.
+     * @return The result of calling function with a non-exclusive guard.
+     */
+    template <typename Function>
+        requires(std::is_invocable_v<Function, const T&>)
+    auto run(Function&& function) -> std::invoke_result_t<Function, const T&> {
+        auto guard = read();
+        return std::invoke(std::forward<Function>(function), *guard);
+    }
+
+    /**
+     * @brief Runs the given lambda with an exclusive guard.
+     * @tparam Function A lambda that takes the guard as an argument.
+     * @return The result of calling function with an exclusive guard.
+     */
+    template <typename Function>
+        requires(std::is_invocable_v<Function, T&>)
+    auto run_exclusive(Function&& function) -> std::invoke_result_t<Function, T&> {
+        auto guard = write();
+        return std::invoke(std::forward<Function>(function), *guard);
     }
 
 private:

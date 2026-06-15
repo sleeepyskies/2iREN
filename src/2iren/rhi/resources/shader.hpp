@@ -43,6 +43,16 @@ struct ShaderStage {
         }
     }
 };
+
+/**
+ * @brief Holds information on a single shader stage.
+ */
+struct ShaderData {
+    /** @brief The optional label of the shader. */
+    std::optional<std::string> label;
+    /** @brief The source code of the stage. */
+    std::string source;
+};
 }
 
 
@@ -57,23 +67,13 @@ struct std::hash<siren::ShaderStage> {
 namespace siren {
 
 /**
- * @brief Holds information on a single shader stage.
- */
-struct ShaderStageData {
-    /** @brief The optional label of the shader. */
-    std::optional<std::string> label;
-    /** @brief The source code of the stage. */
-    std::string source;
-};
-
-/**
  * @brief Describes a @ref Shader to be created.
  */
 struct ShaderDescriptor {
     /** @brief The optional label of the shader. */
     std::optional<std::string> label;
-    /** @brief The source code for each stage of the Shader. */
-    std::unordered_map<ShaderStage, ShaderStageData> source;
+    /** @brief The shader code for each stage of the Shader. */
+    std::unordered_map<ShaderStage, ShaderData> source;
 };
 
 /**
@@ -91,6 +91,7 @@ public:
     Shader(Shader&& other) noexcept;
     Shader& operator=(Shader&& other) noexcept;
 
+    /** @brief Returns the @ref ShaderDescriptor associated with this shader. */
     [[nodiscard]] auto descriptor() const noexcept -> const ShaderDescriptor&;
 };
 

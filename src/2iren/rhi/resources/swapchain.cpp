@@ -12,7 +12,7 @@ Swapchain::Swapchain(
 ) : Base(device, handle) { }
 
 Swapchain::~Swapchain() {
-    if (m_device && m_handle.valid()) {
+    if (m_device && m_handle.is_valid()) {
         m_device->destroy_swapchain(m_handle);
     }
 }
@@ -22,7 +22,7 @@ Swapchain::Swapchain(Swapchain&& other) noexcept : Base(std::move(other)) { }
 Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
     if (this != &other) {
         // cleanup old buffer
-        if (m_device && m_handle.valid()) {
+        if (m_device && m_handle.is_valid()) {
             m_device->destroy_swapchain(m_handle);
         }
 

@@ -70,9 +70,7 @@ inline Level level{ Level::None };
  * @brief Inits the siren logger with the provided level.
  * @param lvl The desired log level.
  */
-inline auto init(const Level lvl) -> void {
-    level = lvl;
-}
+inline auto init(const Level lvl) -> void { level = lvl; }
 
 /**
  * @brief Inits the siren logger with the provided level.

@@ -66,7 +66,7 @@ auto RenderThread::run(GLFWwindow* window) const -> void {
     while (true) {
         std::queue<RenderTask> local_tasks;
 
-        m_inner.guarded([&] (UniqueGuard<Inner>& inner) {
+        m_inner.run_guarded([&] (UniqueGuard<Inner>& inner) {
             m_condition.wait(inner, [&inner, this] {
                 return m_terminate || !inner->tasks.empty();
             });

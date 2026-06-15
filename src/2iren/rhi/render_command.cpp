@@ -113,7 +113,7 @@ auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, 
 
 auto RenderPassRecorder::draw_arrays(const u32 start, const u32 count) noexcept -> void {
     ASSERT(
-        m_active_pipeline.valid(),
+        m_active_pipeline.is_valid(),
         "There is no pipeline bound, cannot call RenderPassRecorder::draw_arrays."
     );
 
@@ -132,11 +132,11 @@ auto RenderPassRecorder::draw_arrays(const u32 start, const u32 count) noexcept 
 
 auto RenderPassRecorder::draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void {
     ASSERT(
-        m_active_pipeline.valid(),
+        m_active_pipeline.is_valid(),
         "There is no pipeline bound, cannot call RenderPassRecorder::draw_indexed."
     );
     ASSERT(
-        m_active_index_buffer.has_value() && m_active_index_buffer.value().index_buffer.valid(),
+        m_active_index_buffer.has_value() && m_active_index_buffer.value().index_buffer.is_valid(),
         "There is no index buffer bound, cannot call RenderPassRecorder::draw_indexed."
     );
     ASSERT(

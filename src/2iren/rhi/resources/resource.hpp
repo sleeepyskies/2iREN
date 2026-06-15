@@ -6,75 +6,39 @@
 
 #include "2iren/base.hpp"
 #include "2iren/sync/sync.hpp"
+#include "2iren/util/identifier.hpp"
 
 
 namespace siren {
 
 class Device;
 
-
-namespace detail {
-struct NullHandle_t {
-    template <typename Handle>
-    constexpr operator Handle() const { return Handle::invalid(); }
-};
-}
-
-
-inline constexpr auto NullHandle = detail::NullHandle_t{ };
-
 /**
  * @struct ResourceHandle
+ * @todo inherit from @ref Identifier here instead of copy paste.
  * @brief A packed 32-bit generational handle.
  * * Bit layout:
  * - [16-31] Generation: Incremented on slot reuse to prevent stale references.
  * - [00-15] Index: The lookup key into the resource pool.
  */
 template <typename Tag>
-struct ResourceHandle {
-    using IdType         = u32;
-    using IndexType      = u16;
-    using GenerationType = u16;
+struct ResourceHandle : Identifier<ResourceHandle<Tag>> {
+    using Base = Identifier<ResourceHandle<Tag>>;
+    using Base::Base;
 
-    static constexpr IdType INDEX_MASK = bit(16) - 1; // 0xffff
+    using IdType         = Base::IdType;
+    using IndexType      = Base::IndexType;
+    using GenerationType = Base::GenerationType;
 
-    static constexpr IdType INVALID_ID = std::numeric_limits<IdType>::max();
+    /**
+     * @brief Constructs a new ResourceHandle.
+     * @param idx The index of the resource in storage.
+     * @param gen The generation of the ResourceHandle for this storage slot.
+     */
+    ResourceHandle(const IndexType idx, const GenerationType gen) noexcept : Base(idx, gen, 0) { }
 
-    ResourceHandle() : packed_id(INVALID_ID) { }
-    ResourceHandle(const IndexType idx, const GenerationType gen)
-        : packed_id(static_cast<IdType>(gen << 16) | (idx & INDEX_MASK)) { }
+    static constexpr auto invalid() noexcept -> ResourceHandle { return ResourceHandle{ }; }
 
-    ResourceHandle(const ResourceHandle&)            = default;
-    ResourceHandle& operator=(const ResourceHandle&) = default;
-    ResourceHandle(ResourceHandle&&)                 = default;
-    ResourceHandle& operator=(ResourceHandle&&)      = default;
-
-    /** @brief Simple factory method to return an invalid Identifier64. */
-    [[nodiscard]]
-    constexpr static auto invalid() noexcept -> ResourceHandle { return { }; }
-
-    /** @brief Returns the full packed value of this id. */
-    [[nodiscard]] constexpr auto packed() const noexcept -> IdType { return packed_id; }
-    /** @brief Returns the index of this id. */
-    [[nodiscard]] constexpr auto index() const noexcept -> IndexType {
-        return static_cast<IndexType>(packed_id & INDEX_MASK);
-    }
-    /** @brief Returns the generation of this id. */
-    [[nodiscard]] constexpr auto generation() const noexcept -> GenerationType {
-        return static_cast<GenerationType>(packed_id) >> 16;
-    }
-
-    /** @brief Checks if the handle is valid aka has a non 0 inner value. */
-    [[nodiscard]] constexpr auto valid() const noexcept -> bool { return packed_id != INVALID_ID; }
-    /** @brief Kills the handle by zeroing its value. */
-    constexpr auto invalidate() noexcept -> void { packed_id = INVALID_ID; }
-    /** @copydoc valid */
-    [[nodiscard]] constexpr explicit operator bool() const noexcept { return valid(); }
-
-    /** @brief Default comparison operator. */
-    friend bool operator==(const ResourceHandle&, const ResourceHandle&) = default;
-
-    IdType packed_id;
 };
 
 /**
@@ -118,6 +82,7 @@ protected:
     Device* m_device;
     HandleType m_handle;
 };
+
 
 namespace detail {
 struct Nothing { };
@@ -198,7 +163,7 @@ public:
         ASSERT(is_valid_id(proxy_handle, *inner), "Passed an invalid ProxyHandleType: {}", proxy_handle);
         auto& table_entry      = inner->table[proxy_handle.index()];
         table_entry.api_handle = api_handle;
-        table_entry.details      = std::move(details);
+        table_entry.details    = std::move(details);
     }
 
     /** @brief Frees the proxy handle. */
@@ -238,7 +203,7 @@ private:
      * or at least no assert this condition.
      */
     auto is_valid_id(const HandleType proxy_handle, const Inner& inner) const -> bool {
-        if (proxy_handle.index() >= inner.table.size() || !proxy_handle.valid()) { return false; }
+        if (proxy_handle.index() >= inner.table.size() || !proxy_handle.is_valid()) { return false; }
         const auto& entry = inner.table[proxy_handle.index()];
         return entry.generation == proxy_handle.generation();
     }

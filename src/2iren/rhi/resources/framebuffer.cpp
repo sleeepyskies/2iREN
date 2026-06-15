@@ -10,7 +10,7 @@ Framebuffer::Framebuffer(
 ) : Base(device, handle) { }
 
 Framebuffer::~Framebuffer() {
-    if (m_device && m_handle.valid()) {
+    if (m_device && m_handle.is_valid()) {
         m_device->destroy_framebuffer(m_handle);
     }
 }
@@ -21,7 +21,7 @@ Framebuffer::Framebuffer(Framebuffer&& other) noexcept
 Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept {
     if (this != &other) {
         // cleanup old buffer
-        if (m_device && m_handle.valid()) {
+        if (m_device && m_handle.is_valid()) {
             m_device->destroy_framebuffer(m_handle);
         }
 

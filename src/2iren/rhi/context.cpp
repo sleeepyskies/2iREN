@@ -21,7 +21,7 @@ static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
 }
 
 
-Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
+Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor), m_asset_server() {
     log::init(descriptor.level);
     libassert::set_failure_handler(
         [] (const libassert::assertion_info& info){
@@ -55,6 +55,11 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
             break;
         }
     }
+
+    // init async stuffs
+    ThreadPool::init();
+
+    // init asset server
 }
 
 auto Context::create_device(const Window& window) const -> std::unique_ptr<Device> {
@@ -64,6 +69,9 @@ auto Context::create_device(const Window& window) const -> std::unique_ptr<Devic
         }
         default: UNREACHABLE("Invalid Backend.");
     }
+}
+auto Context::assets() -> asset::AssetServer& {
+    return m_asset_server;
 }
 
 } // namespace siren

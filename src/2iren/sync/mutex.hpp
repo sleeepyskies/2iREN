@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <functional>
 
 #include "guard.hpp"
 
@@ -86,13 +87,18 @@ public:
     }
 
     /**
-     * @brief Executes a callable with a reference to the protected data.
-     * @return The result of the callable.
+     * @brief Runs the given lambda immediately passing in a locked @ref Guard as
+     * an argument.
+     * This function is essentially a helper to perform some scoped action with a lock.
+     * @tparam Function A lambda that takes the guard as an argument.
      */
     template <typename Function>
-    auto run(Function&& func) const noexcept -> std::invoke_result_t<Function, T&> {
-        auto guard = this->lock();
-        return func(*guard);
+        requires(std::is_invocable_v<Function, T&>)
+    auto run(
+        Function&& func
+    ) const noexcept -> std::invoke_result_t<Function, T&> {
+        auto guard = lock();
+        return std::invoke(std::forward<Function>(func), *guard);
     }
 
     /**
@@ -100,7 +106,7 @@ public:
      * @return The result of the callable.
      */
     template <typename Function>
-    auto guarded(Function&& func) const noexcept -> std::invoke_result_t<Function, UniqueGuard<T>&> {
+    auto run_guarded(Function&& func) const noexcept -> std::invoke_result_t<Function, UniqueGuard<T>&> {
         auto guard = this->lock();
         return func(guard);
     }
@@ -114,11 +120,20 @@ public:
     auto set(U&& val) const noexcept -> void { *lock() = std::forward<U>(val); }
 
     /**
-     * @brief Retrieves a copy of the wrapped value.
-     * @return A copy of the internal data.
-     * @note Thread will block during the copy operation.
+     * @brief Returns a copy of the inner value of the mutex.
+     * @warning May stall the thread if the mutex is locked for writing when called.
      */
-    auto get() const noexcept -> T { return *lock(); }
+    [[nodiscard]] auto get() const noexcept -> T { return *lock(); }
+
+    /**
+     * @brief Locks the resource and returns and consumes the inner value.
+     * @warning After calling this, the inner value will have its default state.
+     * @warning May stall the current thread.
+     */
+    [[nodiscard]] auto consume() noexcept -> T {
+        auto guard = lock();
+        return std::exchange(m_data, T{ });
+    }
 
 private:
     T m_data;
@@ -164,13 +179,18 @@ public:
     }
 
     /**
-     * @brief Executes a callable with a reference to the protected data.
-     * @return The result of the callable.
+     * @brief Runs the given lambda immediately passing in a locked @ref Guard as
+     * an argument.
+     * This function is essentially a helper to perform some scoped action with a lock.
+     * @tparam Function A lambda that takes the guard as an argument.
      */
     template <typename Function>
-    auto run(Function&& func) const noexcept -> std::invoke_result_t<Function> {
-        auto lock = this->lock();
-        return func();
+        requires(std::is_invocable_v<Function>)
+    auto run(
+        Function&& func
+    ) noexcept -> std::invoke_result_t<Function> {
+        auto guard = lock();
+        return std::invoke(std::forward<Function>(func));
     }
 
 private:
