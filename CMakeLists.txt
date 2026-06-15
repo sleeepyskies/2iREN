@@ -6,7 +6,6 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_compile_options(
         -Wall -Wextra -Wpedantic
         -Werror
-        -Wshadow
         -Wnull-dereference
         -Wformat=2
 )
