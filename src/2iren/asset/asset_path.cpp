@@ -36,7 +36,7 @@ auto AssetPath::parse(const std::string& str) noexcept -> AssetPath {
         colon + 3,
         pound == std::string::npos ? std::string::npos : pound - (colon + 3)
     );
-    std::string label = pound == std::string::npos ? "no_label" : str.substr(pound + 1);
+    std::string label = pound == std::string::npos ? "" : str.substr(pound + 1);
     return AssetPath{ std::move(vfs), std::move(path), std::move(label) };
 }
 
@@ -44,9 +44,11 @@ auto AssetPath::invalid() noexcept -> AssetPath { return AssetPath{ }; }
 
 auto AssetPath::is_valid() const noexcept -> bool { return m_buffer != nullptr; }
 
+auto AssetPath::full_path() const noexcept -> std::string_view { return *m_buffer.get(); }
+
 auto AssetPath::vfs() const -> std::string { return m_buffer->substr(0, m_path_offset); }
 
-auto AssetPath::path() const -> std::string {
+auto AssetPath::relative_path() const -> std::string {
     return m_buffer->substr(m_path_offset, m_label_offset == 0 ? std::string::npos : m_label_offset - m_path_offset);
 }
 
@@ -55,11 +57,11 @@ auto AssetPath::label() const -> std::optional<std::string> {
     return m_buffer->substr(m_label_offset + 1);
 }
 
-auto AssetPath::filename() const -> std::string { return Path{ path() }.filename().string(); }
+auto AssetPath::filename() const -> std::string { return Path{ relative_path() }.filename().string(); }
 
-auto AssetPath::extension() const -> std::string { return Path{ path() }.extension().string(); }
+auto AssetPath::extension() const -> std::string { return Path{ relative_path() }.extension().string().substr(1); }
 
-auto AssetPath::to_string() const noexcept -> std::string_view { return *m_buffer.get(); }
+auto AssetPath::to_string() const noexcept -> std::string_view { return full_path(); }
 
 auto AssetPath::has_label() const noexcept -> bool { return m_label_offset != 0; }
 

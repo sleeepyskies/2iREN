@@ -50,42 +50,13 @@ public:
 
     /**
      * @brief Retrieves the singleton instance of this ThreadPool.
-     * @warning Crashes if ThreadPool::init() has not been called yet. This is
-     * handled by the @ref SyncPlugin.
+     * @warning Crashes if ThreadPool::init() has not been called yet.
      */
     static auto get() -> ThreadPool& { return *s_instance.get(); }
 
     /** @brief Initializes the global singleton instance. */
     static auto init(const i32 thread_count = static_cast<i32>(std::jthread::hardware_concurrency())) -> void {
         s_instance = std::make_unique<ThreadPool>(thread_count);
-    }
-
-    /**
-     * @brief Runs a provided task asynchronously (if siren::single_threaded is false).
-     * @note This function returns nothing, so the called must handle results of the function.
-     * To receive a future, see ThreadPool::spawn().
-     * @tparam Func The function type.
-     * @tparam Args The argument types of the function.
-     * @param func The function to run.
-     * @param args The arguments to provide to the function.
-     */
-    template <typename Func, typename... Args>
-        requires std::is_invocable_v<Func, Args...>
-    auto spawn_detached(Func&& func, Args&&... args) -> void {
-        Task task = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-
-        if constexpr (single_threaded) {
-            // runs immediately on this thread.
-            task();
-        } else {
-            // unlock before notifying so the thread doesn't have to wait
-            m_inner.run(
-                [&task] (UniqueGuard<Inner>& inner){
-                    inner->tasks.push(std::move(task));
-                }
-            );
-            m_condition.notify_one();
-        }
     }
 
     /**
@@ -114,8 +85,8 @@ public:
         } else {
             // unlock before notifying so the thread doesn't have to wait
             m_inner.run(
-                [packaged_task = std::move(packaged_task)] (UniqueGuard<Inner>& inner) mutable{
-                    inner->tasks.push([t = std::move(packaged_task)] mutable{ t(); });
+                [packaged_task = std::move(packaged_task)] (Inner& inner) mutable{
+                    inner.tasks.push([t = std::move(packaged_task)] mutable{ t(); });
                 }
             );
             m_condition.notify_one();
@@ -124,9 +95,35 @@ public:
         return future;
     }
 
-private:
-    friend class SyncPlugin;
+    /**
+     * @brief Runs a provided task asynchronously (if siren::single_threaded is false).
+     * @note This function returns nothing, so the called must handle results of the function.
+     * To receive a future, see ThreadPool::spawn().
+     * @tparam Func The function type.
+     * @tparam Args The argument types of the function.
+     * @param func The function to run.
+     * @param args The arguments to provide to the function.
+     */
+    template <typename Func, typename... Args>
+        requires std::is_invocable_v<Func, Args...>
+    auto spawn_detached(Func&& func, Args&&... args) -> void {
+        Task task = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 
+        if constexpr (single_threaded) {
+            // runs immediately on this thread.
+            task();
+        } else {
+            // unlock before notifying so the thread doesn't have to wait
+            m_inner.run(
+                [&task] (Inner& inner){
+                    inner.tasks.push(std::move(task));
+                }
+            );
+            m_condition.notify_one();
+        }
+    }
+
+private:
     /** @brief Main worker loop for a thread. */
     void run();
 

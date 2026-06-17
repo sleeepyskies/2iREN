@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "fwd.hpp"
+#include "2iren/util/string_utils.hpp"
 
 
 namespace siren {
@@ -41,6 +42,20 @@ struct ShaderStage {
             case Mesh: return "Mesh";
             default: return "Unknown";
         }
+    }
+
+    /** @brief Creates a new ShaderStage parsed from a string. */
+    static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
+        const std::string lower = str::tolower(std::string(str));
+
+        if (lower == "vertex") { return Vertex; }
+        if (lower == "fragment") { return Fragment; }
+        if (lower == "geometry") { return Geometry; }
+        if (lower == "compute") { return Compute; }
+        if (lower == "task") { return Task; }
+        if (lower == "mesh") { return Mesh; }
+
+        return std::nullopt;
     }
 };
 

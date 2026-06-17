@@ -5,7 +5,7 @@
 #include "asset.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 /**
  * @brief Identifier for assets. Contains additional data such as a unique id, an index,
@@ -47,4 +47,4 @@ struct AssetID final : Identifier<AssetID> {
     static constexpr auto invalid() noexcept -> AssetID { return AssetID{ }; }
 };
 
-} // namespace siren::asset
+} // namespace siren

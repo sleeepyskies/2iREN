@@ -58,10 +58,13 @@ public:
     /** @brief Checks if the AssetPath is valid or not. */
     [[nodiscard]] auto is_valid() const noexcept -> bool;
 
+    /** @brief Returns the full VFS path. */
+    [[nodiscard]] auto full_path() const noexcept -> std::string_view;
+
     /** @brief Returns the VFS mount. */
     [[nodiscard]] auto vfs() const -> std::string;
     /** @brief Returns the relative path. */
-    [[nodiscard]] auto path() const -> std::string;
+    [[nodiscard]] auto relative_path() const -> std::string;
     /** @brief Returns the label, if present. */
     [[nodiscard]] auto label() const -> std::optional<std::string>;
 

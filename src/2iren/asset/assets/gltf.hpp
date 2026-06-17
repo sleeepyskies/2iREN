@@ -10,7 +10,7 @@
 #include "2iren/asset/asset_loader.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 /** @brief A camera. Can have either orthographic or perspective projection. */
 struct SceneCamera {
@@ -84,7 +84,7 @@ struct Gltf : Asset {
         std::vector<StrongHandle<GltfScene>>&& scenes,
         std::optional<StrongHandle<GltfScene>>&& default_scene,
         std::vector<StrongHandle<Mesh>>&& meshes,
-        std::vector<StrongHandle<PBRMaterial>>&& materials,
+        std::vector<StrongHandle<PBRMaterialAsset>>&& materials,
         std::vector<StrongHandle<GltfNode>>&& nodes,
         std::vector<SceneCamera>&& cameras
     ) : scenes(std::move(scenes)),
@@ -128,9 +128,9 @@ class GltfLoader final : public AssetLoader<Gltf> {
 public:
     auto load(
         LoadContext&& ctx,
-        const ConfigType& config
+        std::optional<ConfigType> config
     ) const -> AssetLoadError override;
     auto extensions() const -> std::vector<std::string_view> override { return { "glb", "gltf" }; }
 };
 
-} // namespace siren::asset
+} // namespace siren

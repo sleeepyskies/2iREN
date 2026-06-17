@@ -8,7 +8,7 @@
 #include "2iren/rhi/resources/sampler.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 /**
  * @brief Determines how to interpret texture data as a 2D TextureArray. Siren requires the
@@ -23,19 +23,19 @@ struct ImageArrayLayout {
  * @brief An asset holding an @ref Image and an @ref ImageSampler.
  */
 struct Texture : Asset {
-    /** @brief The name of the Texture. */
-    std::string name;
-    /** @brief The underlying Image of the Texture. */
-    Image image;
-    /** @brief The underlying ImageSampler of the Texture. */
-    Sampler sampler;
-
     /** @brief Constructs a new Texture. */
     Texture(
         const std::string& name,
         Image&& image,
         Sampler&& sampler
     ) : name(name), image(std::move(image)), sampler(std::move(sampler)) { }
+
+    /** @brief The name of the Texture. */
+    std::string name;
+    /** @brief The underlying Image of the Texture. */
+    Image image;
+    /** @brief The underlying ImageSampler of the Texture. */
+    Sampler sampler;
 };
 
 template <>
@@ -65,9 +65,9 @@ class TextureLoader final : public AssetLoader<Texture> {
 public:
     auto load(
         LoadContext&& ctx,
-        const ConfigType& config
+        std::optional<ConfigType> config
     ) const -> AssetLoadError override;
     auto extensions() const -> std::vector<std::string_view> override { return { "png", "jpg", "jpeg" }; }
 };
 
-} // namespace siren::asset
+} // namespace siren

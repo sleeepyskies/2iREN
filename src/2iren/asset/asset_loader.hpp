@@ -6,12 +6,22 @@
 #include "2iren/asset/asset.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 class AssetServer;
 class LoadContext;
 
-enum class AssetErrorCode { };
+/** @brief Error codes possible during asset loading. */
+enum class AssetErrorCode {
+    /** @brief The asset file could not be located on disk. */
+    FileNotFound,
+    /** @brief The asset file is somehow corrupted or could not be parsed. */
+    InvalidFormat,
+    /** @brief The file could be parsed, but was missing some required fields. */
+    InvalidSchema,
+    /** @brief Some GPU or Driver failure. */
+    RuntimeFailed
+};
 
 using AssetLoadError = std::expected<void, AssetErrorCode>;
 
@@ -41,7 +51,10 @@ struct AssetLoader : AssetLoaderBase {
      * @param config A config determining how to load the asset.
      * @return Nothing on success, or an error code on fail.
      */
-    virtual auto load(LoadContext&& ctx, const ConfigType& config = { }) const -> AssetLoadError = 0;
+    virtual auto load(
+        LoadContext&& ctx,
+        const std::optional<ConfigType> config
+    ) const -> AssetLoadError = 0;
 };
 
-} // namespace siren::asset
+} // namespace siren

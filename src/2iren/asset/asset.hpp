@@ -1,8 +1,9 @@
 #pragma once
+
 #include <concepts>
 
 
-namespace siren::asset {
+namespace siren {
 
 /**
  * @struct Asset
@@ -16,4 +17,4 @@ struct Asset { };
 template <typename A>
 concept IsAsset = std::derived_from<A, Asset>;
 
-} // namespace siren::asset
+} // namespace siren
