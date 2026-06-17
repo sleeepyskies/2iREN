@@ -180,3 +180,20 @@ LOG_FUNCTION(error, Level::Error, 31)
 
 #undef LOG_FUNCTION
 } // namespace siren::log
+
+template <typename T>
+concept HasToString = requires(const T& t) {
+    { t.to_string() } -> std::convertible_to<std::string_view>;
+};
+
+template<HasToString T>
+struct std::formatter<T> {
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const T& t, FormatContext& ctx) const {
+        return std::format_to(ctx.out(), "{}", t.to_string());
+    }
+};
