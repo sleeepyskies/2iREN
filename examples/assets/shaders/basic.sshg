@@ -1,0 +1,8 @@
+name: shader
+stages:
+  vertex:
+    name: vertex
+    path: shader.vert
+  fragment:
+    name: fragment
+    path: shader.frag
