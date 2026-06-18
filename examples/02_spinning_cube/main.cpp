@@ -148,7 +148,7 @@ int main() {
                 .label = std::nullopt,
                 .target = swapchain.current_framebuffer(),
                 .begin_operation = siren::BeginOperation::Clear,
-                .clear_color = siren::RGBA::black(),
+                .clear_color = siren::RGBA::green(),
             });
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);

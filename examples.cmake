@@ -1,2 +1,3 @@
 add_subdirectory(examples/01_rainbow_triangle)
 add_subdirectory(examples/02_spinning_cube)
+add_subdirectory(examples/03_load_shader)
