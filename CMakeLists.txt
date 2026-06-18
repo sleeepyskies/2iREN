@@ -38,6 +38,8 @@ add_library(
         src/2iren/sync/thread_pool.cpp
 
         src/2iren/asset/asset_path.cpp
+        src/2iren/asset/asset_server.cpp
+        src/2iren/asset/assets/shader.cpp
 
         src/2iren/window.cpp
 
@@ -46,6 +48,9 @@ add_library(
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# pass root dir for VFS of 2iren to work
+target_compile_definitions(2iren PRIVATE SIREN_ENGINE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(dependencies.cmake)
 include(examples.cmake)

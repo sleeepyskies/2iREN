@@ -10,6 +10,8 @@
 
 namespace siren {
 
+// todo: maybe Context should be a struct holding AssetServer and Device and eventually Renderer?
+
 /**
  * @brief Parameters used to instantiate the context.
  */
@@ -32,11 +34,9 @@ public:
     Context& operator=(Context&&)      = delete;
 
     [[nodiscard]] auto create_device(const Window& window) const -> std::unique_ptr<Device>;
-    [[nodiscard]] auto assets() -> asset::AssetServer&;
 
 private:
     ContextDescriptor m_descriptor;
-    asset::AssetServer m_asset_server;
 };
 
 } // namespace siren

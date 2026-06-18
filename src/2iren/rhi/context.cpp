@@ -1,10 +1,14 @@
 #include "context.hpp"
 
 #include "device.hpp"
+#include "2iren/util/filesystem.hpp"
 #include "backend/gl/device.hpp"
 #include "2iren/util/platform.hpp"
 #include "2iren/util/time.hpp"
 
+#ifndef SIREN_ENGINE_ROOT
+#define SIREN_ENGINE_ROOT "."
+#endif
 
 namespace siren {
 
@@ -20,12 +24,11 @@ static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
     return std::make_unique<GlDevice>(window);
 }
 
-
-Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor), m_asset_server() {
+Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
     libassert::set_failure_handler(
         [] (const libassert::assertion_info& info){
-            log::error("{}", info.to_string());
+            log::error("{}", info);
         }
     );
     glfwSetErrorCallback(
@@ -57,9 +60,15 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     }
 
     // init async stuffs
-    ThreadPool::init();
+    if constexpr (!single_threaded) {
+        ThreadPool::init();
+    }
 
     // init asset server
+
+    // init virtual filesystem
+    const auto engine_root = Path{ SIREN_ENGINE_ROOT };
+    FileSystem::mount("engine", engine_root);
 }
 
 auto Context::create_device(const Window& window) const -> std::unique_ptr<Device> {
@@ -69,9 +78,6 @@ auto Context::create_device(const Window& window) const -> std::unique_ptr<Devic
         }
         default: UNREACHABLE("Invalid Backend.");
     }
-}
-auto Context::assets() -> asset::AssetServer& {
-    return m_asset_server;
 }
 
 } // namespace siren

@@ -8,7 +8,7 @@
 #include "2iren/rhi/resources/graphics_pipeline.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 /**
  * @brief A Basic PBR material that closely follows the GLTF specs.
@@ -201,4 +201,4 @@ private:
     bool m_unlit           = false;
 };
 
-} // namespace siren::asset
+} // namespace siren

@@ -141,9 +141,11 @@ void unmount(const std::string& v_key) {
     }
 }
 
-std::optional<Path> get_physical_path(const std::string& virtual_path) {
-    for (auto it = s_mounts.begin(); it != s_mounts.end(); ++it) {
-        if (it->virt == virtual_path) { return it->pyhs; }
+std::optional<Path> get_physical_path(const std::string_view virtual_path) {
+    for (const auto& [virt, pyhs] : s_mounts) {
+        if (virt == virtual_path) {
+            return pyhs;
+        }
     }
     return std::nullopt;
 }
@@ -171,7 +173,7 @@ std::optional<Path> to_physical(const Path& path) {
         return std::nullopt;
     }(p_str).transform(
         [&p_str] (const Mount& m){
-            const u32 idx = m.virt.length();
+            const u32 idx = m.virt.length() + 3; // account for ://
             return m.pyhs / p_str.erase(0, idx);
         }
     );

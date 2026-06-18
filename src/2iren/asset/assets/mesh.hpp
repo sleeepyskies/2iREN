@@ -9,7 +9,7 @@
 #include "2iren/rhi/resources/buffer.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 struct Surface : Asset {
     Surface(
@@ -42,4 +42,4 @@ struct Mesh : Asset {
     std::vector<StrongHandle<Surface>> surfaces;
 };
 
-} // namespace siren::asset
+} // namespace siren

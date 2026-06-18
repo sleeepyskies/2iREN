@@ -1,7 +1,7 @@
 #include "pbr_material.hpp"
 
 
-namespace siren::asset {
+namespace siren {
 
 // setters
 
@@ -325,4 +325,4 @@ bool PBRMaterialAsset::unlit() const noexcept {
     return m_unlit;
 }
 
-} // namespace siren::asset
+} // namespace siren
