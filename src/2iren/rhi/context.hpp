@@ -11,6 +11,10 @@
 namespace siren {
 
 // todo: maybe Context should be a struct holding AssetServer and Device and eventually Renderer?
+// so probable like a free function to create a siren context, with a ContextDescriptor,
+// then this context is a simple struct with all other objects as fields ig, so
+// create_context({ .server_config = std::nullopt, .render_config = { ... }, .debuug = true, })...
+// then ctx.asset_server.load(), ctx.renderer.begin(), ctx.device.create_buffer() etc
 
 /**
  * @brief Parameters used to instantiate the context.

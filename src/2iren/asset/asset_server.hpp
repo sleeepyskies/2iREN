@@ -15,6 +15,13 @@
 
 namespace siren {
 
+/// todo:
+///     maybe the asset server shouldn't even have access to the device?
+///     we could just load CPU version of the asset. This data could be used
+///     to create individual GPU objects via device, but having server call
+///     device directly is not great imo... but then for this there should
+///     exist a Renderer that simplifies Asset -> GPU object creation
+
 class Device;
 
 /**
@@ -250,7 +257,7 @@ private:
 
         if (contains) { return; }
 
-        log::debug("Registering a new asset type: {}", typehash_of<A>());
+        log::debug("Registering a new asset type: {}", typename_of<A>());
         m_data.storage.run_exclusive(
             [tid] (auto& storage){
                 storage.emplace(tid, std::make_unique<AssetPool<A>>()).first;

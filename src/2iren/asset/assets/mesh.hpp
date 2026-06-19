@@ -14,24 +14,34 @@ namespace siren {
 struct Surface : Asset {
     Surface(
         const StrongHandle<PBRMaterialAsset>& material,
-        Buffer&& index_buffer,
         Buffer&& vertex_buffer,
+        const Layout& layout,
+        Buffer&& index_buffer,
+        const IndexFormat index_format,
         const u32 index_count
     ) : material(material),
         index_buffer(std::move(index_buffer)),
+        layout(layout),
+        index_count(index_count),
         vertex_buffer(std::move(vertex_buffer)),
-        index_count(index_count) { }
+        index_format(index_format) { }
 
     /** @brief The name of the surface. */
     std::string name;
     /** @brief The material to use for this surface. */
     StrongHandle<PBRMaterialAsset> material;
+
     /** @brief The index buffer of this surface. */
     Buffer index_buffer;
-    /** @brief The vertex buffer of this surface. */
-    Buffer vertex_buffer;
+    /** @brief The vertex layout of the vertex buffer. */
+    Layout layout;
     /** @brief The number of indices this surface has. */
     u32 index_count;
+
+    /** @brief The vertex buffer of this surface. */
+    Buffer vertex_buffer;
+    /** @brief The format of the indices. */
+    IndexFormat index_format;
 };
 
 /** @brief A collection of @ref Surface's forming a complete Mesh. */

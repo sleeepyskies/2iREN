@@ -10,7 +10,9 @@
 #include "2iren/sync/mutex.hpp"
 #include "string_utils.hpp"
 
-/// @todo: log functions show error msg in my IDE but still compile and run... fix that prolly
+/// @todo:
+///     log functions show error msg in my IDE but still compile and run... fix that prolly
+///     this seems to be a clang bug though??? annoying...
 
 namespace siren::log {
 
@@ -42,10 +44,10 @@ struct Level {
         switch (this->value) {
             case Trace: return "Trace";
             case Debug: return "Debug";
-            case Info: return "Info";
-            case Warn: return "Warn";
+            case Info: return "Info ";
+            case Warn: return "Warn ";
             case Error: return "Error";
-            case None: return "None";
+            case None: return "None ";
             default: UNREACHABLE();
         }
     }
