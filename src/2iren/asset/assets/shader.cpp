@@ -17,17 +17,17 @@ constexpr std::string_view PATH   = "path";
 constexpr std::string_view SOURCE = "source";
 } // namespace keys
 
-static auto invalid_schema(const std::string& msg) -> AssetLoadError {
+static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     log::warn("Invalid Schema found: {}", msg);
     return std::unexpected(AssetErrorCode::InvalidSchema);
 }
 
-static auto file_not_found(const std::string& path) -> AssetLoadError {
+static auto file_not_found(const std::string_view path) -> AssetLoadError {
     log::warn("Shader file not found at path: {}", path);
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
-static auto invalid_format(const std::string& path) -> AssetLoadError {
+static auto invalid_format(const std::string_view path) -> AssetLoadError {
     log::warn("Invalid YAML syntax in shader file: {}.", path);
     return std::unexpected(AssetErrorCode::InvalidFormat);
 }
@@ -36,16 +36,18 @@ static auto fetch_optional(const YAML::Node& node, const std::string_view key) -
     return node[key] ? std::make_optional(node[key].as<std::string>()) : std::nullopt;
 }
 
-static auto fetch_source_code(const YAML::Node& node) -> std::optional<std::string> {
+static auto fetch_source_code(const YAML::Node& node, const Path& base_dir) -> std::optional<std::string> {
     const auto source = fetch_optional(node, keys::SOURCE);
     const auto path   = fetch_optional(node, keys::PATH);
 
     if (source) { return source; }
 
     if (path) {
-        const auto text = FileSystem::read_text(*path);
+        const auto abs = base_dir / *path;
+        log::trace("Attempting to load shader stage from path at {}", abs.string());
+        const auto text = FileSystem::read_text(abs);
         if (!text) {
-            log::warn("Could not read shader source from file {}", *path);
+            log::warn("Could not read shader source from file {}", abs.string());
             return std::nullopt;
         }
         return *text;
@@ -57,10 +59,10 @@ static auto fetch_source_code(const YAML::Node& node) -> std::optional<std::stri
 
 auto ShaderLoader::load(
     LoadContext&& ctx,
-        const std::optional<ConfigType>
+    const std::optional<ConfigType>
 ) const -> AssetLoadError {
     const auto path = FileSystem::to_physical(ctx.path().full_path());
-    if (!path.has_value()) { return file_not_found(ctx.path().relative_path()); }
+    if (!path.has_value()) { return file_not_found(ctx.path().full_path()); }
 
     try {
         const auto yaml = YAML::LoadFile(path->string());
@@ -69,7 +71,7 @@ auto ShaderLoader::load(
         }
 
         const auto shader_name = fetch_optional(yaml, keys::NAME);
-        const auto base_dir    = Path{ ctx.path().relative_path() }.parent_path();
+        const auto base_dir    = Path{ ctx.path().full_path() }.parent_path();
         std::unordered_map<ShaderStage, ShaderData> map{ };
 
         for (const auto& stage : yaml[keys::STAGES]) {
@@ -87,7 +89,7 @@ auto ShaderLoader::load(
             }
 
             const auto stage_name = fetch_optional(stage_node, keys::NAME);
-            const auto source     = fetch_source_code(stage_node);
+            const auto source     = fetch_source_code(stage_node, base_dir);
             if (!source.has_value()) {
                 log::warn("Invalid shader stage found ({}). Continuing anyway", stage_str);
                 continue;
@@ -103,10 +105,12 @@ auto ShaderLoader::load(
             return invalid_schema("Could not parse any valid shader stages.");
         }
 
-        auto shader = ctx.device().create_shader({
-            .label = shader_name,
-            .source = map
-        });
+        auto shader = ctx.device().create_shader(
+            {
+                .label = shader_name,
+                .source = map
+            }
+        );
 
         ctx.finish(std::make_unique<ShaderAsset>(std::move(shader), std::move(map)));
         return { };

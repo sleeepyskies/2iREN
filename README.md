@@ -12,10 +12,12 @@ Currently only OpenGL 4.6 is supported, but other APIs may be supported in the f
 
 ## Dependencies
 Conan is used for package management.
+* **yaml-cpp**: Used for certain 2iren specific file types (sshg etc.).
 * **GLFW**: Windowing
 * **GLM**: Math library
-* **glad**: OpenGL loader
 * **libassert**: Runtime assertions with stacktrace output
+* **glad**: OpenGL loader
+* **OpenGL**: Rendering API
 
 
 # Examples
@@ -27,3 +29,7 @@ Conan is used for package management.
 2. Spinning Cube
  
 ![cube.png](images/cube.png)
+
+3. Load Shader
+ 
+Demos loading a simple asset from the VFS.
