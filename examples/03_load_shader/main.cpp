@@ -19,7 +19,7 @@ const siren::ByteBuffer vertices{
 };
 
 int main() {
-    siren::Context ctx{ { .debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::OpenGL } };
+    siren::Context ctx{ { .debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto } };
     siren::Window window({
         .title = "2iren",
         .width = 1280,
@@ -73,19 +73,23 @@ int main() {
     while (!window.should_close()) {
         window.poll_events();
 
-        auto render_cmds = device->record_render_commands();
+        auto cmds = device->record_render_commands();
         {
-            auto pass = render_cmds.begin_render_pass(
-                {
-                    .label = std::nullopt,
-                    .target = swapchain.current_framebuffer(),
-                    .begin_operation = siren::BeginOperation::Clear,
-                    .clear_color = siren::RGBA::red(),
-                }
-            );
+            auto pass = cmds.begin_render_pass({
+                .label = std::nullopt,
+                .target = swapchain.current_framebuffer(),
+                .begin_operation = siren::BeginOperation::Clear,
+                .clear_color = siren::RGBA::black(),
+            });
+
+            pass.bind_graphics_pipeline(pipeline.handle());
+            pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+            pass.draw_arrays(0, 3);
+
+            cmds.consume_render_pass(pass.finish());
         }
 
-        device->submit(render_cmds.finish());
+        device->submit(cmds.finish());
         device->present(swapchain.handle());
         device->flush_delete_queue();
     }

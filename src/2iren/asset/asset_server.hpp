@@ -424,7 +424,7 @@ template <IsAsset A>
     // spawn non-blocking loading task
     AssetID asset_id = pool->reserve();
     const WeakHandle weak_handle{ asset_id, pool, path };
-    log::debug(
+    log::trace(
         "Asset of type at {} does not exist in cache, attempting to load from disk with handle {}.",
         typename_of<A>(),
         weak_handle
