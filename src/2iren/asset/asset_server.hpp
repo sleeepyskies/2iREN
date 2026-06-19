@@ -114,14 +114,12 @@ public:
     template <IsAsset A>
     [[nodiscard]] auto get(const StrongHandle<A> handle) -> A* {
         if (!handle.is_valid()) {
-            log::debug("Could not get {} asset, as the handle {} is invalid.", typename_of<A>(), handle);
+            log::debug("Could not get asset {}, as the handle is invalid.", handle);
             return nullptr;
         }
 
         if (!is_loaded_with_dependencies(handle)) {
-            log::debug(
-                "Could not get {} asset, as at least of of its dependencies is still loading..", typename_of<A>()
-            );
+            log::debug("Could not get asset {}, as at least of of its dependencies is still loading.", handle);
             return nullptr;
         }
 
@@ -129,7 +127,7 @@ public:
             [&handle] (const std::unordered_map<TypeID, std::unique_ptr<AssetPoolBase>>& storage) -> A*{
                 const auto it = storage.find(AssetID::get_type_id<A>());
                 if (it == storage.end()) {
-                    log::debug("Could not get {} asset storage.", typename_of<A>());
+                    log::debug("{} asset storage does not exist, cannot get asset.", typename_of<A>(), handle);
                     return nullptr;
                 }
                 auto* pool = static_cast<AssetPool<A>*>(it->second.get());
@@ -238,6 +236,7 @@ private:
     /**
      * @brief Ensures that the asset type has a registered storage block.
      * @tparam A The asset type to register.
+     * @note This may lock m_data.storage, and will read from it, so make sure there is no lock on this yet!
      */
     template <IsAsset A>
     auto ensure_asset_registered() {
@@ -257,6 +256,53 @@ private:
                 storage.emplace(tid, std::make_unique<AssetPool<A>>()).first;
             }
         );
+    }
+
+    /**
+     * Searches the cache for a handle to the asset based on its path.
+     * @tparam A The asset type to search for.
+     * @param path The path of the asset used as a cache key.
+     * @return An optional handle to the asset.
+     */
+    template <IsAsset A>
+    auto search_cache(const AssetPath& path) -> std::optional<StrongHandle<A>> {
+        return m_data.asset_infos.run([path] (const auto& asset_infos) -> std::optional<StrongHandle<A>>{
+            // search cache
+            auto ait = asset_infos.find(path.hashed_string());
+
+            // nothing inside of cache
+            if (ait == asset_infos.end()) {
+                return std::nullopt;
+            }
+
+            // there is no label, this is the main asset.
+            if (!path.label()) {
+                return StrongHandle<A>::from_weak(ait->second.weak_handle);
+            }
+
+            // this is a labeled sub asset
+            const auto lit = ait->second.labeled_deps.find(path.label().value());
+            if (lit != ait->second.labeled_deps.end()) {
+                return StrongHandle<A>::from_weak(lit->second);
+            }
+
+            return std::nullopt;
+        });
+    }
+
+    /**
+     * Attempts to fetch a suitable loader for the asset type and file type.
+     * @tparam A The type of asset the loader is for.
+     * @param ext The extension the loader should handle.
+     * @return A pointer to a loader, or nullptr in case on does not exist.
+     */
+    template <IsAsset A>
+    auto fetch_loader(const std::string& ext) -> AssetLoader<A>* {
+        const auto it = m_data.loaders.ext_to_loader.find(ext);
+        if (it == m_data.loaders.ext_to_loader.end()) {
+            return nullptr;
+        }
+        return dynamic_cast<AssetLoader<A>*>(it->second);
     }
 
     /** @brief The underlying data of the AssetServer. */
@@ -383,6 +429,11 @@ private:
     Device& m_device;      ///< @brief A reference to the device for the
 };
 
+// general process here goes:
+// 1. ensure asset storage exists
+// 2. if cached, return handle from cache
+// 3. if no loader exists, return invalid handle
+// 4. spawn new load task
 template <IsAsset A>
 [[nodiscard]] auto AssetServer::load(
     const AssetPath& path,
@@ -391,60 +442,50 @@ template <IsAsset A>
     ensure_asset_registered<A>();
     log::trace("Loading new asset from path {}", path);
 
-    auto storage     = m_data.storage.write();
-    auto asset_infos = m_data.asset_infos.write();
-
-    auto storage_it = storage->find(AssetID::get_type_id<A>());
-    auto pool       = static_cast<AssetPool<A>*>(storage_it->second.get());
-
-    // asset has already been cached
-    const auto asset_info_it = asset_infos->find(path.hashed_string());
-    if (asset_info_it != asset_infos->end()) {
-        // this is a labeled sub asset
-        const auto label = path.label();
-        if (label.has_value()) {
-            const auto label_it = asset_info_it->second.labeled_deps.find(label.value());
-            if (label_it != asset_info_it->second.labeled_deps.end()) {
-                return StrongHandle<A>::from_weak(label_it->second);
-            }
-        } else {
-            // this is the main asset
-            return StrongHandle<A>::from_weak(asset_info_it->second.weak_handle);
-        }
+    // generate new or fetch weak handle from cache
+    auto cached = search_cache<A>(path);
+    if (cached) {
+        return *cached;
     }
 
     // check if loader exists
-    const auto loader_it = m_data.loaders.ext_to_loader.find(path.extension());
-    if (loader_it == m_data.loaders.ext_to_loader.end()) {
+    auto loader = fetch_loader<A>(path.extension());
+    if (!loader) {
         log::warn("Could not load asset of type {}, as there exists no loader for it.", typename_of<A>());
         return StrongHandle<A>::invalid();
     }
-    auto& loader = *dynamic_cast<AssetLoader<A>*>(loader_it->second);
 
-    // spawn non-blocking loading task
-    AssetID asset_id = pool->reserve();
-    const WeakHandle weak_handle{ asset_id, pool, path };
-    log::trace(
-        "Asset of type at {} does not exist in cache, attempting to load from disk with handle {}.",
-        typename_of<A>(),
-        weak_handle
-    );
+
+    // generate a new handle
+    const auto weak_handle = m_data.storage.run_exclusive([path](auto& storage) -> WeakHandle {
+        const auto it = storage.find(AssetID::get_type_id<A>());
+        auto pool = static_cast<AssetPool<A>*>(it->second.get());
+        return WeakHandle{
+            pool->reserve(),
+            pool,
+            path
+        };
+    });
+
+    log::trace("Asset {} does not exist in cache, attempting to load from disk.", weak_handle);
+    m_data.asset_infos.run_exclusive([weak_handle, path](auto& asset_infos){
+        asset_infos.emplace(
+            path.hashed_string(),
+            AssetInfo{
+                // .path = {},
+                .weak_handle = weak_handle,
+                .load_state = { },
+                .labeled_deps = { },
+                .dependencies = { },
+                .dependents = { },
+            }
+        );
+    });
+
+    // spawn new loading task
     ThreadPool::get().spawn_detached(
-        [this, path, loader = &loader, weak_handle, config]{
+        [this, path, loader, weak_handle, config]{
             loader->load(LoadContext{ *this, path, weak_handle, m_device }, config);
-        }
-    );
-
-    // init AssetInfo state
-    asset_infos->emplace(
-        path.hashed_string(),
-        AssetInfo{
-            // .path = {},
-            .weak_handle = weak_handle,
-            .load_state = { },
-            .labeled_deps = { },
-            .dependencies = { },
-            .dependents = { },
         }
     );
 
