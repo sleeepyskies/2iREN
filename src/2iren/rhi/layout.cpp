@@ -26,7 +26,7 @@ constexpr auto DataType::size() const -> usize {
     }
 }
 
-constexpr auto DataType::to_string() const -> std::string {
+constexpr auto DataType::to_string() const -> std::string_view {
     switch (this->value) {
         case Int8: return "Int8";
         case Int16: return "Int16";
@@ -47,25 +47,25 @@ auto LayoutBuilder::start() -> LayoutBuilder { return LayoutBuilder{ }; }
 
 auto LayoutBuilder::finish() -> Layout {
     return Layout{
-        .attributes = std::move(m_attributes),
+        .components = std::move(m_components),
         .stride = m_offset,
     };
 }
 
 auto LayoutBuilder::add(
-    const Component component,
+    const Attribute attribute,
     const u32 count,
     const DataType type
 ) -> LayoutBuilder& {
-    const Attribute attr{
-        .component = component,
-        .size = count,
+    const Component component{
         .type = type,
+        .size = count,
         .offset = m_offset,
-        .location = m_attributes.size(),
+        .location = m_components.size(),
+        .attribute = attribute,
     };
 
-    m_attributes.push_back(attr);
+    m_components.push_back(component);
 
     m_offset += type.size() * count;
 

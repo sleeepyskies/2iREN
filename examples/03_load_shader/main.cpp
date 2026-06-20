@@ -42,8 +42,8 @@ int main() {
     });
     const auto layout =
             siren::LayoutBuilder::start()
-           .add(siren::Component::Position, 3, siren::DataType::Float32)
-           .add(siren::Component::Color, 4, siren::DataType::Float32)
+           .add(siren::Attribute::Position, 3, siren::DataType::Float32)
+           .add(siren::Attribute::Color, 4, siren::DataType::Float32)
            .finish();
 
     const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/basic.sshg");

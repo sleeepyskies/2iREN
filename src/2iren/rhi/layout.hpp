@@ -9,10 +9,10 @@
 namespace siren {
 
 /**
- * @enum Component
+ * @enum Attribute
  * @brief Identifies the semantic purpose of a shader attribute.
  */
-enum class Component : u8 {
+enum class Attribute : u8 {
     Position,
     Normal,
     Tangent,
@@ -40,27 +40,29 @@ struct DataType {
     /** @brief Returns the size of this DataType instance in bytes. */
     constexpr auto size() const -> usize;
     /** @brief Returns the string representation of this value. */
-    constexpr auto to_string() const -> std::string;
+    constexpr auto to_string() const -> std::string_view;
 };
 
-/** @brief Represents a single attribute inside a buffer. */
-struct Attribute {
-    /** @brief The type of this attribute. */
-    Component component;
-    /** @brief The number of components per vertex attribute */
-    u32 size;
+/**
+ * @brief Represents a single vertex component inside a buffer.
+ */
+struct Component {
     /** @brief The datatype of this vertex attribute */
     DataType type;
+    /** @brief The number of components per vertex attribute */
+    u32 size;
     /** @brief The byte offset of the first vertex attribute into the whole buffer. */
     usize offset;
     /** @brief The location this attribute is bound to. */
     usize location;
+    /** @brief The attribute of this component. */
+    Attribute attribute;
 };
 
 /** @brief Describes the layout of a vertex buffer. */
 struct Layout {
-    /** @brief The various attributes within this buffer. */
-    std::vector<Attribute> attributes;
+    /** @brief The various components within this buffer. */
+    std::vector<Component> components;
     /** @brief The total stride of a single vertex inside the buffer. */
     usize stride;
 };
@@ -81,7 +83,7 @@ public:
     auto finish() -> Layout;
 
     /**
-     * @param component The @ref Component to add.
+     * @param attribute The @ref Attribute to add.
      * @param count The number of components
      * @param type The datatype of the attributes components.
      * Example:
@@ -92,7 +94,7 @@ public:
      * @return A reference to the builder.
      */
     auto add(
-        Component component,
+        Attribute attribute,
         u32 count,
         DataType type
     ) -> LayoutBuilder&;
@@ -100,7 +102,7 @@ public:
 private:
     LayoutBuilder() = default;
 
-    std::vector<Attribute> m_attributes{ };
+    std::vector<Component> m_components{ };
     usize m_offset{ 0 };
 };
 

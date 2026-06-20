@@ -153,7 +153,7 @@ public:
     template <IsAsset A>
     [[nodiscard]] auto load(
         const std::string& path,
-        const std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
+        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
     ) -> StrongHandle<A> { return load<A>(AssetPath::parse(path), config); }
 
     /**
@@ -350,8 +350,16 @@ public:
     template <IsAsset A>
     [[nodiscard]]
     auto load_external_asset(
+        const std::string& asset_path,
+        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
+    ) -> StrongHandle<A> { return load_external_asset<A>(AssetPath::parse(asset_path), config); }
+
+
+    template <IsAsset A>
+    [[nodiscard]]
+    auto load_external_asset(
         const AssetPath& asset_path,
-        const AssetLoader<A>::ConfigType* config = nullptr
+        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
     ) -> StrongHandle<A> {
         const StrongHandle<A> handle = m_server.load<A>(asset_path, config);
 
@@ -444,7 +452,7 @@ private:
 template <IsAsset A>
 [[nodiscard]] auto AssetServer::load(
     const AssetPath& path,
-    const std::optional<typename AssetLoader<A>::ConfigType> config
+    std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
 ) -> StrongHandle<A> {
     ensure_asset_registered<A>();
     log::trace("Loading new asset from path {}", path);
@@ -491,7 +499,7 @@ template <IsAsset A>
 
     // spawn new loading task
     ThreadPool::get().spawn_detached(
-        [this, path, loader, weak_handle, config]{
+        [this, path, loader, weak_handle, config = std::move(config)]{
             loader->load(LoadContext{ *this, path, weak_handle, m_device }, config);
         }
     );

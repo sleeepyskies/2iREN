@@ -109,7 +109,7 @@ int main() {
         .usage = siren::BufferUsage::Dynamic,
     });
     const auto layout = siren::LayoutBuilder::start()
-           .add(siren::Component::Position, 3, siren::DataType::Float32)
+           .add(siren::Attribute::Position, 3, siren::DataType::Float32)
            .finish();
 
     const auto shader = device->create_shader({

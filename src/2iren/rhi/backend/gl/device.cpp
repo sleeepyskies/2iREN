@@ -525,7 +525,7 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
                 );
             }
 
-            for (const auto& [index, attribute] : descriptor.layout.attributes | views::enumerate) {
+            for (const auto& [index, attribute] : descriptor.layout.components | views::enumerate) {
                 // enables some element aka the layout(location = n) shader side
                 glEnableVertexArrayAttrib(vertex_array, static_cast<GLuint>(index));
 

@@ -27,7 +27,7 @@ struct ImageExtent {
  */
 enum class ImageFormat {
     /** @brief Invalid format */
-    Unknown,
+    Unknown = 0,
     /** @brief 1-Channel byte data. */
     Mask8,
     /** @brief 4-Channel (RGBA) byte data. (linear encoding) */
