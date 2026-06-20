@@ -34,11 +34,11 @@ struct RGBA {
     constexpr RGBA(const float color, const float alpha) noexcept : r(color), g(color), b(color), a(alpha) { }
     /** @brief Constructs a new RGBA color provided the given values. */
     constexpr RGBA(
-        const float r_,
-        const float g_,
-        const float b_,
-        const float a_
-    ) noexcept : r(r_), g(g_), b(b_), a(a_) { }
+        const float r,
+        const float g,
+        const float b,
+        const float a
+    ) noexcept : r(r), g(g), b(b), a(a) { }
 
     /** @brief Formats this RGBA as a string. */
     [[nodiscard]] auto to_string() -> std::string {

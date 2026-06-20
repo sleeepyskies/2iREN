@@ -20,7 +20,11 @@ enum class AssetErrorCode {
     /** @brief The file could be parsed, but was missing some required fields. */
     InvalidSchema,
     /** @brief Some GPU or Driver failure. */
-    RuntimeFailed
+    RuntimeFailed,
+    /** @brief Some feature was encountered that 2iren does not support. */
+    NotSupported,
+    /** @brief Some data has been corrupted. */
+    AssetCorrupted
 };
 
 using AssetLoadError = std::expected<void, AssetErrorCode>;

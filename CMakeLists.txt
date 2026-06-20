@@ -40,11 +40,14 @@ add_library(
         src/2iren/asset/asset_path.cpp
         src/2iren/asset/asset_server.cpp
         src/2iren/asset/assets/shader.cpp
+        src/2iren/asset/assets/gltf.cpp
 
         src/2iren/window.cpp
 
         src/2iren/util/time.cpp
         src/2iren/util/filesystem.cpp
+        src/2iren/util/stb_image.cpp
+        src/2iren/util/cgltf.cpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
