@@ -10,10 +10,28 @@
 
 namespace siren {
 
+// todo: i think we need to use mutex on ref counts here since handle be dropping these from any threads
+
+template <IsAsset A>
+class AssetPool;
+
 /** @brief Base AssetPool class used for polymorphism. */
 class AssetPoolBase {
 public:
     virtual ~AssetPoolBase() = default;
+
+    /** @brief Returns the TypeID of the asset type this loader manages. */
+    [[nodiscard]] virtual auto type_id() const noexcept -> AssetID::TypeID = 0;
+
+    /** @brief Casts a base loader to a type variant. Also performs a type check. */
+    template <IsAsset A>
+    [[nodiscard]] auto as() -> AssetPool<A>& {
+        ASSERT(
+            AssetID::type_id<A>() == type_id(),
+            std::format("Invalid loader cast, {} != {}", AssetID::type_id<A>(), type_id())
+        );
+        return *static_cast<AssetPool<A>*>(this);
+    }
 };
 
 /**
@@ -58,9 +76,10 @@ private:
     };
 
 public:
+    [[nodiscard]] auto type_id() const noexcept -> AssetID::TypeID  override { return AssetID::type_id<A>(); }
+
     /** @brief Creates a new AssetID for this pool, as well as allocates it a storage slot. */
-    [[nodiscard]]
-    auto reserve() -> AssetID {
+    [[nodiscard]] auto reserve() -> AssetID {
         IndexType idx;
 
         if (!m_data.free_list.empty()) {
@@ -75,7 +94,7 @@ public:
         pool_entry.asset     = nullptr;
         pool_entry.ref_count = 0;
 
-        return AssetID{ idx, pool_entry.generation, AssetID::get_type_id<A>() };
+        return AssetID{ idx, pool_entry.generation, AssetID::type_id<A>() };
     }
 
     /** @brief Adds an asset and takes ownership. */
@@ -125,7 +144,6 @@ private:
         if (!is_valid_id(id)) { return; }
 
         PoolEntry& entry = m_data.storage[id.index()];
-        if (entry.generation != id.generation()) { return; }
 
         // todo: we should maybe emit an AssetCleanupEvent? need to handle destruction here an in asset server eventually
         entry.ref_count -= 1;
