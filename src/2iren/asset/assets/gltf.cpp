@@ -482,23 +482,36 @@ static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadEr
     return { };
 }
 
+static auto validate_index_type(const cgltf_component_type type) -> AssetLoadError {
+    if (type == cgltf_component_type_r_8u) {
+        log::debug("Surface has index type is UInt8, will be converted to UInt32.");
+    } else if (type == cgltf_component_type_r_16u) {
+        log::debug("Surface has index type is UInt16, will be converted to UInt32.");
+    } else if (type == cgltf_component_type_r_32u) {
+        // do nothing, log nothing is fine
+    } else {
+        log::error("Invalid glTF index type encountered, cgltf_component_type value: {}.", (u32)type);
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
+    }
+
+    return { };
+}
+
 static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError {
     if (!indices) {
         log::warn("2iren does not support gltf meshes without indices.");
         return std::unexpected(AssetErrorCode::NotSupported);
     }
 
-    if (indices->component_type != cgltf_component_type_r_32u) {
-        log::warn("2iren only suports uint32 indices, found cgltf_component_type: {}.", (u32)indices->component_type);
-        return std::unexpected(AssetErrorCode::NotSupported);
-    }
+    if (const auto res = validate_index_type(indices->component_type); !res) { return res; }
 
     if (indices->type != cgltf_type_scalar) {
         log::warn("gltf mesh has non scalar indices.");
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    if (!indices->buffer_view
+    if (
+        !indices->buffer_view
         || !indices->buffer_view->buffer
         || !indices->buffer_view->buffer->data
     ) {
@@ -521,9 +534,13 @@ static auto load_index_buffer(
         return std::unexpected(res.error());
     }
 
-    const usize index_count = indices->count;
+    const auto index_count = indices->count;
+
+    // have to resize not just reserve since a c-style api wants direct buffer access
     ByteBuffer buffer;
-    const usize unpacked_count = cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(f32), index_count);
+    buffer.data().resize(index_count * sizeof(u32));
+
+    const usize unpacked_count = cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(u32), index_count);
     ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
     return IndexBuffer {
@@ -907,59 +924,53 @@ auto GltfLoader::load(
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    const auto textures_ = load_textures(data.get(), ctx);
-    if (!textures_.has_value()) {
+    const auto textures = load_textures(data.get(), ctx);
+    if (!textures.has_value()) {
         log::warn("Could not load gltf at {}, textures could not be loaded.", ctx.path());
-        return std::unexpected(textures_.error());
+        return std::unexpected(textures.error());
     }
-    std::vector<StrongHandle<Texture>> textures = textures_.value();
 
-    const auto materials_ = load_materials(data.get(), textures, ctx);
-    if (!materials_.has_value()) {
+    auto materials = load_materials(data.get(), *textures, ctx);
+    if (!materials.has_value()) {
         log::warn("Could not load gltf at {}, materials could not be loaded.", ctx.path());
-        return std::unexpected(materials_.error());
+        return std::unexpected(materials.error());
     }
-    std::vector<StrongHandle<PBRMaterialAsset>> materials = materials_.value();
 
-    const auto meshes_ = load_meshes(data.get(), materials, ctx);
-    if (!meshes_.has_value()) {
+    auto meshes = load_meshes(data.get(), *materials, ctx);
+    if (!meshes.has_value()) {
         log::warn("Could not load gltf at {}, meshes could not be loaded.", ctx.path());
-        return std::unexpected(meshes_.error());
+        return std::unexpected(meshes.error());
     }
-    std::vector<StrongHandle<Mesh>> meshes = meshes_.value();
 
-    const auto cameras_ = load_cameras(data.get());
-    if (!cameras_.has_value()) {
+    auto cameras = load_cameras(data.get());
+    if (!cameras.has_value()) {
         log::warn("Could not load gltf at {}, cameras could not be loaded.", ctx.path());
-        return std::unexpected(cameras_.error());
+        return std::unexpected(cameras.error());
     }
-    std::vector<SceneCamera> cameras = cameras_.value();
 
-    const auto nodes_ = load_nodes(data.get(), meshes, cameras, ctx);
-    if (!nodes_.has_value()) {
+    auto nodes = load_nodes(data.get(), *meshes, *cameras, ctx);
+    if (!nodes.has_value()) {
         log::warn("Could not load gltf at {}, nodes could not be loaded.", ctx.path());
-        return std::unexpected(nodes_.error());
+        return std::unexpected(nodes.error());
     }
-    std::vector<StrongHandle<GltfNode>> nodes = nodes_.value();
 
-    const auto scenes_ = load_scenes(data.get(), nodes, ctx);
-    if (!scenes_.has_value()) {
+    auto scenes = load_scenes(data.get(), *nodes, ctx);
+    if (!scenes.has_value()) {
         log::warn("Could not load gltf at {}, scenes could not be loaded.", ctx.path());
-        return std::unexpected(scenes_.error());
+        return std::unexpected(scenes.error());
     }
-    std::vector<StrongHandle<GltfScene>> scenes = scenes_.value();
 
     std::optional<StrongHandle<GltfScene>> default_scene;
-    if (data->scene) { default_scene = scenes[data->scene - data->scenes]; }
+    if (data->scene) { default_scene = (*scenes)[data->scene - data->scenes]; }
 
     ctx.finish(
         std::make_unique<Gltf>(
-            std::move(scenes),
+            std::move(*scenes),
             std::move(default_scene),
-            std::move(meshes),
-            std::move(materials),
-            std::move(nodes),
-            std::move(cameras)
+            std::move(*meshes),
+            std::move(*materials),
+            std::move(*nodes),
+            std::move(*cameras)
         )
     );
 
