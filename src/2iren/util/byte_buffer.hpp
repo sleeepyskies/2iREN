@@ -28,7 +28,7 @@ public:
      * @param data Input data to be serialized into bytes.
      */
     template <IsCopyable T>
-    explicit ByteBuffer(const std::vector<T>& data) : m_data() {
+    explicit ByteBuffer(const std::vector<T>& data) {
         for (const auto& item : data) {
             append<T>(item);
         }
@@ -40,9 +40,7 @@ public:
      * @param items Items to append to the buffer.
      */
     template <IsCopyable T>
-    explicit ByteBuffer(const std::initializer_list<T> items) : m_data() {
-        append<T>(items);
-    }
+    explicit ByteBuffer(const std::initializer_list<T> items) { append<T>(items); }
 
     ByteBuffer(const ByteBuffer& other)            = default;
     ByteBuffer(ByteBuffer&& other)                 = default;
@@ -59,9 +57,7 @@ public:
      * @warning Assumes buffer is evenly divisible by sizeof(T).
      */
     template <typename T>
-    auto size_as() const noexcept -> usize {
-        return size_bytes() / sizeof(T);
-    }
+    auto size_as() const noexcept -> usize { return size_bytes() / sizeof(T); }
 
     /**
      * @brief Checks if buffer is empty.
@@ -153,7 +149,7 @@ public:
     }
 
 private:
-    std::vector<u8> m_data;
+    std::vector<u8> m_data{ };
 
     /**
      * @brief Ensures buffer size is a multiple of sizeof(T).

@@ -15,10 +15,9 @@ namespace siren {
 enum class Attribute : u8 {
     Position,
     Normal,
-    Tangent,
-    Bitangent,
-    Texture,
     Color,
+    Tangent,
+    Texture,
 };
 
 /**
@@ -63,7 +62,10 @@ struct Component {
 struct Layout {
     /** @brief The various components within this buffer. */
     std::vector<Component> components;
-    /** @brief The total stride of a single vertex inside the buffer. */
+    /**
+     * @brief The total stride of a single vertex inside the buffer.
+     * This is also equal to the size of a single vertex.
+     */
     usize stride;
 };
 

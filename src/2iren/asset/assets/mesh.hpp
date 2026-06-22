@@ -7,26 +7,42 @@
 #include "2iren/base.hpp"
 #include "2iren/rhi/resources/buffer.hpp"
 
+// todo: do we want to store buffer data CPU side as well?
+
 
 namespace siren {
+
+/**
+ * @struct IndexBuffer
+ * @brief Simple container semantically representing an index buffer.
+ */
+struct IndexBuffer {
+    /** @brief The GPU side index data. */
+    Buffer data;
+    /** @brief The number of indices. */
+    usize count;
+    /** @brief The type of the indices. */
+    IndexFormat format;
+};
+
+/**
+ * @struct VertexBuffer
+ * @brief Simple container semantically representing a vertex buffer.
+ */
+struct VertexBuffer {
+    Buffer data;
+    Layout layout;
+};
 
 struct Surface : Asset {
     /** @brief The name of the surface. */
     std::string name;
     /** @brief The material to use for this surface. */
     StrongHandle<PBRMaterialAsset> material;
-
-    /** @brief The index buffer of this surface. */
-    Buffer index_buffer;
-    /** @brief The vertex layout of the vertex buffer. */
-    Layout layout;
-    /** @brief The number of indices this surface has. */
-    u32 index_count;
-
-    /** @brief The vertex buffer of this surface. */
-    Buffer vertex_buffer;
-    /** @brief The format of the indices. */
-    IndexFormat index_format;
+    /** @brief The indices of the Surface. */
+    IndexBuffer index_buffer;
+    /** @brief The vertices of the Surface. */
+    VertexBuffer vertex_buffer;
 };
 
 /** @brief A collection of @ref Surface's forming a complete Mesh. */
