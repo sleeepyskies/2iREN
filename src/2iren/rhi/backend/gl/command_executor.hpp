@@ -15,7 +15,7 @@ struct TrackedState {
     GraphicsPipelineHandle active_pipeline = NullHandle;
     BindIndexBuffer active_ibo             = {
         .index_buffer = BufferHandle::invalid(),
-        .index_format = IndexFormat::Uint32
+        .index_format = IndexFormat::UInt32
     };
 };
 

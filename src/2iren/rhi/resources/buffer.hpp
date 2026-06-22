@@ -25,17 +25,17 @@ enum class BufferUsage {
 class IndexFormat {
 public:
     enum Value : u8 {
-        Uint8,
-        Uint16,
-        Uint32
+        UInt8,
+        UInt16,
+        UInt32
     } value;
 
     /** @brief Returns the size of this format in bytes. */
     [[nodiscard]] constexpr auto size_bytes() const -> usize {
         switch (value) {
-            case Uint8: return 1;
-            case Uint16: return 2;
-            case Uint32: return 4;
+            case UInt8: return 1;
+            case UInt16: return 2;
+            case UInt32: return 4;
             default: UNREACHABLE();
         }
     }
@@ -55,6 +55,7 @@ struct BufferDescriptor {
      * @note This is dropped by the @ref Buffer once owned by it. Therefore,
      * it is best to never access this via a @ref Buffer
      * @todo remove this? idk
+     * @todo should this field actually be a @ref ByteBuffer instead?
      */
     std::optional<std::vector<u8>> data;
     /** @brief The initial size of the buffer in bytes. */

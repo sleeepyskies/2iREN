@@ -320,9 +320,9 @@ constexpr auto topology_to_gl(const PrimitiveTopology topology) -> GLenum {
  */
 constexpr auto index_format_to_gl(const IndexFormat format) -> GLenum {
     switch (format) {
-        case IndexFormat::Uint8: return GL_UNSIGNED_BYTE;
-        case IndexFormat::Uint16: return GL_UNSIGNED_SHORT;
-        case IndexFormat::Uint32: return GL_UNSIGNED_INT;
+        case IndexFormat::UInt8: return GL_UNSIGNED_BYTE;
+        case IndexFormat::UInt16: return GL_UNSIGNED_SHORT;
+        case IndexFormat::UInt32: return GL_UNSIGNED_INT;
         default: UNREACHABLE();
     }
 }

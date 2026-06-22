@@ -152,7 +152,7 @@ int main() {
             });
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
-            pass.bind_index_buffer(index_buffer.handle(), siren::IndexFormat::Uint32);
+            pass.bind_index_buffer(index_buffer.handle(), siren::IndexFormat::UInt32);
             pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
             pass.draw_indexed((siren::u32)indices.size_as<siren::u32>(), 0);
 
