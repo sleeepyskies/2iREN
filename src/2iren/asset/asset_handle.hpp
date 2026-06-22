@@ -135,7 +135,7 @@ public:
 private:
     StrongHandle() = default;
     template <IsAsset T>
-    friend WeakHandle make_weak(StrongHandle);
+    friend WeakHandle make_weak(const StrongHandle<T>&) noexcept;
 
     /** @brief The wrapped @ref WeakHandle. */
     WeakHandle m_weak;

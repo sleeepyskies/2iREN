@@ -35,6 +35,16 @@ struct VertexBuffer {
 };
 
 struct Surface : Asset {
+    Surface(
+        const std::string& name,
+        const StrongHandle<PBRMaterialAsset>& material,
+        IndexBuffer&& index_buffer,
+        VertexBuffer&& vertex_buffer
+    ) : name(name),
+        material(material),
+        index_buffer(std::move(index_buffer)),
+        vertex_buffer(std::move(vertex_buffer)) { }
+
     /** @brief The name of the surface. */
     std::string name;
     /** @brief The material to use for this surface. */

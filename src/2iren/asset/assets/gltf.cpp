@@ -33,6 +33,8 @@ namespace siren {
 // ============================================================================
 // == MARK: Mappings
 // ============================================================================
+
+[[maybe_unused]]
 static auto gltf_attribute_to_siren(const cgltf_attribute_type attribute) -> Attribute {
     switch (attribute) {
         case cgltf_attribute_type_position: return Attribute::Position;
@@ -49,6 +51,7 @@ static auto gltf_attribute_to_siren(const cgltf_attribute_type attribute) -> Att
     }
 }
 
+[[maybe_unused]]
 static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFormat {
     switch (type) {
         case cgltf_component_type_r_8u: return IndexFormat::UInt8;
@@ -66,6 +69,7 @@ static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFo
     }
 }
 
+[[maybe_unused]]
 static auto gltf_type_to_siren(const cgltf_component_type type) -> DataType {
     switch (type) {
         case cgltf_component_type_r_8: return DataType::Int8;
@@ -651,7 +655,9 @@ static auto load_meshes(
     const std::vector<StrongHandle<PBRMaterialAsset>>& materials,
     LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
-    NameIDGenerator name_gen{ .fallback = "Mesh" };
+    // surface names scoped are scoped to the gltf due to asset label system.
+    NameIDGenerator mesh_name_generator{ .fallback = "Mesh" };
+    NameIDGenerator surface_name_generator{ .fallback = "Surface" };
 
     std::vector<StrongHandle<Mesh>> vec;
     vec.reserve(data->meshes_count);
@@ -661,7 +667,7 @@ static auto load_meshes(
         const auto& gltf_mesh = data->meshes[mesh_idx];
 
         auto mesh  = std::make_unique<Mesh>();
-        mesh->name = name_gen.next(gltf_mesh.name);
+        mesh->name = mesh_name_generator.next(gltf_mesh.name);
         mesh->surfaces.reserve(gltf_mesh.primitives_count);
 
         // iterate each surface of the individual meshes
@@ -679,17 +685,18 @@ static auto load_meshes(
             }
 
             // load vertex data according to layout
-            const auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
+            auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
             const auto& material_handle = materials[gltf_prim.material - data->materials];
 
             auto surface = std::make_unique<Surface>(
-                surface_name,
+                surface_name_generator.next(),
                 material_handle,
-                index_buffer,
-                vertex_buffer
+                std::move(*index_buffer),
+                std::move(vertex_buffer)
             );
-            mesh->surfaces.emplace_back(ctx.add_labeled_asset(surface_label, std::move(surface)));
+
+            mesh->surfaces.emplace_back(ctx.add_labeled_asset(surface->name, std::move(surface)));
         }
 
         vec.emplace_back(ctx.add_labeled_asset(mesh->name, std::move(mesh)));
@@ -861,11 +868,11 @@ static auto load_scenes(
 
 auto GltfLoader::load(
     LoadContext&& ctx,
-    std::optional<ConfigType> config
+    std::optional<ConfigType>
 ) const -> AssetLoadError {
     log::debug("Loading a new gltf file from {}", ctx.path());
 
-    const auto config_ = config.value_or(ConfigType{ });
+    // const auto config_ = config.value_or(ConfigType{ });
 
     // @formatter:off
     struct cgltf_delete { auto operator()(cgltf_data* data) const -> void { cgltf_free(data); } };
@@ -882,7 +889,7 @@ auto GltfLoader::load(
                 const auto result = cgltf_parse_file(&options, p.string().c_str(), &raw);
                 result != cgltf_result_success
             ) {
-                log::warn("Could not parse gltf at {}, cgltf_result code: {}", result);
+                log::warn("Could not parse gltf at {}, cgltf_result code: {}", (usize)result);
                 return std::nullopt;
             }
 
@@ -890,7 +897,7 @@ auto GltfLoader::load(
                 const auto result = cgltf_validate(raw);
                 result != cgltf_result_success
             ) {
-                log::warn("Could not validate gltf at {}, cgltf_result code: {}", result);
+                log::warn("Could not validate gltf at {}, cgltf_result code: {}", (usize)result);
                 cgltf_free(raw);
                 return std::nullopt;
             }
@@ -899,7 +906,7 @@ auto GltfLoader::load(
                 const auto result = cgltf_load_buffers(&options, raw, p.string().c_str());
                 result != cgltf_result_success
             ) {
-                log::warn("Could not load gltf at {}, cgltf_result code: {}", result);
+                log::warn("Could not load gltf at {}, cgltf_result code: {}", (usize)result);
                 cgltf_free(raw);
                 return std::nullopt;
             }
@@ -909,7 +916,7 @@ auto GltfLoader::load(
     ).value_or(nullptr);
 
     if (!data) {
-        log::warn("Could not load gltf at {}, vfs path {} does not exist.", ctx.path());
+        log::warn("Could not load gltf at {}, vfs path does not exist.", ctx.path());
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 

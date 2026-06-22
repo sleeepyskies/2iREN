@@ -36,7 +36,7 @@ int main() {
 
     const auto pipeline = device->create_graphics_pipeline({
         .label = std::nullopt,
-        .layout = surface->layout,
+        .layout = surface->vertex_buffer.layout,
         .shader = shader_asset->shader.handle(),
         .topology = siren::PrimitiveTopology::Triangles,
         .alpha_mode = siren::AlphaMode::Opaque,
@@ -60,8 +60,8 @@ int main() {
             });
 
             pass.bind_graphics_pipeline(pipeline.handle());
-            pass.bind_vertex_buffer(surface->vertex_buffer.handle(), 0, 0);
-            pass.bind_index_buffer(surface->index_buffer.handle(), surface->index_format);
+            pass.bind_vertex_buffer(surface->vertex_buffer.data.handle(), 0, 0);
+            pass.bind_index_buffer(surface->index_buffer.data.handle(), surface->index_buffer.format);
             pass.draw_indexed(0, 3);
 
             cmds.consume_render_pass(pass.finish());

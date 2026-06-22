@@ -176,14 +176,14 @@ public:
         log::debug("Attempting to add new asset of type {}", typename_of<A>());
 
         return m_data.storage.run_exclusive(
-            [asset = std::move(asset)] (auto& storage){
+            [asset = std::move(asset)] (auto& storage) mutable {
                 const auto it = storage.find(AssetID::type_id<A>());
-                if (it == storage->end()) {
+                if (it == storage.end()) {
                     log::error("Could not find an appropriate asset pool for type {}", typename_of<A>());
                     return StrongHandle<A>::invalid();
                 }
-                auto pool        = static_cast<AssetPool<A>*>(it->second.get());
-                const AssetID id = pool->add(std::forward<std::unique_ptr<A>>(asset));
+                auto& pool = pool_cast<A>(it->second.get());
+                const AssetID id = pool.add(std::forward<std::unique_ptr<A>>(asset));
                 // todo: can we handle non disk assets better, for example a UUID
                 return StrongHandle<A>{ id, pool, AssetPath::invalid() };
             }
@@ -396,8 +396,12 @@ public:
         pool.link(m_handle.id(), std::move(asset));
     }
 
+    /** @brief Returns the @ref AssetPath this LoadContext was created for. */
     [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& { return m_handle.path(); }
+    /** @brief Returns the @ref Device this LoadContext is using. */
     [[nodiscard]] constexpr auto device() noexcept -> Device& { return m_device; }
+    /** @brief Returns the @ref WeakHandle this LoadContext was made to load an asset for. */
+    [[nodiscard]] constexpr auto handle() noexcept -> WeakHandle { return m_handle; }
 
 private:
     auto notify_dependents(
