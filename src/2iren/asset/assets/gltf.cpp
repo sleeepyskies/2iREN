@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "2iren/asset/asset_server.hpp"
+#include "2iren/asset/asset_utils.hpp"
 #include "2iren/rhi/device.hpp"
 #include "2iren/util/cgltf.cpp"
 #include "2iren/util/filesystem.hpp"
@@ -41,6 +42,21 @@ static auto gltf_attribute_to_siren(const u32 attribute) -> Attribute {
         case cgltf_attribute_type_invalid:
         case cgltf_attribute_type_max_enum:
         default: UNREACHABLE("Could not convert cgltf attribute type to native 2iren type.");
+    }
+}
+
+static auto gltf_type_to_siren(const cgltf_component_type type) -> DataType {
+    switch (type) {
+        case cgltf_component_type_r_8: return DataType::Int8;
+        case cgltf_component_type_r_8u: return DataType::UInt8;
+        case cgltf_component_type_r_16: return DataType::Int16;
+        case cgltf_component_type_r_16u: return DataType::UInt16;
+        case cgltf_component_type_r_32u: return DataType::UInt32;
+        case cgltf_component_type_r_32f: return DataType::Float32;
+
+        case cgltf_component_type_max_enum:
+        case cgltf_component_type_invalid:
+        default: UNREACHABLE("Could not convert cgltf_component_type to 2iren DataType");
     }
 }
 
@@ -444,13 +460,103 @@ static auto load_materials(
     return vec;
 }
 
+static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadError {
+    if (primitve.type != cgltf_primitive_type_triangles) {
+        log::warn(
+            "2iren only supports primitive type triangles. Encountered cgltf_primitive_type: {}", (u32)primitve.type
+        );
+        return std::unexpected(AssetErrorCode::NotSupported);
+    }
+
+    if (primitve.has_draco_mesh_compression) {
+        log::warn("2iren does not support draco gltf mesh compression.");
+        return std::unexpected(AssetErrorCode::NotSupported);
+    }
+
+    if (!primitve.attributes) {
+        log::error("gltf primitive contains no vertex attributes.");
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
+    }
+
+    return { };
+}
+
+static auto check_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError {
+    if (!indices) {
+        log::warn("2iren does not support gltf meshes without indices.");
+        return std::unexpected(AssetErrorCode::NotSupported);
+    }
+
+    if (indices->component_type != cgltf_component_type_r_32u) {
+        log::warn("2iren only suports uint32 indices, found cgltf_component_type: {}.", (u32)indices->component_type);
+        return std::unexpected(AssetErrorCode::NotSupported);
+    }
+
+    if (indices->type != cgltf_type_scalar) {
+        log::warn("gltf mesh has non scalar indices.");
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
+    }
+
+    if (!indices->buffer_view
+        || !indices->buffer_view->buffer
+        || !indices->buffer_view->buffer->data
+    ) {
+        log::error("gltf mesh indices point to missing or invalid buffer data.");
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
+    }
+
+    return { };
+}
+
+/// @todo: support not just uint32 here
+static auto load_index_buffer(
+    const cgltf_accessor* indices,
+    Device& device
+) -> std::expected<Buffer, AssetErrorCode> {
+
+    if (const auto res = check_gltf_indices(indices); !res) {
+        return std::unexpected(res.error());
+    }
+
+    const auto buffer_view = indices->buffer_view;
+
+    auto idx_data = read_buffer_data(
+        static_cast<const u8*>(buffer_view->buffer->data),
+        indices->offset + buffer_view->offset,
+        indices->count,
+        buffer_view->stride,
+        4,
+        1
+    );
+
+    return device.create_buffer({
+        .label = std::nullopt,
+        .data = std::move(idx_data),
+        .size = idx_data.size(),
+        .usage = BufferUsage::Static,
+    });
+}
+
+static auto load_vertex_layout(const cgltf_primitive& primitive) -> Layout {
+    auto layout_builder = LayoutBuilder::start();
+    for (u32 i = 0; i < primitive.attributes_count; i++) {
+        const auto& gltf_attribute = primitive.attributes[i];
+        const auto& accessor       = gltf_attribute.data;
+
+        layout_builder.add(
+            gltf_attribute_to_siren(gltf_attribute.type),
+            cgltf_num_components(accessor->type),
+            gltf_type_to_siren(accessor->component_type)
+        );
+    }
+    return layout_builder.finish();
+}
+
 static auto load_meshes(
     const cgltf_data* data,
     const std::vector<StrongHandle<PBRMaterialAsset>>& materials,
     LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
-    // todo: i think the whole buffer reading logic needs to be redone lmao. for like the 4th time now
-
     NameIDGenerator name_gen{ .fallback = "Mesh" };
 
     std::vector<StrongHandle<Mesh>> vec;
@@ -458,54 +564,31 @@ static auto load_meshes(
 
     for (usize mesh_idx = 0; mesh_idx < data->meshes_count; mesh_idx++) {
         const auto& gltf_mesh = data->meshes[mesh_idx];
-        const auto name       = name_gen.next(gltf_mesh.name);
-        std::vector<StrongHandle<Surface>> surfaces;
-        surfaces.reserve(gltf_mesh.primitives_count);
+
         auto mesh  = std::make_unique<Mesh>();
-        mesh->name = name;
+        mesh->name = name_gen.next(gltf_mesh.name);
+        mesh->surfaces.reserve(gltf_mesh.primitives_count);
 
-        for (i32 prim_idx = 0; prim_idx < gltf_mesh.primitives_count; prim_idx++) {
+        for (usize prim_idx = 0; prim_idx < gltf_mesh.primitives_count; prim_idx++) {
+            // get the relevant primitive, aka the relevant Surface. then validate
             const auto& gltf_prim = gltf_mesh.primitives[prim_idx];
-            // only support triangles
-            if (gltf_prim.type != cgltf_primitive_type_triangles) {
-                return std::unexpected(AssetErrorCode::NotSupported);
+            if (const auto res = check_gltf_primitive(gltf_prim); !res) {
+                return std::unexpected(res.error());
             }
 
-            // dont support any compression
-            if (gltf_prim.has_draco_mesh_compression) {
-                return std::unexpected(AssetErrorCode::NotSupported);
+            // load and validate index buffer
+            auto index_buffer = load_index_buffer(gltf_prim.indices, ctx.device());
+            if (!index_buffer) {
+                return std::unexpected(index_buffer.error());
             }
 
-            const auto gltf_indices = gltf_prim.indices;
-            if (!gltf_indices) {
-                return std::unexpected(AssetErrorCode::NotSupported);
-            }
+            // parse vertex buffer layout
+            const auto layout = load_vertex_layout(gltf_prim);
 
-            if (gltf_indices->component_type != cgltf_component_type_r_32u) {
-                return std::unexpected(AssetErrorCode::NotSupported);
-            }
-            if (gltf_indices->type != cgltf_type_scalar) {
-                return std::unexpected(AssetErrorCode::NotSupported);
-            }
-            if (gltf_indices->type != cgltf_type_scalar)
-                if (!gltf_indices->buffer_view
-                    || !gltf_indices->buffer_view->buffer
-                    || !gltf_indices->buffer_view->buffer->data
-                ) { return std::unexpected(AssetErrorCode::NotSupported); }
-            if (!gltf_prim.attributes) {
-                return std::unexpected(AssetErrorCode::NotSupported);
-            }
+            // load vertex data according to layout
+            for (const auto& component: layout.components) {
 
-            const auto idx_buffer_view = gltf_indices->buffer_view;
-
-            auto idx_data = read_buffer_data(
-                static_cast<const u8*>(idx_buffer_view->buffer->data),
-                gltf_indices->offset + idx_buffer_view->offset,
-                gltf_indices->count,
-                idx_buffer_view->stride,
-                4,
-                1
-            );
+            }
 
             std::vector<Attribute> attr_list;
             std::vector<u8> positions;  // vec3
@@ -514,6 +597,7 @@ static auto load_meshes(
             std::vector<u8> bitangents; // vec3
             std::vector<u8> textures;   // vec2
             std::vector<u8> colors;     // vec4
+
             u32 element_count = 0;
             for (u32 attr_idx = 0; attr_idx < gltf_prim.attributes_count; attr_idx++) {
                 const auto& gltf_attribute      = gltf_prim.attributes[attr_idx];
@@ -584,7 +668,7 @@ static auto load_meshes(
 
             ByteBuffer bytes;
             VertexBufferBuilder vbb{ VertexLayout{ std::move(attr_list) } };
-            for (u32 elem_idx = 0; elem_idx < element_count; elem_idx++) {
+            for (usize elem_idx = 0; elem_idx < element_count; elem_idx++) {
                 vbb.push_vertex(
                     {
                         .position = get_element.operator()<glm::vec3>(positions, elem_idx),
@@ -598,17 +682,9 @@ static auto load_meshes(
             }
 
             const auto& material_handle = materials[gltf_prim.material - data->materials];
-            // todo: add name here
-            auto index_buffer = ctx.device().create_buffer({
-                .label = std::nullopt,
-                .data = std::move(idx_data),
-                .size = idx_data.size(),
-                .usage = BufferUsage::Static,
-            });
 
             BufferParams vb_params = vbb.build();
-            const u32 data_size    = vb_params.data.size();
-            // todo: add name here
+            const usize data_size    = vb_params.data.size();
             auto vertex_buffer = ctx.device().create_buffer({
                 .label = std::nullopt,
                 .data = std::move(vb_params.data),
@@ -625,9 +701,7 @@ static auto load_meshes(
             mesh->surfaces.push_back(handle);
         }
 
-        mesh->surfaces = std::move(surfaces);
-
-        vec.emplace_back(ctx.add_labeled_asset(name, std::move(mesh)));
+        vec.emplace_back(ctx.add_labeled_asset(mesh->name, std::move(mesh)));
     }
 
     return vec;
@@ -740,7 +814,7 @@ static auto load_nodes(
         if (gltf_node.parent) {
             const auto parent_idx = get_node_idx(gltf_node.parent);
             auto& parent_handle   = vec[parent_idx].first;
-            node->parent          = parent_handle.as_weak();
+            node->parent          = make_weak(parent_handle);
         }
 
         std::vector<StrongHandle<GltfNode>> children;
@@ -794,75 +868,117 @@ static auto load_scenes(
     return vec;
 }
 
-auto GltfLoader::load(LoadContext&& ctx, const LoaderConfig& config) const -> std::expected<void, Error> {
-    if (!std::holds_alternative<GltfLoaderConfig>(config)) { return std::unexpected(Error(Code::LogicFail)); }
-    const auto config_ = std::get<GltfLoaderConfig>(config);
+auto GltfLoader::load(
+    LoadContext&& ctx,
+    std::optional<ConfigType> config
+) const -> AssetLoadError {
+    log::debug("Loading a new gltf file from {}", ctx.path());
+
+    const auto config_ = config.value_or(ConfigType{ });
 
     // @formatter:off
     struct cgltf_delete { auto operator()(cgltf_data* data) const -> void { cgltf_free(data); } };
     using cgltf_ptr = std::unique_ptr<cgltf_data, cgltf_delete>;
     // @formatter:on
 
-    const auto data = FileSystem::to_physical(ctx.path().path()).and_then(
+    // load the gltf file using cgltf
+    const auto data = FileSystem::to_physical(ctx.path().full_path()).and_then(
         [] (const Path& p) -> std::optional<cgltf_ptr>{
-            cgltf_data* data = nullptr;
-            constexpr cgltf_options options{ };
+            cgltf_data* raw = nullptr;
+            cgltf_options options{ };
 
-            if (cgltf_parse_file(&options, p.string().c_str(), &data) != cgltf_result_success) { return std::nullopt; }
-
-            if (cgltf_validate(data) != cgltf_result_success) {
-                cgltf_free(data);
+            if (
+                const auto result = cgltf_parse_file(&options, p.string().c_str(), &raw);
+                result != cgltf_result_success
+            ) {
+                log::warn("Could not parse gltf at {}, cgltf_result code: {}", result);
                 return std::nullopt;
             }
 
-            if (cgltf_load_buffers(&options, data, p.string().c_str()) != cgltf_result_success) {
-                cgltf_free(data);
+            if (
+                const auto result = cgltf_validate(raw);
+                result != cgltf_result_success
+            ) {
+                log::warn("Could not validate gltf at {}, cgltf_result code: {}", result);
+                cgltf_free(raw);
                 return std::nullopt;
             }
 
-            return cgltf_ptr(data);
+            if (
+                const auto result = cgltf_load_buffers(&options, raw, p.string().c_str());
+                result != cgltf_result_success
+            ) {
+                log::warn("Could not load gltf at {}, cgltf_result code: {}", result);
+                cgltf_free(raw);
+                return std::nullopt;
+            }
+
+            return cgltf_ptr(raw);
         }
     ).value_or(nullptr);
 
-    if (!data) { return std::unexpected(Error(Code::AssetCorrupted)); }
+    if (!data) {
+        log::warn("Could not load gltf at {}, vfs path {} does not exist.", ctx.path());
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
+    }
 
     const auto textures_ = load_textures(data.get(), ctx);
-    if (!textures_.has_value()) { return std::unexpected(textures_.error()); }
+    if (!textures_.has_value()) {
+        log::warn("Could not load gltf at {}, textures could not be loaded.", ctx.path());
+        return std::unexpected(textures_.error());
+    }
     std::vector<StrongHandle<Texture>> textures = textures_.value();
 
     const auto materials_ = load_materials(data.get(), textures, ctx);
-    if (!materials_.has_value()) { return std::unexpected(materials_.error()); }
-    std::vector<StrongHandle<PBRMaterial>> materials = materials_.value();
+    if (!materials_.has_value()) {
+        log::warn("Could not load gltf at {}, materials could not be loaded.", ctx.path());
+        return std::unexpected(materials_.error());
+    }
+    std::vector<StrongHandle<PBRMaterialAsset>> materials = materials_.value();
 
     const auto meshes_ = load_meshes(data.get(), materials, ctx);
-    if (!meshes_.has_value()) { return std::unexpected(meshes_.error()); }
+    if (!meshes_.has_value()) {
+        log::warn("Could not load gltf at {}, meshes could not be loaded.", ctx.path());
+        return std::unexpected(meshes_.error());
+    }
     std::vector<StrongHandle<Mesh>> meshes = meshes_.value();
 
     const auto cameras_ = load_cameras(data.get());
-    if (!cameras_.has_value()) { return std::unexpected(cameras_.error()); }
+    if (!cameras_.has_value()) {
+        log::warn("Could not load gltf at {}, cameras could not be loaded.", ctx.path());
+        return std::unexpected(cameras_.error());
+    }
     std::vector<SceneCamera> cameras = cameras_.value();
 
     const auto nodes_ = load_nodes(data.get(), meshes, cameras, ctx);
-    if (!nodes_.has_value()) { return std::unexpected(nodes_.error()); }
+    if (!nodes_.has_value()) {
+        log::warn("Could not load gltf at {}, nodes could not be loaded.", ctx.path());
+        return std::unexpected(nodes_.error());
+    }
     std::vector<StrongHandle<GltfNode>> nodes = nodes_.value();
 
-    const auto scenes_result = load_scenes(data.get(), nodes, ctx);
-    if (!scenes_result.has_value()) { return std::unexpected(scenes_result.error()); }
-    std::vector<StrongHandle<GltfScene>> scenes = scenes_result.value();
+    const auto scenes_ = load_scenes(data.get(), nodes, ctx);
+    if (!scenes_.has_value()) {
+        log::warn("Could not load gltf at {}, scenes could not be loaded.", ctx.path());
+        return std::unexpected(scenes_.error());
+    }
+    std::vector<StrongHandle<GltfScene>> scenes = scenes_.value();
 
     std::optional<StrongHandle<GltfScene>> default_scene;
     if (data->scene) { default_scene = scenes[data->scene - data->scenes]; }
 
-    auto gltf = std::make_unique<Gltf>(
-        std::move(scenes),
-        std::move(default_scene),
-        std::move(meshes),
-        std::move(materials),
-        std::move(nodes),
-        std::move(cameras)
+    ctx.finish(
+        std::make_unique<Gltf>(
+            std::move(scenes),
+            std::move(default_scene),
+            std::move(meshes),
+            std::move(materials),
+            std::move(nodes),
+            std::move(cameras)
+        )
     );
 
-    ctx.finish(std::move(gltf));
+    log::debug("gltf file successfully loaded into asset {}", ctx.handle());
 
     return { };
 }
