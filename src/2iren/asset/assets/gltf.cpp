@@ -15,6 +15,9 @@
 /// For a brief overview of GLTF see: https://www.khronos.org/files/gltf20-reference-guide.pdf
 
 // todo: LOGGING PLESE WOULD HELP SO MUCH HERE
+// todo:
+//      we do a mix of assertions and error handling here, but not consitently.
+//      i should at some point go through code and make consistent.
 
 struct NameIDGenerator {
     std::string fallback = "Unnamed";
@@ -23,13 +26,14 @@ struct NameIDGenerator {
         if (name) { return name; }
         return fallback + "_" + std::to_string(count++);
     }
+    auto next() -> std::string { return next(nullptr); }
 };
 
 namespace siren {
 // ============================================================================
 // == MARK: Mappings
 // ============================================================================
-static auto gltf_attribute_to_siren(const u32 attribute) -> Attribute {
+static auto gltf_attribute_to_siren(const cgltf_attribute_type attribute) -> Attribute {
     switch (attribute) {
         case cgltf_attribute_type_position: return Attribute::Position;
         case cgltf_attribute_type_normal: return Attribute::Normal;
@@ -42,6 +46,23 @@ static auto gltf_attribute_to_siren(const u32 attribute) -> Attribute {
         case cgltf_attribute_type_invalid:
         case cgltf_attribute_type_max_enum:
         default: UNREACHABLE("Could not convert cgltf attribute type to native 2iren type.");
+    }
+}
+
+static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFormat {
+    switch (type) {
+        case cgltf_component_type_r_8u: return IndexFormat::UInt8;
+        case cgltf_component_type_r_16u: return IndexFormat::UInt16;
+        case cgltf_component_type_r_32u: return IndexFormat::UInt32;
+
+        case cgltf_component_type_r_8:
+        case cgltf_component_type_r_16:
+        case cgltf_component_type_r_32f: PANIC("Attempted to define either a Int8, Int16 or Float32 as an index type.");
+
+
+        case cgltf_component_type_max_enum:
+        case cgltf_component_type_invalid:
+        default: UNREACHABLE("Could not convert cgltf_component_type to 2iren DataType");
     }
 }
 
@@ -116,30 +137,6 @@ static auto gltf_alpha_mode_to_siren(const i32 alpha_mode) -> AlphaMode {
 // ============================================================================
 // == MARK: Helper functions
 // ============================================================================
-
-static auto read_buffer_data(
-    const u8* buf,
-    const u32 offset,
-    const u32 count,
-    const u32 stride,
-    const u32 component_size,
-    const u32 num_components
-) -> std::vector<u8> {
-    std::vector<u8> vec;
-    const u32 elem_size = component_size * num_components;
-    const u32 stride_   = stride == 0 ? elem_size : stride; // if 0, data is tightly packed
-    vec.resize(count * elem_size);
-
-    u32 dest_offset = 0;
-    u32 src_offset  = offset;
-    for (u32 i = 0; i < count; i++) {
-        std::memcpy(vec.data() + dest_offset, buf + src_offset, elem_size);
-        dest_offset += elem_size;
-        src_offset += stride_;
-    }
-
-    return vec;
-}
 
 static auto parse_sampler(const cgltf_sampler* sampler, Device& device) -> Sampler {
     // use default sampler if none is provided.
@@ -481,7 +478,7 @@ static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadEr
     return { };
 }
 
-static auto check_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError {
+static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError {
     if (!indices) {
         log::warn("2iren does not support gltf meshes without indices.");
         return std::unexpected(AssetErrorCode::NotSupported);
@@ -508,38 +505,50 @@ static auto check_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError 
     return { };
 }
 
-/// @todo: support not just uint32 here
 static auto load_index_buffer(
     const cgltf_accessor* indices,
     Device& device
-) -> std::expected<Buffer, AssetErrorCode> {
+) -> std::expected<IndexBuffer, AssetErrorCode> {
+    // not that 2iren only supports 32-bit unsinged integers for now as indices.
+    // at the end of the day, this probably doesnt matter too much, but it would b nice to maybe
+    // support lower bit indices?
 
-    if (const auto res = check_gltf_indices(indices); !res) {
+    if (const auto res = validate_gltf_indices(indices); !res) {
         return std::unexpected(res.error());
     }
 
-    const auto buffer_view = indices->buffer_view;
+    const usize index_count = indices->count;
+    ByteBuffer buffer;
+    const usize unpacked_count = cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(f32), index_count);
+    ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
-    auto idx_data = read_buffer_data(
-        static_cast<const u8*>(buffer_view->buffer->data),
-        indices->offset + buffer_view->offset,
-        indices->count,
-        buffer_view->stride,
-        4,
-        1
-    );
-
-    return device.create_buffer({
-        .label = std::nullopt,
-        .data = std::move(idx_data),
-        .size = idx_data.size(),
-        .usage = BufferUsage::Static,
-    });
+    return IndexBuffer {
+        .data = device.create_buffer({
+                .label = std::nullopt,
+                .data = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
+                .size = buffer.size_bytes(),
+                .usage = BufferUsage::Static,
+            }),
+        .count = index_count,
+        .format = IndexFormat::UInt32,
+    };
 }
 
-static auto load_vertex_layout(const cgltf_primitive& primitive) -> Layout {
+static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
+    // we enforce a default vertex layout atm in 2iren. This means, every vertex buffer
+    // is built the same, even if the gltf file only specifies a position attribute.
+    return LayoutBuilder::start()
+          .add(Attribute::Position, 4, DataType::Float32)
+          .add(Attribute::Normal, 4, DataType::Float32)
+          .add(Attribute::Color, 3, DataType::Float32)
+          .add(Attribute::Texture, 2, DataType::Float32)
+          .add(Attribute::Tangent, 4, DataType::Float32)
+          .finish();
+
+    // code below returns the actual layout
+    /*
     auto layout_builder = LayoutBuilder::start();
-    for (u32 i = 0; i < primitive.attributes_count; i++) {
+    for (usize i = 0; i < primitive.attributes_count; i++) {
         const auto& gltf_attribute = primitive.attributes[i];
         const auto& accessor       = gltf_attribute.data;
 
@@ -550,6 +559,91 @@ static auto load_vertex_layout(const cgltf_primitive& primitive) -> Layout {
         );
     }
     return layout_builder.finish();
+    */
+}
+
+static auto load_vertex_buffer(
+    const cgltf_primitive& primitive,
+    Device& device
+) -> VertexBuffer {
+    // when loading a vertex buffer, we enforce that each attribute exists. This means
+    // we write dummy data into the vertex buffer for any attributes missing in the actual
+    // underlying gltf buffers. Eventually, shader permuations would be nice, but for now we do this.
+
+    // first, load layout
+    const auto layout = load_vertex_layout(primitive);
+
+    // then validate attribute size
+    const usize count = primitive.attributes[0].data->count;
+    for (usize i = 0; i < primitive.attributes_count; i++) {
+        ASSERT(count == primitive.attributes[i].data->count, "gltf vertex attributes must all have the same count!");
+    }
+
+    ByteBuffer buffer;
+    buffer.reserve_bytes(layout.stride * count); // size of a single vertex * number of vertices
+
+    // get all accessors
+    cgltf_accessor* positions  = nullptr;
+    cgltf_accessor* normals    = nullptr;
+    cgltf_accessor* colors     = nullptr;
+    cgltf_accessor* textures   = nullptr;
+    cgltf_accessor* tangents   = nullptr;
+
+    for (usize i = 0; i < primitive.attributes_count; i++) {
+        const auto& attribute = primitive.attributes[i];
+        switch (const auto type = attribute.type) {
+            case cgltf_attribute_type_position: positions = primitive.attributes->data; break;
+            case cgltf_attribute_type_normal: normals = primitive.attributes->data; break;
+            case cgltf_attribute_type_color: colors = primitive.attributes->data; break;
+            case cgltf_attribute_type_texcoord: textures = primitive.attributes->data; break;
+            case cgltf_attribute_type_tangent: tangents = primitive.attributes->data; break;
+
+            case cgltf_attribute_type_joints:
+            case cgltf_attribute_type_weights:
+            case cgltf_attribute_type_custom: {
+                log::warn("gltf attribute contains unsupported cgltf_attribute_type: {}, skipping this.", (usize)type);
+                break;
+            }
+
+            case cgltf_attribute_type_invalid:
+            case cgltf_attribute_type_max_enum: PANIC("gltf file contains invalid attribute type.");
+        }
+    }
+
+    ASSERT(positions, "Surface does not contain a positional attribute!");
+
+    for (usize i = 0; i < count; i++) {
+        std::array<f32, 4> position = { 0.f, 0.f, 0.f, 0.f };
+        cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
+        buffer.append(position);
+
+        std::array<f32, 4> normal = { 0.f, 1.f, 1.f, 1.f };
+        cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
+        buffer.append(normal);
+
+        std::array<f32, 3> color = { 0.5f, 0.f, 0.5f };
+        cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 3);
+        buffer.append(color);
+
+
+        std::array<f32, 2> texture = { 0.f, 0.f, };
+        cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 3);
+        buffer.append(texture);
+
+        std::array<f32, 4> tangent = { 1.f, 0.f, 0.f, 1.f };
+        cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
+        buffer.append(tangent);
+    }
+
+    return VertexBuffer {
+        .data = device.create_buffer({
+            .label = std::nullopt,
+            .data = buffer.data(), // todo: also does a copy here fuck
+            .size = buffer.size_bytes(),
+            .usage = BufferUsage::Static,
+        }),
+        .layout = layout,
+    };
 }
 
 static auto load_meshes(
@@ -562,6 +656,7 @@ static auto load_meshes(
     std::vector<StrongHandle<Mesh>> vec;
     vec.reserve(data->meshes_count);
 
+    // iterate over each mesh inside the file
     for (usize mesh_idx = 0; mesh_idx < data->meshes_count; mesh_idx++) {
         const auto& gltf_mesh = data->meshes[mesh_idx];
 
@@ -569,6 +664,7 @@ static auto load_meshes(
         mesh->name = name_gen.next(gltf_mesh.name);
         mesh->surfaces.reserve(gltf_mesh.primitives_count);
 
+        // iterate each surface of the individual meshes
         for (usize prim_idx = 0; prim_idx < gltf_mesh.primitives_count; prim_idx++) {
             // get the relevant primitive, aka the relevant Surface. then validate
             const auto& gltf_prim = gltf_mesh.primitives[prim_idx];
@@ -582,123 +678,18 @@ static auto load_meshes(
                 return std::unexpected(index_buffer.error());
             }
 
-            // parse vertex buffer layout
-            const auto layout = load_vertex_layout(gltf_prim);
-
             // load vertex data according to layout
-            for (const auto& component: layout.components) {
-
-            }
-
-            std::vector<Attribute> attr_list;
-            std::vector<u8> positions;  // vec3
-            std::vector<u8> normals;    // vec3
-            std::vector<u8> tangents;   // vec3
-            std::vector<u8> bitangents; // vec3
-            std::vector<u8> textures;   // vec2
-            std::vector<u8> colors;     // vec4
-
-            u32 element_count = 0;
-            for (u32 attr_idx = 0; attr_idx < gltf_prim.attributes_count; attr_idx++) {
-                const auto& gltf_attribute      = gltf_prim.attributes[attr_idx];
-                const auto attribute = gltf_attribute_to_siren(gltf_attribute.type);
-                attr_list.push_back(attribute);
-                const auto& prim_accessor    = gltf_attribute.data;
-                const auto& prim_buffer_view = prim_accessor->buffer_view;
-                const auto& prim_buffer      = prim_buffer_view->data;
-
-                const auto src            = static_cast<const u8*>(prim_buffer);
-                const auto offset         = prim_accessor->offset + prim_buffer_view->offset;
-                const auto count          = prim_accessor->count;
-                const auto stride         = prim_buffer_view->stride;
-                const auto component_size = cgltf_component_size(prim_accessor->component_type);
-                const auto num_components = cgltf_num_components(prim_accessor->type);
-                element_count             = glm::max(element_count, (u32)prim_accessor->count);
-
-                switch (attribute) {
-                    case Attribute::Position: {
-                        if (component_size != 4 || num_components != 3) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        positions = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                    case Attribute::Normal: {
-                        if (component_size != 4 || num_components != 3) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        normals = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                    case Attribute::Tangent: {
-                        if (component_size != 4 || num_components != 3) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        tangents = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                    case Attribute::Bitangent: {
-                        if (component_size != 4 || num_components != 3) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        bitangents = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                    case Attribute::Texture: {
-                        if (component_size != 4 || num_components != 2) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        textures = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                    case Attribute::Color: {
-                        if (component_size != 4 || num_components != 4) {
-                            return std::unexpected(AssetErrorCode::AssetCorrupted);
-                        }
-                        colors = read_buffer_data(src, offset, count, stride, component_size, num_components);
-                        break;
-                    }
-                }
-            }
-
-            const auto get_element = []<typename T> (const std::vector<u8>& buf, const u32 idx) -> T{
-                if (buf.empty()) { return T{ 0 }; }
-                return reinterpret_cast<const T*>(buf.data())[idx];
-            };
-
-            ByteBuffer bytes;
-            VertexBufferBuilder vbb{ VertexLayout{ std::move(attr_list) } };
-            for (usize elem_idx = 0; elem_idx < element_count; elem_idx++) {
-                vbb.push_vertex(
-                    {
-                        .position = get_element.operator()<glm::vec3>(positions, elem_idx),
-                        .normal = get_element.operator()<glm::vec3>(normals, elem_idx),
-                        .tangent = get_element.operator()<glm::vec3>(tangents, elem_idx),
-                        .bitangent = get_element.operator()<glm::vec3>(bitangents, elem_idx),
-                        .texture = get_element.operator()<glm::vec2>(textures, elem_idx),
-                        .color = get_element.operator()<glm::vec4>(colors, elem_idx),
-                    }
-                );
-            }
+            const auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
             const auto& material_handle = materials[gltf_prim.material - data->materials];
 
-            BufferParams vb_params = vbb.build();
-            const usize data_size    = vb_params.data.size();
-            auto vertex_buffer = ctx.device().create_buffer({
-                .label = std::nullopt,
-                .data = std::move(vb_params.data),
-                .size = data_size,
-                .usage = BufferUsage::Static,
-            });
             auto surface = std::make_unique<Surface>(
+                surface_name,
                 material_handle,
-                std::move(index_buffer),
-                std::move(vertex_buffer),
-                (u32)gltf_indices->count
+                index_buffer,
+                vertex_buffer
             );
-            const auto handle = ctx.add_labeled_asset(name, std::move(surface));
-            mesh->surfaces.push_back(handle);
+            mesh->surfaces.emplace_back(ctx.add_labeled_asset(surface_label, std::move(surface)));
         }
 
         vec.emplace_back(ctx.add_labeled_asset(mesh->name, std::move(mesh)));
