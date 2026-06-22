@@ -41,6 +41,7 @@ add_library(
         src/2iren/asset/asset_server.cpp
         src/2iren/asset/assets/shader.cpp
         src/2iren/asset/assets/gltf.cpp
+        src/2iren/asset/assets/pbr_material.cpp
 
         src/2iren/window.cpp
 

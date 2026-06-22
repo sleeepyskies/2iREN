@@ -2,6 +2,8 @@
 
 #include <string>
 #include <expected>
+#include <vector>
+#include <optional>
 
 #include "fwd.hpp"
 

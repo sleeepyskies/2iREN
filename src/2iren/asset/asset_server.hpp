@@ -351,16 +351,15 @@ public:
     auto load_external_asset(
         const std::string& asset_path,
         std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
-    ) -> StrongHandle<A> { return load_external_asset<A>(AssetPath::parse(asset_path), config); }
+    ) -> StrongHandle<A> { return load_external_asset<A>(AssetPath::parse(asset_path), std::move(config)); }
 
 
     template <IsAsset A>
-    [[nodiscard]]
-    auto load_external_asset(
+    [[nodiscard]] auto load_external_asset(
         const AssetPath& asset_path,
         std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
     ) -> StrongHandle<A> {
-        const StrongHandle<A> handle = m_server.load<A>(asset_path, config);
+        const StrongHandle<A> handle = m_server.load<A>(asset_path, std::move(config));
 
         // the asset_info should exist already, if it doesn't please crash, something went wrong :D
         auto asset_infos          = m_server.m_data.asset_infos.write();
@@ -461,8 +460,7 @@ template <IsAsset A>
     log::trace("Loading new asset from path {}", path);
 
     // generate new or fetch weak handle from cache
-    auto cached = search_cache<A>(path);
-    if (cached) {
+    if (const auto cached = search_cache<A>(path); cached) {
         return *cached;
     }
 
@@ -472,7 +470,6 @@ template <IsAsset A>
         log::warn("Could not load asset of type {}, as there exists no loader for it.", typename_of<A>());
         return StrongHandle<A>::invalid();
     }
-
 
     // generate a new handle
     const auto weak_handle = m_data.storage.run_exclusive([path](auto& storage) -> WeakHandle {
@@ -502,8 +499,8 @@ template <IsAsset A>
 
     // spawn new loading task
     ThreadPool::get().spawn_detached(
-        [this, path, loader, weak_handle, config = std::move(config)]{
-            loader->load(LoadContext{ *this, path, weak_handle, m_device }, config);
+        [this, path, loader, weak_handle, config = std::move(config)] mutable {
+            loader->load(LoadContext{ *this, path, weak_handle, m_device }, std::move(config));
         }
     );
 

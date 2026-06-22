@@ -188,9 +188,9 @@ static auto load_textures(
                 std::make_optional(
                     TextureLoader::ConfigType{
                         .name = name,
-                        .format = ImageFormat{},
+                        .format = ImageFormat{ },
                         .sampler = std::move(sampler),
-                        .array_layout = ImageArrayLayout{},
+                        .array_layout = ImageArrayLayout{ },
                         .is_srgb = false,
                         .generate_mipmap_levels = true,
                     }
@@ -880,40 +880,27 @@ auto GltfLoader::load(
     // @formatter:on
 
     // load the gltf file using cgltf
-    const auto data = FileSystem::to_physical(ctx.path().full_path()).and_then(
-        [] (const Path& p) -> std::optional<cgltf_ptr>{
-            cgltf_data* raw = nullptr;
-            cgltf_options options{ };
+    auto physical_path_opt = FileSystem::to_physical(ctx.path().full_path());
+    cgltf_data* raw = nullptr;
 
-            if (
-                const auto result = cgltf_parse_file(&options, p.string().c_str(), &raw);
-                result != cgltf_result_success
-            ) {
-                log::warn("Could not parse gltf at {}, cgltf_result code: {}", (usize)result);
-                return std::nullopt;
-            }
+    if (physical_path_opt) {
+        const Path& p = *physical_path_opt;
+        cgltf_options options{ };
 
-            if (
-                const auto result = cgltf_validate(raw);
-                result != cgltf_result_success
-            ) {
-                log::warn("Could not validate gltf at {}, cgltf_result code: {}", (usize)result);
-                cgltf_free(raw);
-                return std::nullopt;
-            }
-
-            if (
-                const auto result = cgltf_load_buffers(&options, raw, p.string().c_str());
-                result != cgltf_result_success
-            ) {
-                log::warn("Could not load gltf at {}, cgltf_result code: {}", (usize)result);
-                cgltf_free(raw);
-                return std::nullopt;
-            }
-
-            return cgltf_ptr(raw);
+        if (cgltf_parse_file(&options, p.string().c_str(), &raw) != cgltf_result_success) {
+            log::warn("Could not parse gltf at {}", p.string());
+        } else if (cgltf_validate(raw) != cgltf_result_success) {
+            log::warn("Could not validate gltf at {}", p.string());
+            cgltf_free(raw);
+            raw = nullptr;
+        } else if (cgltf_load_buffers(&options, raw, p.string().c_str()) != cgltf_result_success) {
+            log::warn("Could not load gltf buffers at {}", p.string());
+            cgltf_free(raw);
+            raw = nullptr;
         }
-    ).value_or(nullptr);
+    }
+
+    const auto data = cgltf_ptr(raw);
 
     if (!data) {
         log::warn("Could not load gltf at {}, vfs path does not exist.", ctx.path());
