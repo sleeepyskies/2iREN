@@ -24,13 +24,17 @@ enum class BufferUsage {
 /** @brief Defines the index format of an index buffer. */
 class IndexFormat {
 public:
-    enum Value : u8 { Byte8, Short16, Uint32 } value;
+    enum Value : u8 {
+        Uint8,
+        Uint16,
+        Uint32
+    } value;
 
     /** @brief Returns the size of this format in bytes. */
     [[nodiscard]] constexpr auto size_bytes() const -> usize {
         switch (value) {
-            case Byte8: return 1;
-            case Short16: return 2;
+            case Uint8: return 1;
+            case Uint16: return 2;
             case Uint32: return 4;
             default: UNREACHABLE();
         }
