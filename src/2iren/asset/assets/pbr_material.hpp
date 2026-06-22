@@ -3,7 +3,6 @@
 #include <string>
 
 #include "texture.hpp"
-#include "2iren/asset/asset.hpp"
 #include "2iren/asset/asset_handle.hpp"
 #include "2iren/rhi/resources/graphics_pipeline.hpp"
 
@@ -143,55 +142,55 @@ private:
     std::string m_name;
 
     RGBA m_base_color{ 1.0f };
-    f32 m_metallic  = 1.0f;
-    f32 m_roughness = 1.0f;
-    StrongHandle<Texture> m_base_color_tex;
-    StrongHandle<Texture> m_metallic_roughness_tex;
+    f32 m_metallic                                 = 1.0f;
+    f32 m_roughness                                = 1.0f;
+    StrongHandle<Texture> m_base_color_tex         = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_metallic_roughness_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_clear_coat           = 0.0f;
-    f32 m_clear_coat_roughness = 0.0f;
-    StrongHandle<Texture> m_clear_coat_tex;
-    StrongHandle<Texture> m_clear_coat_roughness_tex;
-    StrongHandle<Texture> m_clearcoat_normal_tex;
+    f32 m_clear_coat                                 = 0.0f;
+    f32 m_clear_coat_roughness                       = 0.0f;
+    StrongHandle<Texture> m_clear_coat_tex           = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_clear_coat_roughness_tex = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_clearcoat_normal_tex     = StrongHandle<Texture>::invalid();
 
-    f32 m_transmission = 0.0f;
-    StrongHandle<Texture> m_transmission_tex;
-    f32 m_thickness = 0.0f;
+    f32 m_transmission                       = 0.0f;
+    StrongHandle<Texture> m_transmission_tex = StrongHandle<Texture>::invalid();
+    f32 m_thickness                          = 0.0f;
     glm::vec3 m_attenuation_color{ 1.f };
-    f32 m_attenuation_distance = 0.0f;
-    StrongHandle<Texture> m_thickness_texture;
+    f32 m_attenuation_distance                = 0.0f;
+    StrongHandle<Texture> m_thickness_texture = StrongHandle<Texture>::invalid();
 
     f32 m_ior             = 1.5f;
     f32 m_specular_factor = 1.0f;
     glm::vec3 m_specular_color{ 1.f };
-    StrongHandle<Texture> m_specular_color_tex;
-    StrongHandle<Texture> m_specular_tex;
+    StrongHandle<Texture> m_specular_color_tex = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_specular_tex       = StrongHandle<Texture>::invalid();
 
     glm::vec3 m_sheen_color{ 0.f };
-    f32 m_sheen_roughness = 0.0f;
-    StrongHandle<Texture> m_sheen_color_tex;
-    StrongHandle<Texture> m_sheen_roughness_tex;
+    f32 m_sheen_roughness                       = 0.0f;
+    StrongHandle<Texture> m_sheen_color_tex     = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_sheen_roughness_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_iridescence_factor = 0.0f;
-    f32 m_iridescence_ior    = 1.3f;
-    f32 m_iridescence_min    = 100.0f;
-    f32 m_iridescence_max    = 400.0f;
-    StrongHandle<Texture> m_iridescence_tex;
-    StrongHandle<Texture> m_iridescence_thickness_tex;
+    f32 m_iridescence_factor                          = 0.0f;
+    f32 m_iridescence_ior                             = 1.3f;
+    f32 m_iridescence_min                             = 100.0f;
+    f32 m_iridescence_max                             = 400.0f;
+    StrongHandle<Texture> m_iridescence_tex           = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_iridescence_thickness_tex = StrongHandle<Texture>::invalid();
 
     f32 m_diffuse_transmission_factor = 0.0f;
     glm::vec3 m_diffuse_transmission_color{ 1.f };
-    StrongHandle<Texture> m_diffuse_transmission_tex;
-    StrongHandle<Texture> m_diffuse_transmission_color_tex;
+    StrongHandle<Texture> m_diffuse_transmission_tex       = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_diffuse_transmission_color_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_anisotropy_strength = 0.0f;
-    f32 m_anisotropy_rotation = 0.0f;
-    StrongHandle<Texture> m_anisotropy_tex;
-    f32 m_dispersion = 0.0f;
+    f32 m_anisotropy_strength              = 0.0f;
+    f32 m_anisotropy_rotation              = 0.0f;
+    StrongHandle<Texture> m_anisotropy_tex = StrongHandle<Texture>::invalid();
+    f32 m_dispersion                       = 0.0f;
 
-    StrongHandle<Texture> m_normal_tex;
-    StrongHandle<Texture> m_occlusion_tex;
-    StrongHandle<Texture> m_emissive_tex;
+    StrongHandle<Texture> m_normal_tex    = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_occlusion_tex = StrongHandle<Texture>::invalid();
+    StrongHandle<Texture> m_emissive_tex  = StrongHandle<Texture>::invalid();
     glm::vec3 m_emissive_color{ 0.f };
     f32 m_emissive_strength = 1.0f;
 
