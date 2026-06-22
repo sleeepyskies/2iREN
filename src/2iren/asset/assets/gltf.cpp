@@ -711,7 +711,9 @@ static auto load_meshes(
             // load vertex data according to layout
             auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
-            const auto& material_handle = materials[gltf_prim.material - data->materials];
+            const auto& material_handle = (gltf_prim.material == nullptr)
+                                              ? ctx.fetch_default<PBRMaterialAsset>()
+                                              : materials[gltf_prim.material - data->materials];
 
             auto surface = std::make_unique<Surface>(
                 surface_name_generator.next(),

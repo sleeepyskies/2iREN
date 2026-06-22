@@ -100,7 +100,7 @@ public:
      */
     template <typename Function>
         requires(std::is_invocable_v<Function, const T&>)
-    auto run(Function&& function) -> std::invoke_result_t<Function, const T&> {
+    auto run(Function&& function) const -> std::invoke_result_t<Function, const T&> {
         auto guard = read();
         return std::invoke(std::forward<Function>(function), *guard);
     }

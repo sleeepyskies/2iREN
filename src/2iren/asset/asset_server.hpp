@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -104,8 +105,19 @@ class AssetServer {
         RwLock<std::unordered_map<HashedString, AssetInfo>> asset_infos;
         /** @brief Main storage for asset data. */
         RwLock<std::unordered_map<TypeID, std::unique_ptr<AssetPoolBase>>> storage{ };
-        /** @brief All active loaders. */
+        /**
+         * @brief All active loaders.
+         * @note The reason we do not use any sync primitives here, is that Loaders are
+         * in principle stateless. Furthermore, we assume all loaders are registered at engine init.
+         * If this is not the case, and loaders are added at runtime, there can be issues.
+         */
         Loaders loaders;
+        /**
+         * @brief Cache of at most a single default handle per asset type.
+         * @todo do we have to use std::any? not great imo, but @ref WeakHandle is not ref counted,
+         * but StrongHandle is not type erased such that we can store in a container....
+         */
+        RwLock<std::unordered_map<TypeID, std::any>> default_handles{ };
     };
 
 public:
@@ -171,8 +183,8 @@ public:
 
     /** @brief Directly adds the provided asset into storage, if a pool exists for its type. */
     template <IsAsset A>
-    [[nodiscard]]
-    auto add(std::unique_ptr<A>&& asset) -> StrongHandle<A> {
+    [[nodiscard]] auto add(std::unique_ptr<A>&& asset) -> StrongHandle<A> {
+        ensure_asset_registered<A>();
         log::debug("Attempting to add new asset of type {}", typename_of<A>());
 
         return m_data.storage.run_exclusive(
@@ -235,6 +247,38 @@ public:
         for (const auto& ext : loader_ptr->extensions()) {
             loaders.ext_to_loader.insert({ std::string(ext), loader_ptr });
         }
+    }
+
+    /**
+     * @brief Fetches a handle to the default asset of type A, iff present.
+     * @tparam A The asset type to fetch a handle to the default asset for.
+     */
+    template <IsAsset A>
+    auto fetch_default() const -> StrongHandle<A> {
+        return m_data.default_handles.run([] (const std::unordered_map<TypeID, std::any>& default_handles){
+            const auto it = default_handles.find(AssetID::type_id<A>());
+            if (it == default_handles.end()) {
+                log::error("There exists no default for asset type {}, but it was requested.", typename_of<A>());
+                return StrongHandle<A>::invalid();
+            }
+            return std::any_cast<StrongHandle<A>>(it->second);
+        });
+    }
+
+    /**
+     * @brief Registers a default asset instance for the type A. If one is already present,
+     * it will be overwritten.
+     * @tparam A The asset type to register a new default asset for.
+     */
+    template <IsAsset A>
+    auto register_default(std::unique_ptr<A>&& asset) -> void {
+        StrongHandle<A> handle = add(std::move(asset));
+        log::info("Registering a new default for type {}. Default handle: {}", typename_of<A>(), handle);
+        m_data.default_handles.run_exclusive(
+            [handle] (std::unordered_map<TypeID, std::any>& default_handles){
+                default_handles[AssetID::type_id<A>()] = std::any{ handle };
+            }
+        );
     }
 
 private:
@@ -394,6 +438,9 @@ public:
         auto& pool = *dynamic_cast<AssetPool<A>*>(storage->at(AssetID::type_id<A>()).get());
         pool.link(m_handle.id(), std::move(asset));
     }
+
+    template <IsAsset A>
+    auto fetch_default() -> StrongHandle<A> { return m_server.fetch_default<A>(); }
 
     /** @brief Returns the @ref AssetPath this LoadContext was created for. */
     [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& { return m_handle.path(); }
