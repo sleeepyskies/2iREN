@@ -638,22 +638,29 @@ static auto load_vertex_buffer(
         cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
         buffer.append(position);
 
-        std::array<f32, 4> normal = { 0.f, 1.f, 1.f, 1.f };
-        cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
-        buffer.append(normal);
+        if (normals) {
+            std::array<f32, 4> normal = { 0.f, 1.f, 1.f, 1.f };
+            cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
+            buffer.append(normal);
+        }
 
-        std::array<f32, 3> color = { 0.5f, 0.f, 0.5f };
-        cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 3);
-        buffer.append(color);
+        if (colors) {
+            std::array<f32, 3> color = { 0.5f, 0.f, 0.5f };
+            cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 3);
+            buffer.append(color);
+        }
 
+        if (textures) {
+            std::array<f32, 2> texture = { 0.f, 0.f, };
+            cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 3);
+            buffer.append(texture);
+        }
 
-        std::array<f32, 2> texture = { 0.f, 0.f, };
-        cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 3);
-        buffer.append(texture);
-
-        std::array<f32, 4> tangent = { 1.f, 0.f, 0.f, 1.f };
-        cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
-        buffer.append(tangent);
+        if (tangents) {
+            std::array<f32, 4> tangent = { 1.f, 0.f, 0.f, 1.f };
+            cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
+            buffer.append(tangent);
+        }
     }
 
     return VertexBuffer {
