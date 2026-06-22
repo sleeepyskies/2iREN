@@ -79,47 +79,55 @@ private:
 
 namespace siren::FileSystem {
 
-/// @brief Mounts a new virtual file system path.
-void mount(const std::string& virtual_path, const Path& physical_path);
-/// @brief Unmounts a virtual file system path if present.
-void unmount(const std::string& v_key);
-/// @brief Returns the physical path of a virtual file system key string.
-std::optional<Path> get_physical_path(std::string_view v_key);
+/** @brief Mounts a new virtual file system path. */
+auto mount(const std::string& virtual_path, const Path& physical_path) -> void;
 
-/// @brief Takes a physical path, and makes it a virtual path of the given v_key, if it exists.
-std::optional<Path> to_virtual(const Path& path, std::string_view v_key);
-/// @brief Takes a virtual path, and resolves it to a physical path.
-std::optional<Path> to_physical(const Path& path);
-/// @brief Checks if the given path is virtual.
-bool is_virtual(const Path& path);
-/// @brief Checks if the given path is physical.
-bool is_physical(const Path& path);
+/** @brief Unmounts a virtual file system path if present. */
+auto unmount(const std::string& v_key) -> void;
 
-/// @brief Checks if a file/directory exists at the given path.
-bool exists(const Path& path);
+/** @brief Returns the physical path of a virtual file system key string. */
+auto get_physical_path(std::string_view v_key) -> std::optional<Path>;
 
-/// @brief Checks if a file exists at the given path.
-bool is_file(const Path& path);
-/// @brief Checks if a directory exists at the given path.
-bool is_dir(const Path& path);
+/** @brief Takes a physical path, and makes it a virtual path of the given v_key, if it exists. */
+auto to_virtual(const Path& path, std::string_view v_key) -> std::optional<Path>;
 
-/// @brief Returns the size of the file at the path, if it exists.
-std::optional<u64> get_file_size(const Path& path);
+/** @brief Takes a virtual path, and resolves it to a physical path. */
+auto to_physical(const Path& path) -> std::optional<Path>;
 
-/// @brief Takes either a virtual or physical path, and reads max(buffer.size, file.size) bytes into it.
-bool read_into(const Path& path, std::span<u8> buffer);
-/// @brief Returns a byte vector of the entire file contents, if present.
-std::optional<std::vector<u8>> read_bytes(const Path& path);
-/// @brief Returns a string of the entire file contents, if present.
-std::optional<std::string> read_text(const Path& path);
+/** @brief Checks if the given path is virtual. */
+auto is_virtual(const Path& path) -> bool;
 
-/// @brief Writes the given data to the file at the path.
-bool write(const Path& path, std::span<const u8> buf);
-/// @brief Writes the string to the file at the path.
-bool write(const Path& path, const std::string& str);
+/** @brief Checks if the given path is physical. */
+auto is_physical(const Path& path) -> bool;
 
-/// @brief Returns a new File object from the given path and IOMode.
-std::optional<File> open(const Path& path, FileOpenMode mode);
+/** @brief Checks if a file/directory exists at the given path. */
+auto exists(const Path& path) -> bool;
+
+/** @brief Checks if a file exists at the given path. */
+auto is_file(const Path& path) -> bool;
+
+/** @brief Checks if a directory exists at the given path. */
+auto is_dir(const Path& path) -> bool;
+
+/** @brief Returns the size of the file at the path, if it exists. */
+auto get_file_size(const Path& path) -> std::optional<u64>;
+
+/** @brief Takes either a virtual or physical path, and reads max(buffer.size, file.size) bytes into it. */
+auto read_into(const Path& path, std::span<u8> buffer) -> bool;
+
+/** @brief Returns a byte vector of the entire file contents, if present. */
+auto read_bytes(const Path& path) -> std::optional<std::vector<u8>>;
+
+/** @brief Returns a string of the entire file contents, if present. */
+auto read_text(const Path& path) -> std::optional<std::string>;
+
+/** @brief Writes the given data to the file at the path. */
+auto write(const Path& path, std::span<const u8> buf) -> bool;
+
+/** @brief Writes the string to the file at the path. */
+auto write(const Path& path, const std::string& str) -> bool;
+
+/** @brief Returns a new File object from the given path and IOMode. */
+auto open(const Path& path, FileOpenMode mode) -> std::optional<File>;
 
 } // namespace siren::io::Filesystem
-

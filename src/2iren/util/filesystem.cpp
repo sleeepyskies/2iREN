@@ -128,29 +128,29 @@ struct Mount {
 // use std::vector here since the amount of mounts should be tiny
 static std::vector<Mount> s_mounts;
 
-void mount(const std::string& virtual_path, const Path& physical_path) {
+auto mount(const std::string& virtual_path, const Path& physical_path) -> void {
     if (virtual_path.empty()) { return; }
     if (FileSystem::exists(physical_path)) {
         s_mounts.push_back(Mount{ .virt = virtual_path, .pyhs = physical_path });
     }
 }
 
-void unmount(const std::string& v_key) {
+auto unmount(const std::string& v_key) -> void {
     for (auto it = s_mounts.begin(); it != s_mounts.end(); ++it) {
         if (it->virt == v_key) { s_mounts.erase(it); }
     }
 }
 
-std::optional<Path> get_physical_path(const std::string_view virtual_path) {
+auto get_physical_path(const std::string_view v_key) -> std::optional<Path> {
     for (const auto& [virt, pyhs] : s_mounts) {
-        if (virt == virtual_path) {
+        if (virt == v_key) {
             return pyhs;
         }
     }
     return std::nullopt;
 }
 
-std::optional<Path> to_virtual(const Path& path, const std::string_view v_key) {
+auto to_virtual(const Path& path, const std::string_view v_key) -> std::optional<Path> {
     if (is_virtual(path)) { return path; }
 
     return get_physical_path(v_key).transform(
@@ -161,7 +161,7 @@ std::optional<Path> to_virtual(const Path& path, const std::string_view v_key) {
     );
 }
 
-std::optional<Path> to_physical(const Path& path) {
+auto to_physical(const Path& path) -> std::optional<Path> {
     if (is_physical(path)) { return path; }
 
     std::string p_str = path.string();
@@ -179,16 +179,16 @@ std::optional<Path> to_physical(const Path& path) {
     );
 }
 
-bool is_virtual(const Path& path) {
+auto is_virtual(const Path& path) -> bool {
     for (const std::string p_str = path.string(); const auto& m : s_mounts) {
         if (p_str.starts_with(m.virt)) { return true; }
     }
     return false;
 }
 
-bool is_physical(const Path& path) { return path.is_absolute(); }
+auto is_physical(const Path& path) -> bool { return path.is_absolute(); }
 
-bool exists(const Path& path) {
+auto exists(const Path& path) -> bool {
     return to_physical(path).transform(
         [] (const Path& p){
             std::error_code ec;
@@ -197,7 +197,7 @@ bool exists(const Path& path) {
     ).value_or(false);
 }
 
-bool is_file(const Path& path) {
+auto is_file(const Path& path) -> bool {
     return to_physical(path).transform(
         [] (const Path& p){
             std::error_code ec;
@@ -206,7 +206,7 @@ bool is_file(const Path& path) {
     ).value_or(false);
 }
 
-bool is_dir(const Path& path) {
+auto is_dir(const Path& path) -> bool {
     return to_physical(path).transform(
         [] (const Path& p){
             std::error_code ec;
@@ -215,7 +215,7 @@ bool is_dir(const Path& path) {
     ).value_or(false);
 }
 
-std::optional<u64> get_file_size(const Path& path) {
+auto get_file_size(const Path& path) -> std::optional<u64> {
     return to_physical(path).transform(
         [] (const Path& p){
             std::error_code ec;
@@ -224,7 +224,7 @@ std::optional<u64> get_file_size(const Path& path) {
     );
 }
 
-bool read_into(const Path& path, std::span<u8> buffer) {
+auto read_into(const Path& path, std::span<u8> buffer) -> bool {
     return to_physical(path).transform(
         [&buffer] (const auto& p){
             if (!is_file(p)) { return false; }
@@ -236,7 +236,7 @@ bool read_into(const Path& path, std::span<u8> buffer) {
     ).value_or(false);
 }
 
-std::optional<std::vector<u8>> read_bytes(const Path& path) {
+auto read_bytes(const Path& path) -> std::optional<std::vector<u8>> {
     return get_file_size(path).transform(
         [&path] (const u32 size){
             std::vector<u8> bytes(size);
@@ -246,7 +246,7 @@ std::optional<std::vector<u8>> read_bytes(const Path& path) {
     );
 }
 
-std::optional<std::string> read_text(const Path& path) {
+auto read_text(const Path& path) -> std::optional<std::string> {
     return get_file_size(path).transform(
         [&path] (const u32 size){
             std::string str;
@@ -257,19 +257,19 @@ std::optional<std::string> read_text(const Path& path) {
     );
 }
 
-bool write(const Path& path, const std::span<u8> buf) {
+auto write(const Path& path, const std::span<u8> buf) -> bool {
     auto file = open(path, FileOpenMode::Write);
     if (!file) { return false; }
     return file->write(buf);
 }
 
-bool write(const Path& path, const std::string& str) {
+auto write(const Path& path, const std::string& str) -> bool {
     auto file = open(path, FileOpenMode::Write);
     if (!file) { return false; }
     return file->write(std::span{ reinterpret_cast<const u8*>(str.data()), str.size() });
 }
 
-std::optional<File> open(const Path& path, FileOpenMode mode) {
+auto open(const Path& path, FileOpenMode mode) -> std::optional<File> {
     return to_physical(path).transform(
         [mode] (const auto& p){
             return File{ p, mode };
