@@ -2,10 +2,10 @@
 
 #include <vector>
 
+#include "2iren/asset/fwd.hpp"
 #include "mesh.hpp"
 #include "pbr_material.hpp"
 #include "2iren/base.hpp"
-#include "2iren/asset/asset.hpp"
 #include "2iren/asset/asset_handle.hpp"
 #include "2iren/asset/asset_loader.hpp"
 
@@ -19,20 +19,23 @@ struct SceneCamera {
     /** @brief The near plane distance. */
     f32 z_near;
 
-    union {
-        struct {
-            /** @brief The aspect ratio. Set to 0 if not present. */
-            f32 aspect_ratio;
-            /** @brief The vertical fov. */
-            f32 y_fov;
-        } perspective;
+    struct PerspectiveData {
+        /** @brief The aspect ratio. Set to 0 if not present. */
+        f32 aspect_ratio;
+        /** @brief The vertical fov. */
+        f32 y_fov;
+    };
 
-        struct {
-            /** @brief The horizontal magnification of the camera. */
-            f32 x_mag;
-            /** @brief The horizontal magnification of the camera. */
-            f32 y_mag;
-        } orthographic;
+    struct OrthoData {
+        /** @brief The horizontal magnification of the camera. */
+        f32 x_mag;
+        /** @brief The horizontal magnification of the camera. */
+        f32 y_mag;
+    };
+
+    union {
+        PerspectiveData perspective;
+        OrthoData orthographic;
     };
 
     /** @brief The type of the camera. */
