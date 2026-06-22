@@ -3,7 +3,6 @@
 #include <string>
 
 #include "../asset_loader.hpp"
-#include "2iren/asset/asset.hpp"
 #include "2iren/rhi/resources/image.hpp"
 #include "2iren/rhi/resources/sampler.hpp"
 

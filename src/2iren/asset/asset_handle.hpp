@@ -36,24 +36,21 @@ public:
     WeakHandle& operator=(WeakHandle&&)      = default;
 
     /** @brief Returns the @ref AssetID of this WeakHandle. */
-    [[nodiscard]]
-    auto id() const noexcept -> AssetID { return m_id; }
+    [[nodiscard]] auto id() const noexcept -> AssetID { return m_id; }
     /** @brief Returns the @ref AssetPoolBase pointer of this WeakHandle. */
     [[nodiscard]]
     constexpr auto pool() const noexcept -> AssetPoolBase* { return m_pool; }
-    [[nodiscard]]
     /** @brief Returns the original asset path of this WeakHandle. */
-    constexpr auto path() const noexcept -> const AssetPath& { return m_path; }
+    [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& { return m_path; }
     /** @brief Returns the string representation of this handle. */
     [[nodiscard]] auto to_string() const -> std::string { return std::format("Weak({})", m_id.packed()); }
 
     /** @brief Equality comparison operator. */
-    [[nodiscard]]
-    constexpr auto operator==(const WeakHandle& other) const -> bool { return id() == other.id(); }
+    [[nodiscard]] constexpr auto operator==(const WeakHandle& other) const -> bool { return id() == other.id(); }
 
 private:
     /** @brief The @ref AssetPath to the referenced asset. */
-    AssetPath m_path{ };
+    AssetPath m_path = AssetPath::invalid();
     /** @brief The raw untyped handle. */
     AssetID m_id = NullHandle;
     /** @brief The pool this handles asset belongs to. */
@@ -75,35 +72,26 @@ private:
  */
 template <typename A>
 class StrongHandle {
+    // enforce here not in template declaration to avoid issues with recursive types, like GltfNode.
+    static_assert(siren::IsAsset<A>, "StrongHandle can only be used with types derived from Asset.");
+
 public:
     using TypeID = WeakHandle::TypeID;
 
     /** @brief Returns a dummy AssetHandle. */
     static auto invalid() noexcept -> StrongHandle { return StrongHandle{ }; }
-    /** @brief Returns a new AssetHandle from a weak one. */
-    static auto from_weak(const WeakHandle& weak) noexcept -> StrongHandle {
-        ASSERT(
-            weak.id().type() == AssetID::get_type_id<A>(),
-            "WeakHandle type does not match StrongHandle<{}>",
-            TypeName<A>::value()
-        );
-        auto* typed_pool = static_cast<AssetPool<A>*>(weak.pool());
-        return StrongHandle{ weak.id(), typed_pool, weak.path() };
-    }
-
-    StrongHandle() = default;
     ~StrongHandle() { if (m_weak.pool()) { pool().dec_ref(id()); } }
 
     StrongHandle(
         const AssetID& id,
-        AssetPool<A>* pool,
+        AssetPool<A>& pool,
         const AssetPath& asset_path
-    ) : m_weak(WeakHandle{ id, pool, asset_path }) {
+    ) : m_weak(WeakHandle{ id, &pool, asset_path }) {
         ASSERT(
-            AssetID::get_type_id<A>() == id.type(),
+            AssetID::type_id<A>() == id.type(),
             "Cannot construct a StrongHandle if AssetID and AssetPool types do not match."
         );
-        if (pool) { pool->inc_ref(id); }
+        pool.inc_ref(id);
     }
 
     StrongHandle(const StrongHandle& other) : m_weak(other.m_weak) { if (m_weak.pool()) { pool().inc_ref(id()); } }
@@ -129,8 +117,6 @@ public:
         return *this;
     }
 
-    /** @brief Returns a weak and type erased handle to the same asset. */
-    [[nodiscard]] constexpr auto as_weak() const noexcept -> WeakHandle { return m_weak; }
     /** @brief Checks if this handle is valid and references an alive asset. */
     [[nodiscard]] auto is_valid() const -> bool { return id().is_valid() && m_weak.pool() != nullptr && pool().is_valid_id(id()); }
 
@@ -143,10 +129,14 @@ public:
     /** @brief Returns the string representation of this handle. */
     [[nodiscard]] auto to_string() const -> std::string { return std::format("Strong<{}>({})", typename_of<A>(), m_weak.id().packed()); }
 
-
-    [[nodiscard]] constexpr auto operator==(const StrongHandle& other) const -> bool { return id() == other.id(); }
+    /** @brief Equality comparison operator. */
+    [[nodiscard]] constexpr auto operator==(const StrongHandle& other) const -> bool = default;
 
 private:
+    StrongHandle() = default;
+    template <IsAsset T>
+    friend WeakHandle make_weak(StrongHandle);
+
     /** @brief The wrapped @ref WeakHandle. */
     WeakHandle m_weak;
 };

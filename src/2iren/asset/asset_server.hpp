@@ -3,9 +3,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "asset.hpp"
 #include "asset_handle.hpp"
 #include "asset_id.hpp"
+#include "asset_utils.hpp"
 #include "asset_pool.hpp"
 #include "asset_loader.hpp"
 #include "2iren/sync/rw_lock.hpp"
@@ -132,7 +132,7 @@ public:
 
         return m_data.storage.run(
             [&handle] (const std::unordered_map<TypeID, std::unique_ptr<AssetPoolBase>>& storage) -> A*{
-                const auto it = storage.find(AssetID::get_type_id<A>());
+                const auto it = storage.find(AssetID::type_id<A>());
                 if (it == storage.end()) {
                     log::debug("{} asset storage does not exist, cannot get asset.", typename_of<A>(), handle);
                     return nullptr;
@@ -177,7 +177,7 @@ public:
 
         return m_data.storage.run_exclusive(
             [asset = std::move(asset)] (auto& storage){
-                const auto it = storage.find(AssetID::get_type_id<A>());
+                const auto it = storage.find(AssetID::type_id<A>());
                 if (it == storage->end()) {
                     log::error("Could not find an appropriate asset pool for type {}", typename_of<A>());
                     return StrongHandle<A>::invalid();
@@ -247,7 +247,7 @@ private:
      */
     template <IsAsset A>
     auto ensure_asset_registered() {
-        const auto tid = AssetID::get_type_id<A>();
+        const auto tid = AssetID::type_id<A>();
 
         auto contains = m_data.storage.run(
             [tid] (const auto& storage) -> bool{
@@ -284,13 +284,13 @@ private:
 
             // there is no label, this is the main asset.
             if (!path.label()) {
-                return StrongHandle<A>::from_weak(ait->second.weak_handle);
+                return make_strong<A>(ait->second.weak_handle);
             }
 
             // this is a labeled sub asset
             const auto lit = ait->second.labeled_deps.find(path.label().value());
             if (lit != ait->second.labeled_deps.end()) {
-                return StrongHandle<A>::from_weak(lit->second);
+                return make_strong<A>(lit->second);
             }
 
             return std::nullopt;
@@ -328,8 +328,7 @@ public:
         : m_server(server), m_handle(handle), m_path(path), m_device(device) { }
 
     template <IsAsset A>
-    [[nodiscard]]
-    auto add_labeled_asset(const std::string& label, std::unique_ptr<A>&& asset) -> StrongHandle<A> {
+    [[nodiscard]] auto add_labeled_asset(const std::string& label, std::unique_ptr<A>&& asset) -> StrongHandle<A> {
         const StrongHandle<A> handle = m_server.add<A>(std::move(asset));
 
         // the asset_info should exist already, if it doesn't please crash, something went wrong :D
@@ -343,7 +342,7 @@ public:
             return handle;
         }
 
-        asset_info.labeled_deps.emplace(label, handle.as_weak());
+        asset_info.labeled_deps.emplace(label, make_weak(handle));
         return handle;
     }
 
@@ -375,7 +374,7 @@ public:
             return handle;
         }
 
-        main_asset_info.dependencies.emplace(handle.as_weak());
+        main_asset_info.dependencies.emplace(make_weak(handle));
         external_asset_info.dependents.emplace(m_handle);
         return handle;
     }
@@ -393,7 +392,7 @@ public:
         // if we have no pending sub assets, work up the tree.
         notify_dependents(m_handle, *asset_infos);
 
-        auto& pool = *dynamic_cast<AssetPool<A>*>(storage->at(AssetID::get_type_id<A>()).get());
+        auto& pool = *dynamic_cast<AssetPool<A>*>(storage->at(AssetID::type_id<A>()).get());
         pool.link(m_handle.id(), std::move(asset));
     }
 
@@ -452,7 +451,7 @@ private:
 template <IsAsset A>
 [[nodiscard]] auto AssetServer::load(
     const AssetPath& path,
-    std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
+    std::optional<typename AssetLoader<A>::ConfigType> config
 ) -> StrongHandle<A> {
     ensure_asset_registered<A>();
     log::trace("Loading new asset from path {}", path);
@@ -473,7 +472,7 @@ template <IsAsset A>
 
     // generate a new handle
     const auto weak_handle = m_data.storage.run_exclusive([path](auto& storage) -> WeakHandle {
-        const auto it = storage.find(AssetID::get_type_id<A>());
+        const auto it = storage.find(AssetID::type_id<A>());
         auto pool = static_cast<AssetPool<A>*>(it->second.get());
         return WeakHandle{
             pool->reserve(),
@@ -504,7 +503,7 @@ template <IsAsset A>
         }
     );
 
-    return StrongHandle<A>::from_weak(weak_handle);
+    return make_strong<A>(weak_handle);
 }
 
 } // namespace siren

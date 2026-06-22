@@ -3,13 +3,10 @@
 #include <string>
 #include <expected>
 
-#include "2iren/asset/asset.hpp"
+#include "fwd.hpp"
 
 
 namespace siren {
-
-class AssetServer;
-class LoadContext;
 
 /** @brief Error codes possible during asset loading. */
 enum class AssetErrorCode {

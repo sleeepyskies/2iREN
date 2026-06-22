@@ -5,8 +5,6 @@
 
 namespace siren {
 
-AssetPath::AssetPath() : m_buffer(nullptr), m_label_offset(0), m_path_offset(0) { }
-
 AssetPath::AssetPath(
     const std::string_view vfs,
     const std::string_view relative_path,
@@ -69,5 +67,7 @@ auto AssetPath::hashed_string() const noexcept -> HashedString {
     if (!m_buffer) { return HashedString{ }; }
     return HashedString{ m_buffer.get()->data() };
 }
+
+AssetPath::AssetPath() : m_buffer(nullptr), m_label_offset(0), m_path_offset(0) { }
 
 } // namespace siren

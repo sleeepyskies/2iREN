@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "../asset.hpp"
 #include "../asset_handle.hpp"
 #include "pbr_material.hpp"
 #include "2iren/base.hpp"
@@ -12,20 +11,6 @@
 namespace siren {
 
 struct Surface : Asset {
-    Surface(
-        const StrongHandle<PBRMaterialAsset>& material,
-        Buffer&& vertex_buffer,
-        const Layout& layout,
-        Buffer&& index_buffer,
-        const IndexFormat index_format,
-        const u32 index_count
-    ) : material(material),
-        index_buffer(std::move(index_buffer)),
-        layout(layout),
-        index_count(index_count),
-        vertex_buffer(std::move(vertex_buffer)),
-        index_format(index_format) { }
-
     /** @brief The name of the surface. */
     std::string name;
     /** @brief The material to use for this surface. */

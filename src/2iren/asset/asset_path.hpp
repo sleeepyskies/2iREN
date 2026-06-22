@@ -21,9 +21,6 @@ namespace siren {
  */
 class AssetPath {
 public:
-    /** @brief Constructs an invalid AssetPath. */
-    AssetPath();
-
     /**
      * @brief
      * @param vfs The virtual file system mount.
@@ -81,6 +78,9 @@ public:
     [[nodiscard]] auto hashed_string() const noexcept -> HashedString;
 
 private:
+    /** @brief Constructs an invalid AssetPath. */
+    AssetPath();
+
     /**
      * @brief The underlying string buffer.
      * @details We use a single shared string buffer here to

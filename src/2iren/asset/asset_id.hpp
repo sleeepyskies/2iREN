@@ -2,7 +2,7 @@
 
 #include "2iren/util/identifier.hpp"
 #include "2iren/util/type_info.hpp"
-#include "asset.hpp"
+#include "fwd.hpp"
 
 
 namespace siren {
@@ -30,6 +30,9 @@ struct AssetID final : Identifier<AssetID> {
         const TypeID type
     ) : Identifier(index, gen, type) { }
 
+    /** @brief Constructs a new invalid AssetID. */
+    static constexpr auto invalid() noexcept -> AssetID { return AssetID{ }; }
+
     AssetID(const AssetID&)            = default;
     AssetID& operator=(const AssetID&) = default;
     AssetID(AssetID&&)                 = default;
@@ -38,13 +41,13 @@ struct AssetID final : Identifier<AssetID> {
     /// todo: does this break since we are casting 64-bit to 16-bit?
     /** @brief Returns a 16-bit TypeID for the Asset of type A. */
     template <IsAsset A>
-    [[nodiscard]]
-    static constexpr TypeID get_type_id() noexcept { return static_cast<TypeID>(typehash_of<A>()); }
+    [[nodiscard]] static constexpr auto type_id() noexcept -> TypeID { return static_cast<TypeID>(typehash_of<A>()); }
 
     /** @brief Returns the TypeID of this AssetID. */
     [[nodiscard]] constexpr auto type() const noexcept -> TypeID { return meta(); }
 
-    static constexpr auto invalid() noexcept -> AssetID { return AssetID{ }; }
+private:
+    AssetID() = default;
 };
 
 } // namespace siren

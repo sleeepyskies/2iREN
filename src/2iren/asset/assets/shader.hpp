@@ -1,6 +1,5 @@
 #pragma once
 
-#include "2iren/asset/asset.hpp"
 #include "2iren/rhi/resources/shader.hpp"
 #include "../asset_loader.hpp"
 

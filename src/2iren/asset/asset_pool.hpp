@@ -4,7 +4,6 @@
 #include <vector>
 #include <libassert/assert.hpp>
 
-#include "asset.hpp"
 #include "asset_id.hpp"
 
 
@@ -22,16 +21,6 @@ public:
 
     /** @brief Returns the TypeID of the asset type this loader manages. */
     [[nodiscard]] virtual auto type_id() const noexcept -> AssetID::TypeID = 0;
-
-    /** @brief Casts a base loader to a type variant. Also performs a type check. */
-    template <IsAsset A>
-    [[nodiscard]] auto as() -> AssetPool<A>& {
-        ASSERT(
-            AssetID::type_id<A>() == type_id(),
-            std::format("Invalid loader cast, {} != {}", AssetID::type_id<A>(), type_id())
-        );
-        return *static_cast<AssetPool<A>*>(this);
-    }
 };
 
 /**
