@@ -23,12 +23,14 @@ int main() {
     siren::AssetServer server{*device};
 
     const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/basic.sshg");
-    const auto gltf_handle   = server.load<siren::Gltf>("engine://examples/assets/meshes/suzanne.glb");
+    const auto gltf_handle   = server.load<siren::Gltf>("engine://examples/assets/meshes/Box.glb");
     while (
         !server.is_loaded_with_dependencies(shader_handle) ||
         !server.is_loaded_with_dependencies(gltf_handle)
         ) { /* wait for load to finish */ }
+
     auto* shader_asset  = server.get<siren::ShaderAsset>(shader_handle);
+
     // model has just one mesh, with just one surface
     auto* gltf    = server.get<siren::Gltf>(gltf_handle);
     auto* mesh    = server.get<siren::Mesh>(gltf->meshes[0]);

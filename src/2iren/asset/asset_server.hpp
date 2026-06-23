@@ -181,14 +181,23 @@ public:
         std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
     ) -> StrongHandle<A>;
 
-    /** @brief Directly adds the provided asset into storage, if a pool exists for its type. */
+    /**
+     * @brief Directly adds the provided asset into storage, if a pool exists for its type.
+     * @tparam A The type of the asset being added.
+     * @param asset The asset to add.
+     * @param path An optional path parameter. Useful if adding as asset that was loaded external to the server.
+     * @return A @ref StrongHandle referencing the newly added asset.
+     */
     template <IsAsset A>
-    [[nodiscard]] auto add(std::unique_ptr<A>&& asset) -> StrongHandle<A> {
+    [[nodiscard]] auto add(
+        std::unique_ptr<A>&& asset,
+        const AssetPath& path = AssetPath::invalid()
+    ) -> StrongHandle<A> {
         ensure_asset_registered<A>();
         log::debug("Attempting to add new asset of type {}", typename_of<A>());
 
         return m_data.storage.run_exclusive(
-            [asset = std::move(asset)] (auto& storage) mutable {
+            [asset = std::move(asset), &path] (auto& storage) mutable {
                 const auto it = storage.find(AssetID::type_id<A>());
                 if (it == storage.end()) {
                     log::error("Could not find an appropriate asset pool for type {}", typename_of<A>());
@@ -197,7 +206,7 @@ public:
                 auto& pool = pool_cast<A>(it->second.get());
                 const AssetID id = pool.add(std::forward<std::unique_ptr<A>>(asset));
                 // todo: can we handle non disk assets better, for example a UUID
-                return StrongHandle<A>{ id, pool, AssetPath::invalid() };
+                return StrongHandle<A>{ id, pool, path};
             }
         );
     }
@@ -225,10 +234,11 @@ public:
      */
     template <IsAsset A>
     auto is_loaded_with_dependencies(const StrongHandle<A>& handle) -> bool {
+        // todo: this fails for subassets, aka any asset with no path, as it then has no entry in asset_infos
         return m_data.asset_infos.run(
-            [&handle] (const std::unordered_map<HashedString, AssetInfo>& asset_info){
-                const auto it = asset_info.find(handle.path().hashed_string());
-                if (it == asset_info.end()) { return false; }
+            [&handle] (const std::unordered_map<HashedString, AssetInfo>& infos){
+                const auto it = infos.find(handle.path().hashed_string());
+                if (it == infos.end()) { return false; }
                 return it->second.load_state.is_ready();
             }
         );
@@ -373,7 +383,7 @@ public:
 
     template <IsAsset A>
     [[nodiscard]] auto add_labeled_asset(const std::string& label, std::unique_ptr<A>&& asset) -> StrongHandle<A> {
-        const StrongHandle<A> handle = m_server.add<A>(std::move(asset));
+        const StrongHandle<A> handle = m_server.add<A>(std::move(asset), m_path);
 
         // the asset_info should exist already, if it doesn't please crash, something went wrong :D
         auto asset_infos = m_server.m_data.asset_infos.write();
@@ -529,6 +539,7 @@ template <IsAsset A>
         };
     });
 
+    // todo: i think we should clean up this AssetInfo entry in the case where loading fails.
     log::trace("Asset {} does not exist in cache, attempting to load from disk.", weak_handle);
     m_data.asset_infos.run_exclusive([weak_handle, path](auto& asset_infos){
         asset_infos.emplace(

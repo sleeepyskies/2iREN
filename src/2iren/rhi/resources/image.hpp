@@ -9,16 +9,25 @@
 namespace siren {
 
 /** @brief Defines the amount of dimensions an @ref Image may have. */
-enum class ImageDimension { D1, D2, D3, Cube };
+enum class ImageDimension {
+    /** @brief A single dimensional image. */
+    D1,
+    /** @brief A two-dimensional image. */
+    D2,
+    /** @brief A three-dimensional image, aka an array of D2 images. */
+    D3,
+    /** @brief A cube map image. */
+    Cube
+};
 
 /** @brief Defines the size of an @ref Image. */
 struct ImageExtent {
     /** @brief The desired width of the Image. */
-    u32 width;
+    usize width;
     /** @brief The desired height of the Image. */
-    u32 height;
+    usize height;
     /** @brief The desired amount of layers (for Image arrays) of depth (for 3D images) of the Image. */
-    u32 depth_or_layers;
+    usize depth_or_layers;
 };
 
 /**

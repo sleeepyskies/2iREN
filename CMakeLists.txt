@@ -4,10 +4,11 @@ project(2iren)
 # warnings as errors
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_compile_options(
-        -Wall -Wextra -Wpedantic
-        -Werror
-        -Wnull-dereference
-        -Wformat=2
+        # todo: research more what flags there are, could b some more useful ones idk
+        -Wall               # activate multiple reliable warnings
+        -Wextra             # similar to Wall, just more
+        -Wpedantic          # warnings about non standard compiler extensions
+        -Wnull-dereference  # identifies some null dereference cases
 )
 
 set(CMAKE_CXX_STANDARD 23)
