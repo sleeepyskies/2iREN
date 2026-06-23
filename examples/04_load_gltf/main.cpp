@@ -22,7 +22,7 @@ int main() {
     auto swapchain = device->create_swapchain({ .label = std::nullopt, .vsync = true });
     siren::AssetServer server{*device};
 
-    const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/basic.sshg");
+    const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/default.sshg");
     const auto gltf_handle   = server.load<siren::Gltf>("engine://examples/assets/meshes/Box.glb");
     while (
         !server.is_loaded_with_dependencies(shader_handle) ||

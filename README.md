@@ -40,7 +40,7 @@ Conan is used for package management.
 
 3. Load Shader
 
-Demos loading a simple asset from the VFS.
+Demos loading a simple asset from the VFS. Also shows the yaml like file type for defining 2iren shaders.
 
 4. Load Gltf (WIP)
 

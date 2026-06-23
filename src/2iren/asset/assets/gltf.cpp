@@ -561,7 +561,7 @@ static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
     return LayoutBuilder::start()
           .add(Attribute::Position, 4, DataType::Float32)
           .add(Attribute::Normal, 4, DataType::Float32)
-          .add(Attribute::Color, 3, DataType::Float32)
+          .add(Attribute::Color, 4, DataType::Float32)
           .add(Attribute::Texture, 2, DataType::Float32)
           .add(Attribute::Tangent, 4, DataType::Float32)
           .finish();
@@ -645,8 +645,8 @@ static auto load_vertex_buffer(
         }
 
         if (colors) {
-            std::array<f32, 3> color = { 0.5f, 0.f, 0.5f };
-            cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 3);
+            std::array<f32, 4> color = { 0.5f, 0.f, 0.5f, 1.0f };
+            cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 4);
             buffer.append(color);
         }
 

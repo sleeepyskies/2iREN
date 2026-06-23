@@ -59,15 +59,12 @@ using f128 = std::float128_t;
 /** @brief An unsigned integer capable of holding the largest memory address. */
 using usize = std::size_t;
 
-/** @brief @todo do this. */
-#define bit(x) (1u << (x))
-
 /**
  * @brief Creates a range.
  * @param end The exclusive end point of the range.
  * @return A range from [0, end).
  */
-inline auto range(const u32 end) { return views::iota(0u, end); }
+constexpr auto range(const usize end) { return views::iota(0u, end); }
 
 /**
  * @brief Creates a range.
@@ -75,6 +72,6 @@ inline auto range(const u32 end) { return views::iota(0u, end); }
  * @param end The exclusive end point of the range.
  * @return A range from [start, end).
  */
-inline auto range(const u32 start, const u32 end) { return views::iota(start, end); }
+constexpr auto range(const usize start, const usize end) { return views::iota(start, end); }
 
 } // namespace siren

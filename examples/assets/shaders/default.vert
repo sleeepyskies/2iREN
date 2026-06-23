@@ -1,0 +1,22 @@
+#version 460
+layout(location = 0) in vec4 a_position;
+layout(location = 1) in vec4 a_normal;
+layout(location = 2) in vec4 a_color;
+layout(location = 3) in vec2 a_texture;
+layout(location = 4) in vec4 a_tangent;
+
+layout(location = 0) out vec4 v_position;
+layout(location = 1) out vec4 v_normal;
+layout(location = 2) out vec4 v_color;
+layout(location = 3) out vec2 v_texture;
+layout(location = 4) out vec4 v_tangent;
+
+void main() {
+    gl_Position = a_position;
+    v_position = gl_Position;
+
+    v_normal = a_normal;
+    v_color = a_color;
+    v_texture = a_texture;
+    v_tangent = a_tangent;
+}

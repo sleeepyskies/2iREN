@@ -2,7 +2,7 @@ name: shader
 stages:
   vertex:
     name: vertex
-    path: basic.vert
+    path: default.vert
   fragment:
     name: fragment
-    path: basic.frag
+    path: default.frag
