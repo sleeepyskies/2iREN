@@ -64,7 +64,7 @@ int main() {
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(surface->vertex_buffer.data.handle(), 0, 0);
             pass.bind_index_buffer(surface->index_buffer.data.handle(), surface->index_buffer.format);
-            pass.draw_indexed(0, 3);
+            pass.draw_indexed(surface->index_buffer.count, 0);
 
             cmds.consume_render_pass(pass.finish());
         }
