@@ -14,7 +14,6 @@
 /// For docs on GLTF see: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#indices-and-names
 /// For a brief overview of GLTF see: https://www.khronos.org/files/gltf20-reference-guide.pdf
 
-// todo: LOGGING PLESE WOULD HELP SO MUCH HERE
 // todo:
 //      we do a mix of assertions and error handling here, but not consitently.
 //      i should at some point go through code and make consistent.

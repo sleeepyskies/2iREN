@@ -5,13 +5,9 @@ game engine.
 
 Currently only OpenGL 4.6 is supported, but other APIs may be supported in the future.
 
-## Features
+## Building 2iREN
 
-- **Multithreaded**: 2iren has the option to run in multithreaded mode. If enabled command recording is decoupled
-  from the backend execution.
-- **Utilities**: 2iren provides some qol helpers to simplify usual annoyances such as ByteBuffer for creating
-  buffers with various types and LayoutBuilder for describing vertex buffer layouts.
-- **RAII Resources**: All render resources (Buffers, Pipelines, Shaders, etc.) are RAII-compliant.
+
 
 ## Dependencies
 

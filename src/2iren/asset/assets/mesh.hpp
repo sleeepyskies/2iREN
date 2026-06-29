@@ -30,7 +30,9 @@ struct IndexBuffer {
  * @brief Simple container semantically representing a vertex buffer.
  */
 struct VertexBuffer {
+    /** @brief The GPU buffer of the vertex data. */
     Buffer data;
+    /** @brief Describes the layout of the vertex buffer. */
     Layout layout;
 };
 

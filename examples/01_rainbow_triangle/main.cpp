@@ -1,8 +1,6 @@
 #include "2iren/2iren.hpp"
 #include "2iren/util/byte_buffer.hpp"
 
-/// @todo: window abstraction + swapchain + surface or something
-
 struct Vertex {
     siren::f32 x, y, z;
     siren::f32 r, g, b, a;

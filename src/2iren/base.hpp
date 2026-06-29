@@ -21,7 +21,6 @@ enum class Backend {
     OpenGL,
 };
 
-
 /** @brief Toggles single threaded mode in siren. */
 inline constexpr bool single_threaded = true;
 
@@ -58,7 +57,6 @@ using f128 = std::float128_t;
 
 /** @brief An unsigned integer capable of holding the largest memory address. */
 using usize = std::size_t;
-
 /**
  * @brief Creates a range.
  * @param end The exclusive end point of the range.

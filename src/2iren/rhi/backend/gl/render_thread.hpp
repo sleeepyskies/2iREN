@@ -30,7 +30,6 @@ public:
     RenderThread& operator=(const RenderThread&) = delete;
     RenderThread& operator=(RenderThread&&)      = delete;
 
-
     /**
      * @brief Spawns a new task to be computed on the RenderThread.
      * @param task The task to perform.
@@ -55,7 +54,7 @@ private:
     /** @brief Flag indicating if the thread should terminate. */
     std::atomic_bool m_terminate;
     /** @brief Number of tasks left to process. A task being process still counts towards this value. */
-    mutable std::atomic<usize> m_task_count;
+    mutable std::atomic_size_t m_task_count;
     /** @brief Used to sleep and wakeup the thread. */
     ConditionVariable m_condition;
     /** @brief Locked inner data. */
