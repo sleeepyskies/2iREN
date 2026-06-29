@@ -4,6 +4,7 @@
 #include <expected>
 #include <vector>
 #include <optional>
+#include <libassert/assert.hpp>
 
 #include "fwd.hpp"
 
@@ -11,19 +12,40 @@
 namespace siren {
 
 /** @brief Error codes possible during asset loading. */
-enum class AssetErrorCode {
-    /** @brief The asset file could not be located on disk. */
-    FileNotFound,
-    /** @brief The asset file is somehow corrupted or could not be parsed. */
-    InvalidFormat,
-    /** @brief The file could be parsed, but was missing some required fields. */
-    InvalidSchema,
-    /** @brief Some GPU or Driver failure. */
-    RuntimeFailed,
-    /** @brief Some feature was encountered that 2iren does not support. */
-    NotSupported,
-    /** @brief Some data has been corrupted. */
-    AssetCorrupted
+class AssetErrorCode {
+public:
+    enum Value {
+        /** @brief The asset file could not be located on disk. */
+        FileNotFound,
+        /** @brief The asset file is somehow corrupted or could not be parsed. */
+        InvalidFormat,
+        /** @brief The file could be parsed, but was missing some required fields. */
+        InvalidSchema,
+        /** @brief Some GPU or Driver failure. */
+        RuntimeFailed,
+        /** @brief Some feature was encountered that 1iren does not support. */
+        NotSupported,
+        /** @brief Some data has been corrupted. */
+        AssetCorrupted
+    } value;
+
+
+    // ReSharper disable once CppNonExplicitConvertingConstructor
+    constexpr AssetErrorCode(const Value v) : value(v) { }
+    // ReSharper disable once CppNonExplicitConversionOperator
+    constexpr operator Value() const { return value; }
+
+    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
+        switch (value) {
+            case FileNotFound: return "FileNotFound";
+            case InvalidFormat: return "InvalidFormat";
+            case InvalidSchema: return "InvalidSchema";
+            case RuntimeFailed: return "RuntimeFailed";
+            case NotSupported: return "NotSupported";
+            case AssetCorrupted: return "AssetCorrupted";
+            default: UNREACHABLE();
+        }
+    }
 };
 
 using AssetLoadError = std::expected<void, AssetErrorCode>;

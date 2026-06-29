@@ -31,6 +31,7 @@ struct ContextDescriptor {
 class Context {
 public:
     explicit Context(const ContextDescriptor& descriptor);
+    ~Context();
 
     Context(const Context&)            = delete;
     Context& operator=(const Context&) = delete;

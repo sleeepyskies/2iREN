@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <atomic>
 #include <vector>
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>

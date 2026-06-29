@@ -22,7 +22,7 @@ enum class Backend {
 };
 
 /** @brief Toggles single threaded mode in siren. */
-inline constexpr bool single_threaded = true;
+inline constexpr bool single_threaded = false;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
@@ -46,14 +46,16 @@ using i64 = std::int64_t;
 /** @brief A signed 128-bit integer */
 using i128 = __int128_t;
 
+// todo: clang doesnt seem to support std::floatx_t, so we use these compiler primitives instead, not ideal though.
+
 /** @brief A 16-bit floating point number. */
-using f16 = std::float16_t;
+using f16 = _Float16;
 /** @brief A 32-bit floating point number. */
-using f32 = std::float32_t;
+using f32 = _Float32;
 /** @brief A 64-bit floating point number. */
-using f64 = std::float64_t;
+using f64 = _Float64;
 /** @brief A 128-bit floating point number. */
-using f128 = std::float128_t;
+using f128 = _Float128;
 
 /** @brief An unsigned integer capable of holding the largest memory address. */
 using usize = std::size_t;

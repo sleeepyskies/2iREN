@@ -1,4 +1,3 @@
-# brings in all of stb libraries. this isn't needed, as we only use stb_image actually
 
 find_package(opengl_system REQUIRED)
 find_package(glad REQUIRED)
@@ -7,7 +6,7 @@ find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(cgltf REQUIRED)
-find_package(stb REQUIRED)
+find_package(stb REQUIRED) # brings in all of stb libraries. this isn't needed, as we only use stb_image actually
 
 target_link_libraries(2iren
         glad::glad

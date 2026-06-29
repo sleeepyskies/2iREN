@@ -52,11 +52,19 @@ public:
      * @brief Retrieves the singleton instance of this ThreadPool.
      * @warning Crashes if ThreadPool::init() has not been called yet.
      */
-    static auto get() -> ThreadPool& { return *s_instance.get(); }
+    static auto get() -> ThreadPool& { return *s_instance; }
 
     /** @brief Initializes the global singleton instance. */
-    static auto init(const i32 thread_count = static_cast<i32>(std::jthread::hardware_concurrency())) -> void {
-        s_instance = std::make_unique<ThreadPool>(thread_count);
+    static auto init(
+        const i32 thread_count = static_cast<i32>(std::jthread::hardware_concurrency())
+    ) -> void {
+        s_instance = new ThreadPool(thread_count);
+    }
+
+    /** @brief Handles cleanup of the singleton instance. */
+    static auto shutdown() -> void {
+        delete s_instance;
+        s_instance = nullptr;
     }
 
     /**
@@ -138,7 +146,7 @@ private:
     Mutex<Inner> m_inner;                 ///< @brief Internal data locked behind a @ref Mutex.
 
     /** @brief The single static instance. */
-    static inline std::unique_ptr<ThreadPool> s_instance;
+    static inline ThreadPool* s_instance;
 };
 
 } // namespace siren

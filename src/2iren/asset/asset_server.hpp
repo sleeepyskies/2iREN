@@ -314,7 +314,7 @@ private:
         log::debug("Registering a new asset type: {}", typename_of<A>());
         m_data.storage.run_exclusive(
             [tid] (auto& storage){
-                storage.emplace(tid, std::make_unique<AssetPool<A>>()).first;
+                (void)storage.emplace(tid, std::make_unique<AssetPool<A>>()).first;
             }
         );
     }
@@ -558,7 +558,10 @@ template <IsAsset A>
     // spawn new loading task
     ThreadPool::get().spawn_detached(
         [this, path, loader, weak_handle, config = std::move(config)] mutable {
-            loader->load(LoadContext{ *this, path, weak_handle, m_device }, std::move(config));
+            const auto result = loader->load(LoadContext{ *this, path, weak_handle, m_device }, std::move(config));
+            if (!result) {
+                log::error("Asset loading failed.", result.error());
+            }
         }
     );
 
