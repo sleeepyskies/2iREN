@@ -111,6 +111,25 @@ auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, 
     m_active_uniform_buffers[slot] = uniform_buffer;
 }
 
+auto RenderPassRecorder::bind_image(const ImageHandle image, const u32 slot) noexcept -> void {
+    const auto& it = m_active_image_handles.find(slot);
+    if (it != m_active_image_handles.end() && it->second == image) { return; }
+
+    m_commands.emplace_back(
+        RenderCommand{
+            .command = {
+                .bind_image = {
+                    .image = image,
+                    .slot = slot,
+                },
+            },
+            .type = RenderCommandType::BindImage,
+        }
+    );
+
+    m_active_image_handles[slot] = image;
+}
+
 auto RenderPassRecorder::draw_arrays(const u32 start, const u32 count) noexcept -> void {
     ASSERT(
         m_active_pipeline.is_valid(),

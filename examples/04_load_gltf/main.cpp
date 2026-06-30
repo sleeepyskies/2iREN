@@ -49,6 +49,7 @@ int main() {
     });
 
     // main render loop
+    siren::log::info("Starting render loop.");
     while (!window.should_close()) {
         window.poll_events();
 

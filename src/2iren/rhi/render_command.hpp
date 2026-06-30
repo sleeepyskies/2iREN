@@ -26,6 +26,7 @@ enum class RenderCommandType: u8 {
     BindVertexBuffer,
     BindIndexBuffer,
     BindUniformBuffer,
+    BindImage,
 
     DrawArrays,
     DrawIndexed,
@@ -86,6 +87,16 @@ struct BindUniformBuffer {
 };
 
 /**
+ * @brief Binds an @ref Image.
+ */
+struct BindImage {
+    /** @brief The image to bind. */
+    ImageHandle image;
+    /** @brief The slot to bind to. */
+    u32 slot;
+};
+
+/**
  * @brief Performs a non indexed draw call.
  */
 struct DrawArrays {
@@ -115,6 +126,7 @@ struct RenderCommand {
         BindVertexBuffer bind_vertex_buffer;
         BindIndexBuffer bind_index_buffer;
         BindUniformBuffer bind_uniform_buffer;
+        BindImage bind_image;
         DrawArrays draw_arrays;
         DrawIndexed draw_indexed;
     } command;
@@ -134,6 +146,8 @@ struct RenderCommand {
             return command.bind_index_buffer;
         } else if constexpr (std::is_same_v<Command, BindUniformBuffer>) {
             return command.bind_uniform_buffer;
+        } else if constexpr (std::is_same_v<Command, BindImage>) {
+            return command.bind_image;
         } else if constexpr (std::is_same_v<Command, DrawArrays>) {
             return command.draw_arrays;
         } else if constexpr (std::is_same_v<Command, DrawIndexed>) {
@@ -237,6 +251,13 @@ public:
     auto bind_uniform_buffer(BufferHandle uniform_buffer, u32 slot) noexcept -> void;
 
     /**
+     * @brief Binds an @ref Image to the given slot.
+     * @param image The @ref Image to bind to the slot.
+     * @param slot The slot to bind to.
+     */
+    auto bind_image(ImageHandle image, u32 slot) noexcept -> void;
+
+    /**
      * @brief Draws from the currently bound vertex buffer(s) non indexed.
      * @param start The first vertex to draw.
      * @param count The amount of vertices starting from the first to draw.
@@ -267,6 +288,9 @@ private:
     /** @brief The tracked uniform buffers. */
     /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_uniform_buffers;
+    /** @brief The tracked uniform buffers. */
+    /** @todo replace with an array? */
+    std::unordered_map<u32, ImageHandle> m_active_image_handles;
     /** @brief The bound index buffer (we need to check index type too hence the struct). */
     std::optional<BindIndexBuffer> m_active_index_buffer;
 };
