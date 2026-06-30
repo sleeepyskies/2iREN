@@ -23,7 +23,7 @@ int main() {
     siren::AssetServer server{*device};
 
     const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/default.sshg");
-    const auto gltf_handle   = server.load<siren::Gltf>("engine://examples/assets/meshes/Box.glb");
+    const auto gltf_handle   = server.load<siren::Gltf>("engine://examples/assets/meshes/ABeautifulGame.glb");
     while (
         !server.is_loaded_with_dependencies(shader_handle) ||
         !server.is_loaded_with_dependencies(gltf_handle)
