@@ -1,11 +1,11 @@
 #include "texture.hpp"
 
+#include <stb_image.h>
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/base.hpp"
 #include "2iren/rhi/device.hpp"
 #include "2iren/util/filesystem.hpp"
 #include "2iren/util/log.hpp"
-#include <stb_image.h>
 
 namespace siren {
 namespace filetypes {
@@ -38,12 +38,12 @@ static const std::vector<std::string> HDR  = {"exr", "hdr"};
 
     if (ranges::contains(filetypes::SRGB, ext)) {
         log::trace("Guessing extension {} image has format LinearColor8.", ext);
-        return ImageFormat::LinearColor8;
+        return ImageFormat::RGBA8;
     }
 
     if (ranges::contains(filetypes::HDR, ext)) {
         log::trace("Guessing extension {} image has format Hdr16.", ext);
-        return ImageFormat::Hdr16;
+        return ImageFormat::RGB16f;
     }
 
     log::trace("Could nopt guess image format.");
@@ -52,12 +52,16 @@ static const std::vector<std::string> HDR  = {"exr", "hdr"};
 
 [[maybe_unused]] [[nodiscard]] static auto determine_srgb(const ImageFormat format) -> bool {
     switch (format) {
-        case ImageFormat::Color8: return true;
-        case ImageFormat::LinearColor8:
-        case ImageFormat::Mask8:
-        case ImageFormat::Hdr16:
-        case ImageFormat::DepthStencil:
+        case ImageFormat::sRGB8:
+        case ImageFormat::sRGBA8: return true;
+
+        case ImageFormat::R8:
+        case ImageFormat::RGB8:
+        case ImageFormat::RGBA8:
+        case ImageFormat::RGB16f:
+        case ImageFormat::Depth24Stencil8:
         case ImageFormat::Unknown: return false;
+
         default: UNREACHABLE("Could not determine srgb from ImageFormat");
     }
 }
@@ -74,7 +78,7 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const auto tname = config->name.value_or(ctx.path().filename());
     const auto iname = std::format("{}_Image", tname);
 
-    const auto format  = determine_format(*config, ctx.path().extension());
+    const auto format = determine_format(*config, ctx.path().extension());
     // const auto is_srgb = determine_srgb(format);
 
     i32 width = 0, height = 0, channels = 0;
@@ -90,12 +94,12 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     }
     const usize data_size = width * height * channels;
 
-    auto image = ctx.device().create_image({
-        .label         = iname,
-        .format        = format,
-        .extent        = extent,
-        .dimension     = ImageDimension::D2,
-        .mipmap_levels = mipmap_levels,
+    auto image    = ctx.device().create_image({
+           .label         = iname,
+           .format        = format,
+           .extent        = extent,
+           .dimension     = ImageDimension::D2,
+           .mipmap_levels = mipmap_levels,
     });
     auto resource = ctx.device().record_resource_commands();
     resource.upload_to_image(image.handle(), std::span(data, data_size));

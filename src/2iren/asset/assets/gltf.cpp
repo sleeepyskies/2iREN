@@ -4,12 +4,12 @@
 #include <glm/gtc/integer.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <stb_image.h>
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/asset/asset_utils.hpp"
 #include "2iren/rhi/device.hpp"
 #include "2iren/util/cgltf.cpp"
 #include "2iren/util/filesystem.hpp"
-#include <stb_image.h>
 
 /// For docs on GLTF see: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#indices-and-names
 /// For a brief overview of GLTF see: https://www.khronos.org/files/gltf20-reference-guide.pdf
@@ -158,8 +158,8 @@ static auto parse_sampler(const cgltf_sampler* sampler, Device& device) -> Sampl
 }
 
 static auto load_textures(const cgltf_data* data, LoadContext& ctx)
-        -> std::expected<std::vector<StrongHandle<Texture>>, AssetErrorCode> {
-    NameIDGenerator name_gen{ .fallback = "Texture" };
+    -> std::expected<std::vector<StrongHandle<Texture>>, AssetErrorCode> {
+    NameIDGenerator name_gen{.fallback = "Texture"};
 
     std::vector<StrongHandle<Texture>> vec;
     vec.reserve(data->textures_count);
@@ -184,12 +184,12 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                 return std::unexpected(AssetErrorCode::FileNotFound);
             }
             handle = ctx.load_external_asset<Texture>(path.value().string(),
-                    std::make_optional(TextureLoader::ConfigType{
-                            .name                   = name,
-                            .format                 = ImageFormat::Unknown, // trust the texture loader can handle lmao
-                            .sampler                = std::move(sampler),
-                            .generate_mipmap_levels = true,
-                    }));
+                std::make_optional(TextureLoader::ConfigType{
+                    .name                   = name,
+                    .format                 = ImageFormat::Unknown, // trust the texture loader can handle lmao
+                    .sampler                = std::move(sampler),
+                    .generate_mipmap_levels = true,
+                }));
         } else if (texture.image->buffer_view) {
             // load image from buffer
             // todo: we dont actually upload the image data here?
@@ -201,34 +201,36 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
             i32 width, height, channels;
             std::unique_ptr<u8, void (*)(void*)> img_data(
-                    stbi_load_from_memory(bytes, (int)size, &width, &height, &channels, STBI_default), stbi_image_free);
+                stbi_load_from_memory(bytes, (int)size, &width, &height, &channels, STBI_default), stbi_image_free);
             if (!img_data) {
                 return std::unexpected(AssetErrorCode::AssetCorrupted);
             }
             const usize img_data_size = width * height * channels;
 
-            const auto format = channels == 1 ? ImageFormat::Mask8
-                    : channels == 4           ? ImageFormat::LinearColor8
+            // todo: put into a function, also this might not be enough? how do we know if 3 channels is rgb or srgb?
+            const auto format = channels == 1 ? ImageFormat::R8
+                : channels == 3               ? ImageFormat::RGB8
+                : channels == 4               ? ImageFormat::RGBA8
                                               : ImageFormat::Unknown;
 
-            const auto extent = ImageExtent{ .width = (u32)width, .height = (u32)height, .depth_or_layers = 1 };
+            const auto extent = ImageExtent{.width = (u32)width, .height = (u32)height, .depth_or_layers = 1};
 
-            const u32 max_dim       = std::max({ extent.width, extent.height, extent.depth_or_layers });
+            const u32 max_dim       = std::max({extent.width, extent.height, extent.depth_or_layers});
             const u32 mipmap_levels = 1 + static_cast<u32>(glm::floor(glm::log2(max_dim)));
 
             // todo: add name?
-            auto img = ctx.device().create_image({
-                    .label         = std::nullopt,
-                    .format        = format,
-                    .extent        = extent,
-                    .dimension     = ImageDimension::D2,
-                    .mipmap_levels = mipmap_levels,
+            auto img      = ctx.device().create_image({
+                     .label         = std::nullopt,
+                     .format        = format,
+                     .extent        = extent,
+                     .dimension     = ImageDimension::D2,
+                     .mipmap_levels = mipmap_levels,
             });
             auto resource = ctx.device().record_resource_commands();
             resource.upload_to_image(img.handle(), std::span(img_data.get(), img_data_size));
             ctx.device().submit(resource.finish());
-            handle   = ctx.add_labeled_asset<Texture>(
-                    name, std::make_unique<Texture>(name, std::move(img), std::move(sampler)));
+            handle = ctx.add_labeled_asset<Texture>(
+                name, std::make_unique<Texture>(name, std::move(img), std::move(sampler)));
         } else {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
         }
@@ -243,11 +245,11 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 }
 
 static auto load_materials(const cgltf_data* data, const std::vector<StrongHandle<Texture>>& textures, LoadContext& ctx)
-        -> std::expected<std::vector<StrongHandle<PBRMaterialAsset>>, AssetErrorCode> {
-    NameIDGenerator name_gen{ .fallback = "Material" };
+    -> std::expected<std::vector<StrongHandle<PBRMaterialAsset>>, AssetErrorCode> {
+    NameIDGenerator name_gen{.fallback = "Material"};
 
-    const auto get_texture =
-            [&textures, &data](const cgltf_texture* texture) -> std::expected<StrongHandle<Texture>, AssetErrorCode> {
+    const auto get_texture = [&textures, &data](
+                                 const cgltf_texture* texture) -> std::expected<StrongHandle<Texture>, AssetErrorCode> {
         const usize idx = texture - data->textures;
         if (idx > textures.size()) {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
@@ -267,7 +269,7 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
 
         if (gltf_material.has_pbr_metallic_roughness) {
             const auto& pbr_mr = gltf_material.pbr_metallic_roughness;
-            mat->set_base_color(RGBA{ glm::make_vec4(pbr_mr.base_color_factor) });
+            mat->set_base_color(RGBA{glm::make_vec4(pbr_mr.base_color_factor)});
             mat->set_metallic(pbr_mr.metallic_factor);
             mat->set_roughness(pbr_mr.roughness_factor);
             if (pbr_mr.base_color_texture.texture) {
@@ -488,8 +490,8 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
 
 static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadError {
     if (primitve.type != cgltf_primitive_type_triangles) {
-        log::warn("2iren only supports primitive type triangles. Encountered cgltf_primitive_type: {}",
-                (u32)primitve.type);
+        log::warn(
+            "2iren only supports primitive type triangles. Encountered cgltf_primitive_type: {}", (u32)primitve.type);
         return std::unexpected(AssetErrorCode::NotSupported);
     }
 
@@ -545,7 +547,7 @@ static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadErr
 }
 
 static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
-        -> std::expected<IndexBuffer, AssetErrorCode> {
+    -> std::expected<IndexBuffer, AssetErrorCode> {
     // not that 2iren only supports 32-bit unsinged integers for now as indices.
     // at the end of the day, this probably doesnt matter too much, but it would b nice to maybe
     // support lower bit indices?
@@ -565,10 +567,10 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
 
     return IndexBuffer{
         .data   = device.create_buffer({
-                  .label = std::nullopt,
-                  .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
-                  .size  = buffer.size_bytes(),
-                  .usage = BufferUsage::Static,
+              .label = std::nullopt,
+              .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
+              .size  = buffer.size_bytes(),
+              .usage = BufferUsage::Static,
         }),
         .count  = index_count,
         .format = IndexFormat::UInt32,
@@ -579,12 +581,12 @@ static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
     // we enforce a default vertex layout atm in 2iren. This means, every vertex buffer
     // is built the same, even if the gltf file only specifies a position attribute.
     return LayoutBuilder::start()
-            .add(Attribute::Position, 4, DataType::Float32)
-            .add(Attribute::Normal, 4, DataType::Float32)
-            .add(Attribute::Color, 4, DataType::Float32)
-            .add(Attribute::Texture, 2, DataType::Float32)
-            .add(Attribute::Tangent, 4, DataType::Float32)
-            .finish();
+        .add(Attribute::Position, 4, DataType::Float32)
+        .add(Attribute::Normal, 4, DataType::Float32)
+        .add(Attribute::Color, 4, DataType::Float32)
+        .add(Attribute::Texture, 2, DataType::Float32)
+        .add(Attribute::Tangent, 4, DataType::Float32)
+        .finish();
 
     // code below returns the actual layout
     /*
@@ -651,18 +653,18 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     ASSERT(positions, "Surface does not contain a positional attribute!");
 
     for (usize i = 0; i < count; i++) {
-        std::array<f32, 4> position = { 0.f, 0.f, 0.f, 0.f };
+        std::array<f32, 4> position = {0.f, 0.f, 0.f, 0.f};
         cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
         buffer.append(position);
 
         if (normals) {
-            std::array<f32, 4> normal = { 0.f, 1.f, 1.f, 1.f };
+            std::array<f32, 4> normal = {0.f, 1.f, 1.f, 1.f};
             cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
             buffer.append(normal);
         }
 
         if (colors) {
-            std::array<f32, 4> color = { 0.5f, 0.f, 0.5f, 1.0f };
+            std::array<f32, 4> color = {0.5f, 0.f, 0.5f, 1.0f};
             cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 4);
             buffer.append(color);
         }
@@ -677,7 +679,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
         }
 
         if (tangents) {
-            std::array<f32, 4> tangent = { 1.f, 0.f, 0.f, 1.f };
+            std::array<f32, 4> tangent = {1.f, 0.f, 0.f, 1.f};
             cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
             buffer.append(tangent);
         }
@@ -685,21 +687,21 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
 
     return VertexBuffer{
         .data   = device.create_buffer({
-                  .label = std::nullopt,
-                  .data  = buffer.data(), // todo: also does a copy here fuck
-                  .size  = buffer.size_bytes(),
-                  .usage = BufferUsage::Static,
+              .label = std::nullopt,
+              .data  = buffer.data(), // todo: also does a copy here fuck
+              .size  = buffer.size_bytes(),
+              .usage = BufferUsage::Static,
         }),
         .layout = layout,
     };
 }
 
 static auto load_meshes(
-        const cgltf_data* data, const std::vector<StrongHandle<PBRMaterialAsset>>& materials, LoadContext& ctx)
-        -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
+    const cgltf_data* data, const std::vector<StrongHandle<PBRMaterialAsset>>& materials, LoadContext& ctx)
+    -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
     // surface names scoped are scoped to the gltf due to asset label system.
-    NameIDGenerator mesh_name_generator{ .fallback = "Mesh" };
-    NameIDGenerator surface_name_generator{ .fallback = "Surface" };
+    NameIDGenerator mesh_name_generator{.fallback = "Mesh"};
+    NameIDGenerator surface_name_generator{.fallback = "Surface"};
 
     std::vector<StrongHandle<Mesh>> vec;
     vec.reserve(data->meshes_count);
@@ -730,11 +732,11 @@ static auto load_meshes(
             auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
             const auto& material_handle = (gltf_prim.material == nullptr)
-                    ? ctx.fetch_default<PBRMaterialAsset>()
-                    : materials[gltf_prim.material - data->materials];
+                ? ctx.fetch_default<PBRMaterialAsset>()
+                : materials[gltf_prim.material - data->materials];
 
             auto surface = std::make_unique<Surface>(
-                    surface_name_generator.next(), material_handle, std::move(*index_buffer), std::move(vertex_buffer));
+                surface_name_generator.next(), material_handle, std::move(*index_buffer), std::move(vertex_buffer));
 
             mesh->surfaces.emplace_back(ctx.add_labeled_asset(surface->name, std::move(surface)));
         }
@@ -746,7 +748,7 @@ static auto load_meshes(
 }
 
 static auto load_cameras(const cgltf_data* data) -> std::expected<std::vector<SceneCamera>, AssetErrorCode> {
-    NameIDGenerator name_gen{ .fallback = "Camera_" };
+    NameIDGenerator name_gen{.fallback = "Camera_"};
 
     std::vector<SceneCamera> vec;
     vec.reserve(data->cameras_count);
@@ -757,30 +759,26 @@ static auto load_cameras(const cgltf_data* data) -> std::expected<std::vector<Sc
 
         if (gltf_camera.type == cgltf_camera_type_perspective) {
             const auto& cam_data = gltf_camera.data.perspective;
-            vec.emplace_back(
-                SceneCamera{
-                    .z_far = cam_data.has_zfar ? cam_data.zfar : 0,
-                    .z_near = cam_data.zfar,
-                    .perspective = {
+            vec.emplace_back(SceneCamera{
+                .z_far  = cam_data.has_zfar ? cam_data.zfar : 0,
+                .z_near = cam_data.zfar,
+                .perspective =
+                    {
                         .aspect_ratio = cam_data.has_aspect_ratio ? cam_data.aspect_ratio : 0,
-                        .y_fov = cam_data.yfov,
+                        .y_fov        = cam_data.yfov,
                     },
-                    .type = SceneCamera::Perspective,
-                }
-            );
+                .type = SceneCamera::Perspective,
+            });
         } else if (gltf_camera.type == cgltf_camera_type_orthographic) {
             const auto& cam_data = gltf_camera.data.orthographic;
-            vec.emplace_back(
-                SceneCamera{
-                    .z_far = cam_data.zfar,
-                    .z_near = cam_data.zfar,
-                    .orthographic = {
+            vec.emplace_back(SceneCamera{.z_far = cam_data.zfar,
+                .z_near                         = cam_data.zfar,
+                .orthographic =
+                    {
                         .x_mag = cam_data.xmag,
                         .y_mag = cam_data.ymag,
                     },
-                    .type = SceneCamera::Orthographic
-                }
-            );
+                .type = SceneCamera::Orthographic});
         } else {
             return std::unexpected(AssetErrorCode::NotSupported);
         }
@@ -790,10 +788,10 @@ static auto load_cameras(const cgltf_data* data) -> std::expected<std::vector<Sc
 }
 
 static auto load_nodes(const cgltf_data* data,
-        const std::vector<StrongHandle<Mesh>>& meshes,
-        const std::vector<SceneCamera>& cameras,
-        LoadContext& ctx) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
-    NameIDGenerator name_gen{ .fallback = "Node_" };
+    const std::vector<StrongHandle<Mesh>>& meshes,
+    const std::vector<SceneCamera>& cameras,
+    LoadContext& ctx) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
+    NameIDGenerator name_gen{.fallback = "Node_"};
 
     const auto get_transform = [](const cgltf_node& node) -> glm::mat4 {
         f32 out[16];
@@ -864,7 +862,7 @@ static auto load_nodes(const cgltf_data* data,
 }
 
 static auto load_scenes(const cgltf_data* data, const std::vector<StrongHandle<GltfNode>>& nodes, LoadContext& ctx)
-        -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
+    -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
     const auto create_name = [](const char* name) -> std::string {
         static u32 count = 0;
         if (name) {
@@ -979,11 +977,11 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
     }
 
     ctx.finish(std::make_unique<Gltf>(std::move(*scenes),
-            std::move(default_scene),
-            std::move(*meshes),
-            std::move(*materials),
-            std::move(*nodes),
-            std::move(*cameras)));
+        std::move(default_scene),
+        std::move(*meshes),
+        std::move(*materials),
+        std::move(*nodes),
+        std::move(*cameras)));
 
     log::debug("gltf file successfully loaded into asset {}", ctx.handle());
 

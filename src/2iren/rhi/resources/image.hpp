@@ -5,7 +5,6 @@
 
 #include "fwd.hpp"
 
-
 namespace siren {
 
 /** @brief Defines the amount of dimensions an @ref Image may have. */
@@ -35,18 +34,22 @@ struct ImageExtent {
  * how the texture is stored in VRAM.
  */
 enum class ImageFormat {
-    /** @brief Invalid format */
+    /** @brief Invalid or uninitialized format */
     Unknown = 0,
-    /** @brief 1-Channel byte data. */
-    Mask8,
-    /** @brief 4-Channel (RGBA) byte data. (linear encoding) */
-    LinearColor8,
-    /** @brief 4-Channel (sRGBA) byte data. (sRGB encoding) */
-    Color8,
-    /** @brief 3-Channel (RGB) HDR float data. */
-    Hdr16,
-    /** @brief Depth Stencil Buffer data */
-    DepthStencil,
+    /** @brief 1-channel 8-bit red */
+    R8,
+    /** @brief 3-channel 8-bit linear RGB */
+    RGB8,
+    /** @brief 3-channel 8-bit sRGB */
+    sRGB8,
+    /** @brief 4-channel 8-bit linear RGBA */
+    RGBA8,
+    /** @brief 4-channel 8-bit sRGB */
+    sRGBA8,
+    /** @brief 3-channel 16-bit float HDR RGB */
+    RGB16f,
+    /** @brief Depth-stencil format (24-bit depth, 8-bit stencil) */
+    Depth24Stencil8,
 };
 
 /**

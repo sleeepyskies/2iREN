@@ -129,7 +129,7 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
             }
 
             const auto internal_format = gl::img_format_to_gl_internal(descriptor.format);
-            const auto& ext            = descriptor.extent;
+            const auto& extent            = descriptor.extent;
 
             // allocate enough memory
             switch (target) {
@@ -137,7 +137,7 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                         img,
                         static_cast<GLsizei>(descriptor.mipmap_levels),
                         internal_format,
-                        static_cast<GLsizei>(ext.width)
+                        static_cast<GLsizei>(extent.width)
                     );
                     break;
                 case GL_TEXTURE_1D_ARRAY:
@@ -147,8 +147,8 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                         img,
                         static_cast<GLsizei>(descriptor.mipmap_levels),
                         internal_format,
-                        static_cast<GLsizei>(ext.width),
-                        static_cast<GLsizei>(ext.height)
+                        static_cast<GLsizei>(extent.width),
+                        static_cast<GLsizei>(extent.height)
                     );
                     break;
                 case GL_TEXTURE_2D_ARRAY:
@@ -157,9 +157,9 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                         img,
                         static_cast<GLsizei>(descriptor.mipmap_levels),
                         internal_format,
-                        static_cast<GLsizei>(ext.width),
-                        static_cast<GLsizei>(ext.height),
-                        static_cast<GLsizei>(ext.depth_or_layers)
+                        static_cast<GLsizei>(extent.width),
+                        static_cast<GLsizei>(extent.height),
+                        static_cast<GLsizei>(extent.depth_or_layers)
                     );
                     break;
                 default: PANIC("Unsupported texture target");
@@ -260,7 +260,7 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
     auto make_color = [&] (u32 i) {
         return create_image({
                 .label = make_label(descriptor.label, std::format("Color Attachment {}", i)),
-                .format = ImageFormat::Color8,
+                .format = ImageFormat::RGBA8,
                 .extent = { .width = descriptor.width, .height = descriptor.height, .depth_or_layers = 1 },
                 .dimension = ImageDimension::D2,
                 .mipmap_levels = 1, // todo: we just hardcoded 1, maybe we need a variable amount? idk
@@ -276,7 +276,7 @@ auto GlDevice::create_framebuffer(const FramebufferDescriptor& descriptor) -> Fr
         if (!descriptor.has_depth_stencil) return std::nullopt;
         return this->create_image({
             .label = make_label(descriptor.label, "Depth Stencil Attachment"),
-            .format = ImageFormat::DepthStencil,
+            .format = ImageFormat::Depth24Stencil8,
             .extent = { descriptor.width, descriptor.height, 1 },
             .dimension = ImageDimension::D2,
             .mipmap_levels = 1, /// @todo: we just hardcoded 1, maybe we need a variable amount? idk

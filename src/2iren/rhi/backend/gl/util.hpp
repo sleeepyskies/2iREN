@@ -4,15 +4,14 @@
  */
 #pragma once
 
-#include <libassert/assert.hpp>
 #include <glad/gl.h>
+#include <libassert/assert.hpp>
 
 #include "2iren/rhi/resources/buffer.hpp"
 #include "2iren/rhi/resources/graphics_pipeline.hpp"
 #include "2iren/rhi/resources/image.hpp"
 #include "2iren/rhi/resources/sampler.hpp"
 #include "2iren/rhi/resources/shader.hpp"
-
 
 namespace siren::gl {
 
@@ -107,26 +106,13 @@ constexpr auto img_dim_to_siren(const GLenum dim) -> ImageDimension {
  */
 constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
     switch (format) {
-        case ImageFormat::Mask8: return GL_R8;
-        case ImageFormat::LinearColor8: return GL_RGBA8;
-        case ImageFormat::Color8: return GL_SRGB8_ALPHA8;
-        case ImageFormat::Hdr16: return GL_RGB16F;
-        case ImageFormat::DepthStencil: return GL_DEPTH24_STENCIL8;
-        default: UNREACHABLE();
-    }
-}
-
-/**
- * @brief Maps a 2iren format to the OpenGL pixel layout (format/type).
- * @details Defines the expected structure of CPU-side pixel data.
- */
-constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
-    switch (format) {
-        case ImageFormat::Mask8: return GL_RED;
-        case ImageFormat::LinearColor8:
-        case ImageFormat::Color8: return GL_RGBA;
-        case ImageFormat::Hdr16: return GL_RGB;
-        case ImageFormat::DepthStencil: return GL_DEPTH_STENCIL;
+        case ImageFormat::R8: return GL_R8;
+        case ImageFormat::RGB8: return GL_RGB8;
+        case ImageFormat::sRGB8: return GL_SRGB8;
+        case ImageFormat::RGBA8: return GL_RGBA8;
+        case ImageFormat::sRGBA8: return GL_SRGB8_ALPHA8;
+        case ImageFormat::RGB16f: return GL_RGB16F;
+        case ImageFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
         default: UNREACHABLE();
     }
 }
@@ -136,12 +122,35 @@ constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
  */
 constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> ImageFormat {
     switch (internal_format) {
-        case GL_R8: return ImageFormat::Mask8;
-        case GL_RGBA8: return ImageFormat::LinearColor8;
-        case GL_SRGB8_ALPHA8: return ImageFormat::Color8;
-        case GL_RGB16F: return ImageFormat::Hdr16;
-        case GL_DEPTH24_STENCIL8: return ImageFormat::DepthStencil;
+        case GL_R8: return ImageFormat::R8;
+        case GL_RGB8: return ImageFormat::RGB8;
+        case GL_SRGB8: return ImageFormat::sRGB8;
+        case GL_RGBA8: return ImageFormat::RGBA8;
+        case GL_SRGB8_ALPHA8: return ImageFormat::sRGBA8;
+        case GL_RGB16F: return ImageFormat::RGB16f;
+        case GL_DEPTH24_STENCIL8: return ImageFormat::Depth24Stencil8;
         default: return ImageFormat::Unknown;
+    }
+}
+
+/**
+ * @brief Maps a 2iren format to the OpenGL pixel layout (format/type).
+ * @details Defines the expected structure of CPU-side pixel data.
+ */
+constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
+    switch (format) {
+        case ImageFormat::R8: return GL_RED;
+
+        case ImageFormat::RGB16f:
+        case ImageFormat::RGB8:
+        case ImageFormat::sRGB8: return GL_RGB;
+
+        case ImageFormat::RGBA8:
+        case ImageFormat::sRGBA8: return GL_RGBA;
+
+        case ImageFormat::Depth24Stencil8: return GL_DEPTH_STENCIL;
+
+        default: UNREACHABLE();
     }
 }
 
@@ -227,9 +236,8 @@ constexpr auto img_to_target_gl(const ImageExtent extent, const ImageDimension d
         // There are no 3D arrays in GL.
         case ImageDimension::D3: return GL_TEXTURE_3D;
         // 6 layers = 1 cube. > 6 layers = Array of cubes.
-        case ImageDimension::Cube: return (extent.depth_or_layers > 6)
-                                              ? GL_TEXTURE_CUBE_MAP_ARRAY
-                                              : GL_TEXTURE_CUBE_MAP;
+        case ImageDimension::Cube:
+            return (extent.depth_or_layers > 6) ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
         default: UNREACHABLE();
     }
 }
@@ -253,7 +261,9 @@ constexpr auto img_to_target_gl(const ImageExtent extent, const ImageDimension d
  * @return GLbitfield The bitmask of OpenGL storage flags.
  */
 constexpr auto buffer_usage_to_flags_gl(const BufferUsage usage) -> GLbitfield {
-    if (usage == BufferUsage::Dynamic) { return GL_DYNAMIC_STORAGE_BIT; }
+    if (usage == BufferUsage::Dynamic) {
+        return GL_DYNAMIC_STORAGE_BIT;
+    }
     if (usage == BufferUsage::Stream) {
         return GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
     }
