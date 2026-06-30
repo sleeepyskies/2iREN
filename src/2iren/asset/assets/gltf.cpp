@@ -863,20 +863,14 @@ static auto load_nodes(const cgltf_data* data,
 
 static auto load_scenes(const cgltf_data* data, const std::vector<StrongHandle<GltfNode>>& nodes, LoadContext& ctx)
     -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
-    const auto create_name = [](const char* name) -> std::string {
-        static u32 count = 0;
-        if (name) {
-            return name;
-        }
-        return "Node_" + std::to_string(count);
-    };
+    NameIDGenerator name_gen{.fallback = "Node_"};
 
     std::vector<StrongHandle<GltfScene>> vec;
     vec.reserve(data->scenes_count);
 
     for (usize scene_idx = 0; scene_idx < data->scenes_count; scene_idx++) {
         const auto& gltf_scene = data->scenes[scene_idx];
-        const auto name        = create_name(gltf_scene.name);
+        const auto name        = name_gen.next(gltf_scene.name);
         std::vector<StrongHandle<GltfNode>> root_nodes;
 
         for (usize node_idx = 0; node_idx < gltf_scene.nodes_count; node_idx++) {
@@ -887,7 +881,7 @@ static auto load_scenes(const cgltf_data* data, const std::vector<StrongHandle<G
 
         auto scene = std::make_unique<GltfScene>(name, scene_idx - data->scenes_count, std::move(root_nodes));
 
-        const auto handle = ctx.add_labeled_asset(gltf_scene.name, std::move(scene));
+        const auto handle = ctx.add_labeled_asset(name, std::move(scene));
 
         vec.emplace_back(handle);
     }
