@@ -49,8 +49,6 @@ struct LoaderTraits<Texture> {
         Sampler sampler;
         /** @brief If present, determines how to interpret the array of textures. */
         std::optional<ImageArrayLayout> array_layout = std::nullopt;
-        /** @brief Whether the image is in linear space or in sRGB space. */
-        bool is_srgb = false;
         /** @brief If true, generates 1 + floor(log2(max(w, h, d))) mipmap levels. */
         bool generate_mipmap_levels = false;
     };
@@ -66,7 +64,7 @@ public:
         LoadContext&& ctx,
         std::optional<ConfigType> config
     ) const -> AssetLoadError override;
-    auto extensions() const -> std::vector<std::string_view> override { return { "png", "jpg", "jpeg" }; }
+    [[nodiscard]] auto extensions() const -> std::vector<std::string_view> override { return { "png", "jpg", "jpeg" }; }
 };
 
 } // namespace siren
