@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.30)
 project(2iren)
 
+# create compile_commands.json, needed for nvim navigation
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # warnings as errors
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_compile_options(
@@ -43,6 +46,7 @@ add_library(
         src/2iren/asset/assets/shader.cpp
         src/2iren/asset/assets/gltf.cpp
         src/2iren/asset/assets/pbr_material.cpp
+        src/2iren/asset/assets/texture.cpp
 
         src/2iren/window.cpp
 
