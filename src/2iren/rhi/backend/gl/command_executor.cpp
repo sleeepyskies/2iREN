@@ -228,6 +228,10 @@ auto GlCommandExecutor::execute_pass(
                 bind_uniform_buffer(cmd.as<BindUniformBuffer>());
                 break;
             }
+            case RenderCommandType::BindImage: {
+                bind_image(cmd.as<BindImage>());
+                break;
+            }
             case RenderCommandType::DrawArrays: {
                 draw_arrays(cmd.as<DrawArrays>());
                 break;
@@ -329,6 +333,12 @@ auto GlCommandExecutor::bind_index_buffer(const BindIndexBuffer& bind_index_buff
 auto GlCommandExecutor::bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void {
     const auto ubo = m_state.buffer_table.fetch(bind_uniform_buffer.uniform_buffer);
     glBindBufferBase(GL_UNIFORM_BUFFER, bind_uniform_buffer.slot, ubo);
+}
+
+auto GlCommandExecutor::bind_image(const BindImage& bind_image) const -> void {
+    const auto img   = m_state.image_table.fetch(bind_image.image);
+    const auto& desc = m_state.image_table.details(bind_image.image).descriptor;
+    glBindImageTexture(bind_image.slot, img, 0, true, 0, GL_READ_ONLY, gl::img_format_to_gl_internal(desc.format));
 }
 
 auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {

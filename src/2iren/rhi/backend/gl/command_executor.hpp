@@ -67,6 +67,8 @@ private:
     auto bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const -> void;
     /** @brief Handles @ref BindUniformBuffer. */
     auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void;
+    /** @brief Handles @ref BindImage. */
+    auto bind_image(const BindImage& bind_image) const -> void;
     /** @brief Handles @ref DrawArrays. */
     auto draw_arrays(const DrawArrays& draw_arrays) const -> void;
     /** @brief Handles @ref DrawIndexed. */
