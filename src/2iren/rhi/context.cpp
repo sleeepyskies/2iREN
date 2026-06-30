@@ -49,6 +49,10 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
                 m_descriptor.backend = Backend::OpenGL;
                 select_gl_backend();
                 break;
+            } else if constexpr (platform::current == platform::Linux) {
+                m_descriptor.backend = Backend::OpenGL;
+                select_gl_backend();
+                break;
             } else {
                 PANIC("Unsupported platform");
             }
@@ -69,6 +73,12 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     // init virtual filesystem
     const auto engine_root = Path{ SIREN_ENGINE_ROOT };
     FileSystem::mount("engine", engine_root);
+}
+
+Context::~Context() {
+    if constexpr (!single_threaded) {
+        ThreadPool::shutdown();
+    }
 }
 
 auto Context::create_device(const Window& window) const -> std::unique_ptr<Device> {

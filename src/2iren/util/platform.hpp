@@ -19,9 +19,7 @@
 
 namespace siren::platform {
 
-/**
- * @brief The platform type being used currently.
- */
+/** @brief The platform type being used currently. */
 enum Type {
     Unknown,
     Windows,

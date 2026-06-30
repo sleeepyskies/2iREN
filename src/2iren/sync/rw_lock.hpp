@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <functional>
+#include <mutex>
 
 #include "guard.hpp"
 
@@ -79,15 +80,13 @@ public:
      * @brief Perform a blocking write. If the resource is
      * currently locked, the thread will wait until it is free.
      */
-    [[nodiscard]]
-    auto write() -> WriteGuard<T> {
+    [[nodiscard]] auto write() -> WriteGuard<T> {
         typename WriteGuard<T>::LockType lock{ m_mutex }; // blocking
         return WriteGuard<T>{ std::move(lock), m_data };
     }
 
     /** @brief Attempts to obtain a @ref WriteGuard. Returns std::unexpected on failure. */
-    [[nodiscard]]
-    auto try_write() -> std::expected<WriteGuard<T>, RwlockError> {
+    [[nodiscard]] auto try_write() -> std::expected<WriteGuard<T>, RwlockError> {
         typename WriteGuard<T>::LockType lock{ m_mutex, std::try_to_lock };
         if (!lock.owns_lock()) { return std::unexpected(RwlockError::ResourceLocked); }
         return WriteGuard<T>{ std::move(lock), m_data };

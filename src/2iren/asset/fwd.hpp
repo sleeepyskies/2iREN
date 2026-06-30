@@ -30,7 +30,7 @@ struct AssetLoaderBase;
 template <IsAsset A>
 struct AssetLoader;
 
-enum class AssetErrorCode;
+class AssetErrorCode;
 
 class AssetServer;
 class LoadContext;

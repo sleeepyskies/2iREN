@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <functional>
+#include <mutex>
 
 #include "guard.hpp"
 
@@ -68,8 +69,7 @@ public:
      * @return A @ref UniqueGuard providing access to the data.
      * @note This is a blocking operation.
      */
-    [[nodiscard]]
-    auto lock() const -> GuardType {
+    [[nodiscard]] auto lock() const -> GuardType {
         LockType lock{ m_mutex };
         // have to const_cast here since m_data is const, Guard expects a non const value however
         return GuardType{ std::move(lock), const_cast<T&>(m_data) };
@@ -79,8 +79,7 @@ public:
      * @brief Attempts to acquire exclusive access without blocking.
      * @return A @ref UniqueGuard on success, or @ref MutexError if locked.
      */
-    [[nodiscard]]
-    auto try_lock() const noexcept -> ExpectedType {
+    [[nodiscard]] auto try_lock() const noexcept -> ExpectedType {
         LockType lock{ m_mutex, std::try_to_lock };
         if (!lock.owns_lock()) { return std::unexpected(MutexError::ResourceLocked); }
         return GuardType{ std::move(lock), const_cast<T&>(m_data) };
@@ -164,15 +163,13 @@ public:
      * @return A @ref UniqueGuard providing access to the data.
      * @note This is a blocking operation.
      */
-    [[nodiscard]]
-    auto lock() const -> LockType { return LockType{ m_mutex }; }
+    [[nodiscard]] auto lock() const -> LockType { return LockType{ m_mutex }; }
 
     /**
      * @brief Attempts to acquire exclusive access without blocking.
      * @return A @ref UniqueGuard on success, or @ref MutexError if locked.
      */
-    [[nodiscard]]
-    auto try_lock() const noexcept -> ExpectedType {
+    [[nodiscard]] auto try_lock() const noexcept -> ExpectedType {
         LockType lock{ m_mutex, std::try_to_lock };
         if (!lock.owns_lock()) { return std::unexpected(MutexError::ResourceLocked); }
         return lock;
