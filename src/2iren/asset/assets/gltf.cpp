@@ -9,7 +9,7 @@
 #include "2iren/rhi/device.hpp"
 #include "2iren/util/cgltf.cpp"
 #include "2iren/util/filesystem.hpp"
-#include "2iren/util/stb_image.cpp"
+#include <stb_image.h>
 
 /// For docs on GLTF see: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#indices-and-names
 /// For a brief overview of GLTF see: https://www.khronos.org/files/gltf20-reference-guide.pdf
@@ -20,9 +20,11 @@
 
 struct NameIDGenerator {
     std::string fallback = "Unnamed";
-    siren::u32 count   = 0;
+    siren::u32 count     = 0;
     auto next(const char* name) -> std::string {
-        if (name) { return name; }
+        if (name) {
+            return name;
+        }
         return fallback + "_" + std::to_string(count++);
     }
     auto next() -> std::string { return next(nullptr); }
@@ -60,7 +62,6 @@ static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFo
         case cgltf_component_type_r_8:
         case cgltf_component_type_r_16:
         case cgltf_component_type_r_32f: PANIC("Attempted to define either a Int8, Int16 or Float32 as an index type.");
-
 
         case cgltf_component_type_max_enum:
         case cgltf_component_type_invalid:
@@ -102,7 +103,7 @@ static auto gltf_filter_to_siren(const i32 filter) -> ImageFilterMode {
 
 static auto gltf_mipmap_filter_to_siren(const i32 filter) -> ImageFilterMode {
     switch (filter) {
-        // opengl/gltf combine min filter and mipmap filter
+            // opengl/gltf combine min filter and mipmap filter
 
         case cgltf_filter_type_nearest_mipmap_nearest:
         case cgltf_filter_type_linear_mipmap_nearest: return ImageFilterMode::Nearest;
@@ -145,21 +146,19 @@ static auto parse_sampler(const cgltf_sampler* sampler, Device& device) -> Sampl
     // use default sampler if none is provided.
     SamplerDescriptor desc;
     if (sampler) {
-        desc.min_filter = gltf_filter_to_siren(sampler->min_filter);
-        desc.max_filter = gltf_filter_to_siren(sampler->mag_filter);
+        desc.min_filter    = gltf_filter_to_siren(sampler->min_filter);
+        desc.max_filter    = gltf_filter_to_siren(sampler->mag_filter);
         desc.mipmap_filter = gltf_mipmap_filter_to_siren(sampler->min_filter);
-        desc.s_wrap = gltf_wrap_to_siren(sampler->wrap_s);
-        desc.t_wrap = gltf_wrap_to_siren(sampler->wrap_t);
+        desc.s_wrap        = gltf_wrap_to_siren(sampler->wrap_s);
+        desc.t_wrap        = gltf_wrap_to_siren(sampler->wrap_t);
         // the following are not provided by gltf spec:
         // r_wrap, lod_min, lod_max, border_color, compare_mode, compare_fn
     }
     return device.create_sampler(std::move(desc));
 }
 
-static auto load_textures(
-    const cgltf_data* data,
-    LoadContext& ctx
-) -> std::expected<std::vector<StrongHandle<Texture>>, AssetErrorCode> {
+static auto load_textures(const cgltf_data* data, LoadContext& ctx)
+        -> std::expected<std::vector<StrongHandle<Texture>>, AssetErrorCode> {
     NameIDGenerator name_gen{ .fallback = "Texture" };
 
     std::vector<StrongHandle<Texture>> vec;
@@ -181,22 +180,19 @@ static auto load_textures(
         if (texture.image->uri) {
             // load image from disk => spawn async task using ImageLoader
             const auto path = FileSystem::to_virtual(texture.image->uri, ctx.path().vfs());
-            if (!path) { return std::unexpected(AssetErrorCode::FileNotFound); }
-            handle = ctx.load_external_asset<Texture>(
-                path.value().string(),
-                std::make_optional(
-                    TextureLoader::ConfigType{
-                        .name = name,
-                        .format = ImageFormat{ },
-                        .sampler = std::move(sampler),
-                        .array_layout = ImageArrayLayout{ },
-                        .is_srgb = false,
-                        .generate_mipmap_levels = true,
-                    }
-                )
-            );
+            if (!path) {
+                return std::unexpected(AssetErrorCode::FileNotFound);
+            }
+            handle = ctx.load_external_asset<Texture>(path.value().string(),
+                    std::make_optional(TextureLoader::ConfigType{
+                            .name                   = name,
+                            .format                 = ImageFormat::Unknown, // trust the texture loader can handle lmao
+                            .sampler                = std::move(sampler),
+                            .generate_mipmap_levels = true,
+                    }));
         } else if (texture.image->buffer_view) {
             // load image from buffer
+            // todo: we dont actually upload the image data here?
             if (texture.image->buffer_view->has_meshopt_compression) {
                 return std::unexpected(AssetErrorCode::NotSupported);
             }
@@ -204,63 +200,54 @@ static auto load_textures(
             const auto size = texture.image->buffer_view->size;
 
             i32 width, height, channels;
-            std::unique_ptr<u8, void(*)(void*)> img_data(
-                stbi_load_from_memory(bytes, (int)size, &width, &height, &channels, STBI_default),
-                stbi_image_free
-            );
-            if (!img_data) { return std::unexpected(AssetErrorCode::AssetCorrupted); }
+            std::unique_ptr<u8, void (*)(void*)> img_data(
+                    stbi_load_from_memory(bytes, (int)size, &width, &height, &channels, STBI_default), stbi_image_free);
+            if (!img_data) {
+                return std::unexpected(AssetErrorCode::AssetCorrupted);
+            }
+            const usize img_data_size = width * height * channels;
 
-            const auto format = channels == 1
-                                    ? ImageFormat::Mask8
-                                    : channels == 4
-                                          ? ImageFormat::LinearColor8
-                                          : ImageFormat::Unknown;
+            const auto format = channels == 1 ? ImageFormat::Mask8
+                    : channels == 4           ? ImageFormat::LinearColor8
+                                              : ImageFormat::Unknown;
 
-            const auto extent = ImageExtent{
-                .width = (u32)width,
-                .height = (u32)height,
-                .depth_or_layers = 1
-            };
+            const auto extent = ImageExtent{ .width = (u32)width, .height = (u32)height, .depth_or_layers = 1 };
 
             const u32 max_dim       = std::max({ extent.width, extent.height, extent.depth_or_layers });
             const u32 mipmap_levels = 1 + static_cast<u32>(glm::floor(glm::log2(max_dim)));
 
             // todo: add name?
             auto img = ctx.device().create_image({
-                .label = std::nullopt,
-                .format = format,
-                .extent = extent,
-                .dimension = ImageDimension::D2,
-                .mipmap_levels = mipmap_levels,
+                    .label         = std::nullopt,
+                    .format        = format,
+                    .extent        = extent,
+                    .dimension     = ImageDimension::D2,
+                    .mipmap_levels = mipmap_levels,
             });
-            handle = ctx.add_labeled_asset<Texture>(
-                name,
-                std::make_unique<Texture>(
-                    name,
-                    std::move(img),
-                    std::move(sampler)
-            ));
+            auto resource = ctx.device().record_resource_commands();
+            resource.upload_to_image(img.handle(), std::span(img_data.get(), img_data_size));
+            ctx.device().submit(resource.finish());
+            handle   = ctx.add_labeled_asset<Texture>(
+                    name, std::make_unique<Texture>(name, std::move(img), std::move(sampler)));
         } else {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
         }
 
-        if (!handle.is_valid()) { return std::unexpected(AssetErrorCode::InvalidFormat); }
+        if (!handle.is_valid()) {
+            return std::unexpected(AssetErrorCode::InvalidFormat);
+        }
         vec.emplace_back(std::move(handle));
     }
 
     return vec;
 }
 
-static auto load_materials(
-    const cgltf_data* data,
-    const std::vector<StrongHandle<Texture>>& textures,
-    LoadContext& ctx
-) -> std::expected<std::vector<StrongHandle<PBRMaterialAsset>>, AssetErrorCode> {
+static auto load_materials(const cgltf_data* data, const std::vector<StrongHandle<Texture>>& textures, LoadContext& ctx)
+        -> std::expected<std::vector<StrongHandle<PBRMaterialAsset>>, AssetErrorCode> {
     NameIDGenerator name_gen{ .fallback = "Material" };
 
-    const auto get_texture = [&textures, &data] (
-        const cgltf_texture* texture
-    ) -> std::expected<StrongHandle<Texture>, AssetErrorCode>{
+    const auto get_texture =
+            [&textures, &data](const cgltf_texture* texture) -> std::expected<StrongHandle<Texture>, AssetErrorCode> {
         const usize idx = texture - data->textures;
         if (idx > textures.size()) {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
@@ -280,22 +267,27 @@ static auto load_materials(
 
         if (gltf_material.has_pbr_metallic_roughness) {
             const auto& pbr_mr = gltf_material.pbr_metallic_roughness;
-            mat->set_base_color(RGBA{glm::make_vec4(pbr_mr.base_color_factor)});
+            mat->set_base_color(RGBA{ glm::make_vec4(pbr_mr.base_color_factor) });
             mat->set_metallic(pbr_mr.metallic_factor);
             mat->set_roughness(pbr_mr.roughness_factor);
             if (pbr_mr.base_color_texture.texture) {
                 const auto texture = get_texture(pbr_mr.base_color_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_base_color_tex(texture.value());
             }
             if (pbr_mr.metallic_roughness_texture.texture) {
                 const auto texture = get_texture(pbr_mr.metallic_roughness_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_metallic_roughness_tex(texture.value());
             }
         }
 
-        if (gltf_material.has_pbr_specular_glossiness) { /* pass */ }
+        if (gltf_material.has_pbr_specular_glossiness) { /* pass */
+        }
 
         if (gltf_material.has_clearcoat) {
             const auto& cc = gltf_material.clearcoat;
@@ -303,17 +295,23 @@ static auto load_materials(
             mat->set_clear_coat_roughness(cc.clearcoat_roughness_factor);
             if (cc.clearcoat_texture.texture) {
                 const auto texture = get_texture(cc.clearcoat_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_clear_coat_tex(texture.value());
             }
             if (cc.clearcoat_roughness_texture.texture) {
                 const auto texture = get_texture(cc.clearcoat_roughness_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_clear_coat_tex(texture.value());
             }
             if (cc.clearcoat_normal_texture.texture) {
                 const auto texture = get_texture(cc.clearcoat_normal_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_clear_coat_tex(texture.value());
             }
         }
@@ -323,7 +321,9 @@ static auto load_materials(
             mat->set_transmission(tr.transmission_factor);
             if (tr.transmission_texture.texture) {
                 const auto texture = get_texture(tr.transmission_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_transmission_tex(texture.value());
             }
         }
@@ -335,7 +335,9 @@ static auto load_materials(
             mat->set_attenuation_distance(vol.attenuation_distance);
             if (vol.thickness_texture.texture) {
                 const auto texture = get_texture(vol.thickness_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_thickness_texture(texture.value());
             }
         }
@@ -350,12 +352,16 @@ static auto load_materials(
             mat->set_specular_color(glm::make_vec3(spec.specular_color_factor));
             if (spec.specular_color_texture.texture) {
                 const auto texture = get_texture(spec.specular_color_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_specular_color_tex(texture.value());
             }
             if (spec.specular_texture.texture) {
                 const auto texture = get_texture(spec.specular_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_specular_tex(texture.value());
             }
         }
@@ -366,12 +372,16 @@ static auto load_materials(
             mat->set_sheen_roughness(sh.sheen_roughness_factor);
             if (sh.sheen_color_texture.texture) {
                 const auto texture = get_texture(sh.sheen_color_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_sheen_color_tex(texture.value());
             }
             if (sh.sheen_roughness_texture.texture) {
                 const auto texture = get_texture(sh.sheen_roughness_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_sheen_roughness_tex(texture.value());
             }
         }
@@ -388,12 +398,16 @@ static auto load_materials(
             mat->set_iridescence_max(ir.iridescence_thickness_max);
             if (ir.iridescence_texture.texture) {
                 const auto texture = get_texture(ir.iridescence_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_iridescence_tex(texture.value());
             }
             if (ir.iridescence_thickness_texture.texture) {
                 const auto texture = get_texture(ir.iridescence_thickness_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_iridescence_thickness_tex(texture.value());
             }
         }
@@ -404,12 +418,16 @@ static auto load_materials(
             mat->set_diffuse_transmission_color(glm::make_vec3(df.diffuse_transmission_color_factor));
             if (df.diffuse_transmission_texture.texture) {
                 const auto texture = get_texture(df.diffuse_transmission_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_diffuse_transmission_tex(texture.value());
             }
             if (df.diffuse_transmission_color_texture.texture) {
                 const auto texture = get_texture(df.diffuse_transmission_color_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_diffuse_transmission_color_tex(texture.value());
             }
         }
@@ -420,7 +438,9 @@ static auto load_materials(
             mat->set_anisotropy_rotation(an.anisotropy_rotation);
             if (an.anisotropy_texture.texture) {
                 const auto texture = get_texture(an.anisotropy_texture.texture);
-                if (!texture.has_value()) { return std::unexpected(texture.error()); }
+                if (!texture.has_value()) {
+                    return std::unexpected(texture.error());
+                }
                 mat->set_anisotropy_tex(texture.value());
             }
         }
@@ -431,19 +451,25 @@ static auto load_materials(
 
         if (gltf_material.normal_texture.texture) {
             const auto texture = get_texture(gltf_material.normal_texture.texture);
-            if (!texture.has_value()) { return std::unexpected(texture.error()); }
+            if (!texture.has_value()) {
+                return std::unexpected(texture.error());
+            }
             mat->set_normal_tex(texture.value());
         }
 
         if (gltf_material.occlusion_texture.texture) {
             const auto texture = get_texture(gltf_material.occlusion_texture.texture);
-            if (!texture.has_value()) { return std::unexpected(texture.error()); }
+            if (!texture.has_value()) {
+                return std::unexpected(texture.error());
+            }
             mat->set_occlusion_tex(texture.value());
         }
 
         if (gltf_material.emissive_texture.texture) {
             const auto texture = get_texture(gltf_material.emissive_texture.texture);
-            if (!texture.has_value()) { return std::unexpected(texture.error()); }
+            if (!texture.has_value()) {
+                return std::unexpected(texture.error());
+            }
             mat->set_emissive_tex(texture.value());
         }
 
@@ -462,9 +488,8 @@ static auto load_materials(
 
 static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadError {
     if (primitve.type != cgltf_primitive_type_triangles) {
-        log::warn(
-            "2iren only supports primitive type triangles. Encountered cgltf_primitive_type: {}", (u32)primitve.type
-        );
+        log::warn("2iren only supports primitive type triangles. Encountered cgltf_primitive_type: {}",
+                (u32)primitve.type);
         return std::unexpected(AssetErrorCode::NotSupported);
     }
 
@@ -478,7 +503,7 @@ static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadEr
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    return { };
+    return {};
 }
 
 static auto validate_index_type(const cgltf_component_type type) -> AssetLoadError {
@@ -493,7 +518,7 @@ static auto validate_index_type(const cgltf_component_type type) -> AssetLoadErr
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    return { };
+    return {};
 }
 
 static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadError {
@@ -502,29 +527,25 @@ static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadErr
         return std::unexpected(AssetErrorCode::NotSupported);
     }
 
-    if (const auto res = validate_index_type(indices->component_type); !res) { return res; }
+    if (const auto res = validate_index_type(indices->component_type); !res) {
+        return res;
+    }
 
     if (indices->type != cgltf_type_scalar) {
         log::warn("gltf mesh has non scalar indices.");
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    if (
-        !indices->buffer_view
-        || !indices->buffer_view->buffer
-        || !indices->buffer_view->buffer->data
-    ) {
+    if (!indices->buffer_view || !indices->buffer_view->buffer || !indices->buffer_view->buffer->data) {
         log::error("gltf mesh indices point to missing or invalid buffer data.");
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    return { };
+    return {};
 }
 
-static auto load_index_buffer(
-    const cgltf_accessor* indices,
-    Device& device
-) -> std::expected<IndexBuffer, AssetErrorCode> {
+static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
+        -> std::expected<IndexBuffer, AssetErrorCode> {
     // not that 2iren only supports 32-bit unsinged integers for now as indices.
     // at the end of the day, this probably doesnt matter too much, but it would b nice to maybe
     // support lower bit indices?
@@ -542,14 +563,14 @@ static auto load_index_buffer(
     const usize unpacked_count = cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(u32), index_count);
     ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
-    return IndexBuffer {
-        .data = device.create_buffer({
-                .label = std::nullopt,
-                .data = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
-                .size = buffer.size_bytes(),
-                .usage = BufferUsage::Static,
-            }),
-        .count = index_count,
+    return IndexBuffer{
+        .data   = device.create_buffer({
+                  .label = std::nullopt,
+                  .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
+                  .size  = buffer.size_bytes(),
+                  .usage = BufferUsage::Static,
+        }),
+        .count  = index_count,
         .format = IndexFormat::UInt32,
     };
 }
@@ -558,12 +579,12 @@ static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
     // we enforce a default vertex layout atm in 2iren. This means, every vertex buffer
     // is built the same, even if the gltf file only specifies a position attribute.
     return LayoutBuilder::start()
-          .add(Attribute::Position, 4, DataType::Float32)
-          .add(Attribute::Normal, 4, DataType::Float32)
-          .add(Attribute::Color, 4, DataType::Float32)
-          .add(Attribute::Texture, 2, DataType::Float32)
-          .add(Attribute::Tangent, 4, DataType::Float32)
-          .finish();
+            .add(Attribute::Position, 4, DataType::Float32)
+            .add(Attribute::Normal, 4, DataType::Float32)
+            .add(Attribute::Color, 4, DataType::Float32)
+            .add(Attribute::Texture, 2, DataType::Float32)
+            .add(Attribute::Tangent, 4, DataType::Float32)
+            .finish();
 
     // code below returns the actual layout
     /*
@@ -582,10 +603,7 @@ static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
     */
 }
 
-static auto load_vertex_buffer(
-    const cgltf_primitive& primitive,
-    Device& device
-) -> VertexBuffer {
+static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device) -> VertexBuffer {
     // when loading a vertex buffer, we enforce that each attribute exists. This means
     // we write dummy data into the vertex buffer for any attributes missing in the actual
     // underlying gltf buffers. Eventually, shader permuations would be nice, but for now we do this.
@@ -603,11 +621,11 @@ static auto load_vertex_buffer(
     buffer.reserve_bytes(layout.stride * count); // size of a single vertex * number of vertices
 
     // get all accessors
-    cgltf_accessor* positions  = nullptr;
-    cgltf_accessor* normals    = nullptr;
-    cgltf_accessor* colors     = nullptr;
-    cgltf_accessor* textures   = nullptr;
-    cgltf_accessor* tangents   = nullptr;
+    cgltf_accessor* positions = nullptr;
+    cgltf_accessor* normals   = nullptr;
+    cgltf_accessor* colors    = nullptr;
+    cgltf_accessor* textures  = nullptr;
+    cgltf_accessor* tangents  = nullptr;
 
     for (usize i = 0; i < primitive.attributes_count; i++) {
         const auto& attribute = primitive.attributes[i];
@@ -650,7 +668,10 @@ static auto load_vertex_buffer(
         }
 
         if (textures) {
-            std::array<f32, 2> texture = { 0.f, 0.f, };
+            std::array<f32, 2> texture = {
+                0.f,
+                0.f,
+            };
             cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 3);
             buffer.append(texture);
         }
@@ -662,22 +683,20 @@ static auto load_vertex_buffer(
         }
     }
 
-    return VertexBuffer {
-        .data = device.create_buffer({
-            .label = std::nullopt,
-            .data = buffer.data(), // todo: also does a copy here fuck
-            .size = buffer.size_bytes(),
-            .usage = BufferUsage::Static,
+    return VertexBuffer{
+        .data   = device.create_buffer({
+                  .label = std::nullopt,
+                  .data  = buffer.data(), // todo: also does a copy here fuck
+                  .size  = buffer.size_bytes(),
+                  .usage = BufferUsage::Static,
         }),
         .layout = layout,
     };
 }
 
 static auto load_meshes(
-    const cgltf_data* data,
-    const std::vector<StrongHandle<PBRMaterialAsset>>& materials,
-    LoadContext& ctx
-) -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
+        const cgltf_data* data, const std::vector<StrongHandle<PBRMaterialAsset>>& materials, LoadContext& ctx)
+        -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
     // surface names scoped are scoped to the gltf due to asset label system.
     NameIDGenerator mesh_name_generator{ .fallback = "Mesh" };
     NameIDGenerator surface_name_generator{ .fallback = "Surface" };
@@ -711,15 +730,11 @@ static auto load_meshes(
             auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
             const auto& material_handle = (gltf_prim.material == nullptr)
-                                              ? ctx.fetch_default<PBRMaterialAsset>()
-                                              : materials[gltf_prim.material - data->materials];
+                    ? ctx.fetch_default<PBRMaterialAsset>()
+                    : materials[gltf_prim.material - data->materials];
 
             auto surface = std::make_unique<Surface>(
-                surface_name_generator.next(),
-                material_handle,
-                std::move(*index_buffer),
-                std::move(vertex_buffer)
-            );
+                    surface_name_generator.next(), material_handle, std::move(*index_buffer), std::move(vertex_buffer));
 
             mesh->surfaces.emplace_back(ctx.add_labeled_asset(surface->name, std::move(surface)));
         }
@@ -730,9 +745,7 @@ static auto load_meshes(
     return vec;
 }
 
-static auto load_cameras(
-    const cgltf_data* data
-) -> std::expected<std::vector<SceneCamera>, AssetErrorCode> {
+static auto load_cameras(const cgltf_data* data) -> std::expected<std::vector<SceneCamera>, AssetErrorCode> {
     NameIDGenerator name_gen{ .fallback = "Camera_" };
 
     std::vector<SceneCamera> vec;
@@ -776,21 +789,19 @@ static auto load_cameras(
     return vec;
 }
 
-static auto load_nodes(
-    const cgltf_data* data,
-    const std::vector<StrongHandle<Mesh>>& meshes,
-    const std::vector<SceneCamera>& cameras,
-    LoadContext& ctx
-) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
+static auto load_nodes(const cgltf_data* data,
+        const std::vector<StrongHandle<Mesh>>& meshes,
+        const std::vector<SceneCamera>& cameras,
+        LoadContext& ctx) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
     NameIDGenerator name_gen{ .fallback = "Node_" };
 
-    const auto get_transform = [] (const cgltf_node& node)-> glm::mat4{
+    const auto get_transform = [](const cgltf_node& node) -> glm::mat4 {
         f32 out[16];
         cgltf_node_transform_local(&node, (cgltf_float*)out);
         return glm::make_mat4(out);
     };
 
-    const auto get_node_idx = [data] (const cgltf_node* node_ptr) -> usize{ return node_ptr - data->nodes; };
+    const auto get_node_idx = [data](const cgltf_node* node_ptr) -> usize { return node_ptr - data->nodes; };
 
     std::vector<std::pair<StrongHandle<GltfNode>, GltfNode*>> vec;
     vec.reserve(data->nodes_count);
@@ -819,7 +830,7 @@ static auto load_nodes(
         node->index     = get_node_idx(&gltf_node);
         node->transform = get_transform(gltf_node);
         node->parent    = std::nullopt;
-        node->children  = { };
+        node->children  = {};
         node->mesh      = mesh;
         node->camera    = camera;
 
@@ -852,14 +863,13 @@ static auto load_nodes(
     return vec | views::keys | ranges::to<std::vector>();
 }
 
-static auto load_scenes(
-    const cgltf_data* data,
-    const std::vector<StrongHandle<GltfNode>>& nodes,
-    LoadContext& ctx
-) -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
-    const auto create_name = [] (const char* name) -> std::string{
+static auto load_scenes(const cgltf_data* data, const std::vector<StrongHandle<GltfNode>>& nodes, LoadContext& ctx)
+        -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
+    const auto create_name = [](const char* name) -> std::string {
         static u32 count = 0;
-        if (name) { return name; }
+        if (name) {
+            return name;
+        }
         return "Node_" + std::to_string(count);
     };
 
@@ -877,11 +887,7 @@ static auto load_scenes(
             root_nodes.emplace_back(nodes[global_node_idx]);
         }
 
-        auto scene = std::make_unique<GltfScene>(
-            name,
-            scene_idx - data->scenes_count,
-            std::move(root_nodes)
-        );
+        auto scene = std::make_unique<GltfScene>(name, scene_idx - data->scenes_count, std::move(root_nodes));
 
         const auto handle = ctx.add_labeled_asset(gltf_scene.name, std::move(scene));
 
@@ -891,26 +897,25 @@ static auto load_scenes(
     return vec;
 }
 
-auto GltfLoader::load(
-    LoadContext&& ctx,
-    std::optional<ConfigType>
-) const -> AssetLoadError {
+auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> AssetLoadError {
     log::debug("Loading a new gltf file from {}", ctx.path());
 
     // const auto config_ = config.value_or(ConfigType{ });
 
     // @formatter:off
-    struct cgltf_delete { auto operator()(cgltf_data* data) const -> void { cgltf_free(data); } };
+    struct cgltf_delete {
+        auto operator()(cgltf_data* data) const -> void { cgltf_free(data); }
+    };
     using cgltf_ptr = std::unique_ptr<cgltf_data, cgltf_delete>;
     // @formatter:on
 
     // load the gltf file using cgltf
     auto physical_path_opt = FileSystem::to_physical(ctx.path().full_path());
-    cgltf_data* raw = nullptr;
+    cgltf_data* raw        = nullptr;
 
     if (physical_path_opt) {
         const Path& p = *physical_path_opt;
-        cgltf_options options{ };
+        cgltf_options options{};
 
         if (cgltf_parse_file(&options, p.string().c_str(), &raw) != cgltf_result_success) {
             log::warn("Could not parse gltf at {}", p.string());
@@ -969,22 +974,20 @@ auto GltfLoader::load(
     }
 
     std::optional<StrongHandle<GltfScene>> default_scene;
-    if (data->scene) { default_scene = (*scenes)[data->scene - data->scenes]; }
+    if (data->scene) {
+        default_scene = (*scenes)[data->scene - data->scenes];
+    }
 
-    ctx.finish(
-        std::make_unique<Gltf>(
-            std::move(*scenes),
+    ctx.finish(std::make_unique<Gltf>(std::move(*scenes),
             std::move(default_scene),
             std::move(*meshes),
             std::move(*materials),
             std::move(*nodes),
-            std::move(*cameras)
-        )
-    );
+            std::move(*cameras)));
 
     log::debug("gltf file successfully loaded into asset {}", ctx.handle());
 
-    return { };
+    return {};
 }
 
 } // namespace siren

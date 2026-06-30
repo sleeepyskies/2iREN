@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <ranges>
+#include <algorithm>
 
 
 namespace siren {

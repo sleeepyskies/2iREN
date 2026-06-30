@@ -1,18 +1,17 @@
 #pragma once
 
 #include <libassert/assert.hpp>
-#include <utility>
 
 #include "asset_id.hpp"
 #include "asset_path.hpp"
 #include "asset_pool.hpp"
 
-
 namespace siren {
 
 /**
  * @brief A weak, type erased asset handle.
- * @todo A promote function would be nice, but I cant be bothered to deal with shitty cpp circular headaches rn.
+ * @todo A promote function would be nice, but I cant be bothered to deal with shitty cpp circular
+ * headaches rn.
  */
 class WeakHandle {
 public:
@@ -21,14 +20,10 @@ public:
     /** @brief Default constructs an invalid handle. */
     WeakHandle() = default;
     /** @brief Constructs a new WeakHandle. */
-    WeakHandle(
-        const AssetID id,
-        AssetPoolBase* pool,
-        const AssetPath& path
-    ) : m_path(path), m_id(id), m_pool(pool) { }
+    WeakHandle(const AssetID id, AssetPoolBase* pool, const AssetPath& path) : m_path(path), m_id(id), m_pool(pool) {}
 
     /** @brief Constructs a new invalid WeakHandle. */
-    static auto invalid() -> WeakHandle { return WeakHandle{ }; }
+    static auto invalid() -> WeakHandle { return WeakHandle{}; }
 
     WeakHandle(const WeakHandle&)            = default;
     WeakHandle& operator=(const WeakHandle&) = default;
@@ -39,7 +34,9 @@ public:
     [[nodiscard]] auto id() const noexcept -> AssetID { return m_id; }
     /** @brief Returns the @ref AssetPoolBase pointer of this WeakHandle. */
     [[nodiscard]]
-    constexpr auto pool() const noexcept -> AssetPoolBase* { return m_pool; }
+    constexpr auto pool() const noexcept -> AssetPoolBase* {
+        return m_pool;
+    }
     /** @brief Returns the original asset path of this WeakHandle. */
     [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& { return m_path; }
     /** @brief Returns the string representation of this handle. */
@@ -79,26 +76,31 @@ public:
     using TypeID = WeakHandle::TypeID;
 
     /** @brief Returns a dummy AssetHandle. */
-    static auto invalid() noexcept -> StrongHandle { return StrongHandle{ }; }
-    ~StrongHandle() { if (m_weak.pool()) { pool().dec_ref(id()); } }
+    static auto invalid() noexcept -> StrongHandle { return StrongHandle{}; }
+    ~StrongHandle() {
+        if (m_weak.pool()) {
+            pool().dec_ref(id());
+        }
+    }
 
-    StrongHandle(
-        const AssetID& id,
-        AssetPool<A>& pool,
-        const AssetPath& asset_path
-    ) : m_weak(WeakHandle{ id, &pool, asset_path }) {
-        ASSERT(
-            AssetID::type_id<A>() == id.type(),
-            "Cannot construct a StrongHandle if AssetID and AssetPool types do not match."
-        );
+    StrongHandle(const AssetID& id, AssetPool<A>& pool, const AssetPath& asset_path) :
+        m_weak(WeakHandle{ id, &pool, asset_path }) {
+        ASSERT(AssetID::type_id<A>() == id.type(),
+                "Cannot construct a StrongHandle if AssetID and AssetPool types do not match.");
         pool.inc_ref(id);
     }
 
-    StrongHandle(const StrongHandle& other) : m_weak(other.m_weak) { if (m_weak.pool()) { pool().inc_ref(id()); } }
+    StrongHandle(const StrongHandle& other) : m_weak(other.m_weak) {
+        if (m_weak.pool()) {
+            pool().inc_ref(id());
+        }
+    }
     StrongHandle& operator=(const StrongHandle& other) {
         if (this != &other) {
             m_weak = other.m_weak;
-            if (m_weak.pool()) { pool().inc_ref(id()); }
+            if (m_weak.pool()) {
+                pool().inc_ref(id());
+            }
         }
         return *this;
     }
@@ -118,7 +120,9 @@ public:
     }
 
     /** @brief Checks if this handle is valid and references an alive asset. */
-    [[nodiscard]] auto is_valid() const -> bool { return id().is_valid() && m_weak.pool() != nullptr && pool().is_valid_id(id()); }
+    [[nodiscard]] auto is_valid() const -> bool {
+        return id().is_valid() && m_weak.pool() != nullptr && pool().is_valid_id(id());
+    }
 
     /** @brief Returns the raw untyped version of this handle. */
     [[nodiscard]] constexpr auto id() const noexcept -> AssetID { return m_weak.id(); }
@@ -127,7 +131,9 @@ public:
     /** @brief Returns the AssetPath of the referenced asset. */
     [[nodiscard]] auto path() const -> AssetPath { return m_weak.path(); }
     /** @brief Returns the string representation of this handle. */
-    [[nodiscard]] auto to_string() const -> std::string { return std::format("Strong<{}>({})", typename_of<A>(), m_weak.id().packed()); }
+    [[nodiscard]] auto to_string() const -> std::string {
+        return std::format("Strong<{}>({})", typename_of<A>(), m_weak.id().packed());
+    }
 
     /** @brief Equality comparison operator. */
     [[nodiscard]] constexpr auto operator==(const StrongHandle& other) const -> bool = default;
@@ -145,7 +151,5 @@ private:
 
 template <>
 struct std::hash<siren::WeakHandle> {
-    auto operator()(const siren::WeakHandle& handle) const noexcept -> siren::usize {
-        return handle.id().hash();
-    }
+    auto operator()(const siren::WeakHandle& handle) const noexcept -> siren::usize { return handle.id().hash(); }
 };

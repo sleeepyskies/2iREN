@@ -46,6 +46,7 @@ public:
 
 /**
  * @brief Describes a @ref Buffer. Used for object creation via @ref Device.
+ * @todo pass in the data as a separate buffer in the device->create_buffer(), or just remove entirely
  */
 struct BufferDescriptor {
     /** @brief An optional label. Mainly useful for debugging. */

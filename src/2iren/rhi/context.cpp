@@ -5,6 +5,7 @@
 #include "backend/gl/device.hpp"
 #include "2iren/util/platform.hpp"
 #include "2iren/util/time.hpp"
+#include <stb_image.h>
 
 #ifndef SIREN_ENGINE_ROOT
 #define SIREN_ENGINE_ROOT "."
@@ -14,6 +15,7 @@ namespace siren {
 
 static auto select_gl_backend() -> void {
     log::info("OpenGL backend chosen.");
+    stbi_set_flip_vertically_on_load(true); // true only for
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

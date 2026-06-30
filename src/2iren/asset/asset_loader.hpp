@@ -1,13 +1,12 @@
 #pragma once
 
-#include <string>
 #include <expected>
-#include <vector>
-#include <optional>
 #include <libassert/assert.hpp>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "fwd.hpp"
-
 
 namespace siren {
 
@@ -26,15 +25,17 @@ public:
         /** @brief Some feature was encountered that 1iren does not support. */
         NotSupported,
         /** @brief Some data has been corrupted. */
-        AssetCorrupted
+        AssetCorrupted,
+        /** @brief No config was provided, when one is required. */
+        NoConfig,
     } value;
 
-
     // ReSharper disable once CppNonExplicitConvertingConstructor
-    constexpr AssetErrorCode(const Value v) : value(v) { }
+    constexpr AssetErrorCode(const Value v) : value(v) {}
     // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
+    /** @brief Stringifies the given AssetErrorCode. */
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (value) {
             case FileNotFound: return "FileNotFound";
@@ -43,6 +44,7 @@ public:
             case RuntimeFailed: return "RuntimeFailed";
             case NotSupported: return "NotSupported";
             case AssetCorrupted: return "AssetCorrupted";
+            case NoConfig: return "NoConfig";
             default: UNREACHABLE();
         }
     }
@@ -52,13 +54,13 @@ using AssetLoadError = std::expected<void, AssetErrorCode>;
 
 template <typename T>
 struct LoaderTraits {
-    struct Config { };
+    struct Config {};
 };
 
 struct AssetLoaderBase {
     virtual ~AssetLoaderBase() = default;
     /** @brief Returns a list of file extensions this loader can load. */
-    virtual auto extensions() const -> std::vector<std::string_view> = 0;
+    [[nodiscard]] virtual auto extensions() const -> std::vector<std::string_view> = 0;
 };
 
 /**
@@ -76,10 +78,7 @@ struct AssetLoader : AssetLoaderBase {
      * @param config A config determining how to load the asset.
      * @return Nothing on success, or an error code on fail.
      */
-    virtual auto load(
-        LoadContext&& ctx,
-        const std::optional<ConfigType> config
-    ) const -> AssetLoadError = 0;
+    virtual auto load(LoadContext&& ctx, const std::optional<ConfigType> config) const -> AssetLoadError = 0;
 };
 
 } // namespace siren

@@ -38,7 +38,7 @@ public:
         LoadContext&& ctx,
         std::optional<ConfigType> config
     ) const -> AssetLoadError override;
-    auto extensions() const -> std::vector<std::string_view> override { return { "sshg" }; }
+    [[nodiscard]] auto extensions() const -> std::vector<std::string_view> override { return { "sshg" }; }
 };
 
 } // namespace siren
