@@ -747,50 +747,8 @@ static auto load_meshes(
     return vec;
 }
 
-static auto load_cameras(const cgltf_data* data) -> std::expected<std::vector<SceneCamera>, AssetErrorCode> {
-    NameIDGenerator name_gen{.fallback = "Camera_"};
-
-    std::vector<SceneCamera> vec;
-    vec.reserve(data->cameras_count);
-
-    for (u32 cam_idx = 0; cam_idx < data->cameras_count; cam_idx++) {
-        const auto& gltf_camera = data->cameras[cam_idx];
-        const auto name         = name_gen.next(gltf_camera.name);
-
-        if (gltf_camera.type == cgltf_camera_type_perspective) {
-            const auto& cam_data = gltf_camera.data.perspective;
-            vec.emplace_back(SceneCamera{
-                .z_far  = cam_data.has_zfar ? cam_data.zfar : 0,
-                .z_near = cam_data.zfar,
-                .perspective =
-                    {
-                        .aspect_ratio = cam_data.has_aspect_ratio ? cam_data.aspect_ratio : 0,
-                        .y_fov        = cam_data.yfov,
-                    },
-                .type = SceneCamera::Perspective,
-            });
-        } else if (gltf_camera.type == cgltf_camera_type_orthographic) {
-            const auto& cam_data = gltf_camera.data.orthographic;
-            vec.emplace_back(SceneCamera{.z_far = cam_data.zfar,
-                .z_near                         = cam_data.zfar,
-                .orthographic =
-                    {
-                        .x_mag = cam_data.xmag,
-                        .y_mag = cam_data.ymag,
-                    },
-                .type = SceneCamera::Orthographic});
-        } else {
-            return std::unexpected(AssetErrorCode::NotSupported);
-        }
-    }
-
-    return vec;
-}
-
-static auto load_nodes(const cgltf_data* data,
-    const std::vector<StrongHandle<Mesh>>& meshes,
-    const std::vector<SceneCamera>& cameras,
-    LoadContext& ctx) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
+static auto load_nodes(const cgltf_data* data, const std::vector<StrongHandle<Mesh>>& meshes, LoadContext& ctx)
+    -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Node_"};
 
     const auto get_transform = [](const cgltf_node& node) -> glm::mat4 {
@@ -817,11 +775,6 @@ static auto load_nodes(const cgltf_data* data,
             mesh = meshes[gltf_node.mesh - data->meshes];
         }
 
-        std::optional<SceneCamera> camera = std::nullopt;
-        if (gltf_node.camera != nullptr) {
-            camera = cameras[gltf_node.camera - data->cameras];
-        }
-
         auto node = std::make_unique<GltfNode>();
 
         node->name      = name;
@@ -830,7 +783,6 @@ static auto load_nodes(const cgltf_data* data,
         node->parent    = std::nullopt;
         node->children  = {};
         node->mesh      = mesh;
-        node->camera    = camera;
 
         // hacky ownership lol
 
@@ -947,13 +899,7 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
         return std::unexpected(meshes.error());
     }
 
-    auto cameras = load_cameras(data.get());
-    if (!cameras.has_value()) {
-        log::warn("Could not load gltf at {}, cameras could not be loaded.", ctx.path());
-        return std::unexpected(cameras.error());
-    }
-
-    auto nodes = load_nodes(data.get(), *meshes, *cameras, ctx);
+    auto nodes = load_nodes(data.get(), *meshes, ctx);
     if (!nodes.has_value()) {
         log::warn("Could not load gltf at {}, nodes could not be loaded.", ctx.path());
         return std::unexpected(nodes.error());
@@ -974,8 +920,7 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
         std::move(default_scene),
         std::move(*meshes),
         std::move(*materials),
-        std::move(*nodes),
-        std::move(*cameras)));
+        std::move(*nodes)));
 
     log::debug("gltf file successfully loaded into asset {}", ctx.handle());
 

@@ -12,36 +12,6 @@
 
 namespace siren {
 
-/** @brief A camera. Can have either orthographic or perspective projection. */
-struct SceneCamera {
-    /** @brief The far plane distance. Set to 0 if infinite. */
-    f32 z_far;
-    /** @brief The near plane distance. */
-    f32 z_near;
-
-    struct PerspectiveData {
-        /** @brief The aspect ratio. Set to 0 if not present. */
-        f32 aspect_ratio;
-        /** @brief The vertical fov. */
-        f32 y_fov;
-    };
-
-    struct OrthoData {
-        /** @brief The horizontal magnification of the camera. */
-        f32 x_mag;
-        /** @brief The horizontal magnification of the camera. */
-        f32 y_mag;
-    };
-
-    union {
-        PerspectiveData perspective;
-        OrthoData orthographic;
-    };
-
-    /** @brief The type of the camera. */
-    enum Type { Perspective, Orthographic } type;
-};
-
 /** @brief A single node in the scene hierarchy. */
 struct GltfNode : Asset {
     /** @brief The name of the node. */
@@ -56,14 +26,9 @@ struct GltfNode : Asset {
     std::vector<StrongHandle<GltfNode>> children;
     /** @brief The mesh of the node. */
     std::optional<StrongHandle<Mesh>> mesh;
-    /** @brief The camera of the node. */
-    std::optional<SceneCamera> camera;
-    // std::optional<AssetHandle<Light>> light;
-    // std::optional<AssetHandle<Skin>> Skin;
-
 };
 
-/// @brief A collection of nodes. Similar to a prefab.
+/** @brief A collection of nodes. Similar to a prefab. */
 struct GltfScene : Asset {
     GltfScene(
         const std::string& name,
@@ -88,14 +53,12 @@ struct Gltf : Asset {
         std::optional<StrongHandle<GltfScene>>&& default_scene,
         std::vector<StrongHandle<Mesh>>&& meshes,
         std::vector<StrongHandle<PBRMaterialAsset>>&& materials,
-        std::vector<StrongHandle<GltfNode>>&& nodes,
-        std::vector<SceneCamera>&& cameras
+        std::vector<StrongHandle<GltfNode>>&& nodes
     ) : scenes(std::move(scenes)),
         default_scene(std::move(default_scene)),
         meshes(std::move(meshes)),
         materials(std::move(materials)),
-        nodes(std::move(nodes)),
-        cameras(std::move(cameras)) { }
+        nodes(std::move(nodes)) { }
 
     /** @brief All scenes loaded from the gltf. */
     std::vector<StrongHandle<GltfScene>> scenes;
@@ -109,10 +72,6 @@ struct Gltf : Asset {
     std::vector<StrongHandle<Texture>> textures;
     /** @brief All nodes loaded from the gltf. */
     std::vector<StrongHandle<GltfNode>> nodes;
-    /** @brief All cameras loaded from the gltf. */
-    std::vector<SceneCamera> cameras;
-    // std::vector<AssetHandle<Light>> lights;
-    // std::vector<AssetHandle<Skin>> skins;
 };
 
 template <>
