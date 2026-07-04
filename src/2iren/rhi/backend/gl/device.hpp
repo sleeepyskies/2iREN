@@ -153,10 +153,10 @@ public:
 
     auto flush_delete_queue() -> void override;
 
-    [[nodiscard]] auto record_resource_commands() -> ResourceCommandRecorder override;
-    [[nodiscard]] auto record_render_commands() -> RenderCommandRecorder override;
-    auto submit(ResourceCommandBuffer&& command_buffer) -> void override;
-    auto submit(RenderCommandBuffer&& command_buffer) -> void override;
+    [[nodiscard]] auto record_resource_commands() const -> ResourceCommandRecorder override;
+    [[nodiscard]] auto record_render_commands() const -> RenderCommandRecorder override;
+    auto submit(ResourceCommandBuffer&& command_buffer) const -> void override;
+    auto submit(RenderCommandBuffer&& command_buffer) const -> void override;
 
     [[nodiscard]] auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& override;
     [[nodiscard]] auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& override;

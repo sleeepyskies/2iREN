@@ -20,12 +20,12 @@ struct GltfNode : Asset {
     usize index;
     /** @brief The transform of the node. */
     glm::mat4 transform;
+    /** @brief The mesh of the node. */
+    std::optional<StrongHandle<Mesh>> mesh;
     /** @brief The parent node of the node (if present). */
     std::optional<WeakHandle> parent;
     /** @brief The children nodes of the node. */
     std::vector<StrongHandle<GltfNode>> children;
-    /** @brief The mesh of the node. */
-    std::optional<StrongHandle<Mesh>> mesh;
 };
 
 /** @brief A collection of nodes. Similar to a prefab. */

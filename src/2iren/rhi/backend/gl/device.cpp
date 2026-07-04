@@ -609,11 +609,11 @@ auto GlDevice::flush_delete_queue() -> void {
     m_delete_queue.clear();
 }
 
-auto GlDevice::record_resource_commands() -> ResourceCommandRecorder { return ResourceCommandRecorder{ }; }
+auto GlDevice::record_resource_commands() const -> ResourceCommandRecorder { return ResourceCommandRecorder{ }; }
 
-auto GlDevice::record_render_commands() -> RenderCommandRecorder { return RenderCommandRecorder{ }; }
+auto GlDevice::record_render_commands() const -> RenderCommandRecorder { return RenderCommandRecorder{ }; }
 
-auto GlDevice::submit(ResourceCommandBuffer&& command_buffer) -> void {
+auto GlDevice::submit(ResourceCommandBuffer&& command_buffer) const -> void {
     m_render_thread.spawn(
         [this, cmds = std::move(command_buffer)]()mutable{
             GlCommandExecutor executor{ this->m_state };
@@ -622,7 +622,7 @@ auto GlDevice::submit(ResourceCommandBuffer&& command_buffer) -> void {
     );
 }
 
-auto GlDevice::submit(RenderCommandBuffer&& command_buffer) -> void {
+auto GlDevice::submit(RenderCommandBuffer&& command_buffer) const -> void {
     m_render_thread.spawn(
         [this, cmds = std::move(command_buffer)]() mutable{
             GlCommandExecutor executor{ this->m_state };

@@ -1,14 +1,13 @@
 #pragma once
 
-#include <unordered_map>
 #include <glm/glm.hpp>
 #include <libassert/assert.hpp>
+#include <unordered_map>
 
 #include "2iren/base.hpp"
-#include "resources/fwd.hpp"
-#include "resources/buffer.hpp"
 #include "2iren/util/color.hpp"
-
+#include "resources/buffer.hpp"
+#include "resources/fwd.hpp"
 
 namespace siren {
 
@@ -19,7 +18,7 @@ namespace siren {
  * @brief Identifies the type of operation recorded into the buffer.
  * Acts as a tag for a union.
  */
-enum class RenderCommandType: u8 {
+enum class RenderCommandType : u8 {
     BindGraphicsPipeline,
     SetViewport,
 
@@ -311,6 +310,14 @@ public:
     [[nodiscard]] auto begin_render_pass(const RenderPassDescriptor& descriptor) const noexcept -> RenderPassRecorder;
     /** @brief Consumes the result of a @ref RenderPassRecorder. */
     auto consume_render_pass(const RenderPassResult& commands) noexcept -> void;
+
+    template <typename Function>
+        requires(std::is_invocable_v<Function, RenderPassRecorder&>)
+    auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
+        auto pass = begin_render_pass(descriptor);
+        std::invoke(func, pass);
+        consume_render_pass(pass.finish());
+    }
 
     /** @brief Consumes the internal data of the RenderCommandBuffer ready for execution. */
     [[nodiscard]] auto finish() noexcept -> RenderCommandBuffer;

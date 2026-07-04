@@ -1,9 +1,8 @@
 #pragma once
 
-#include "resources/fwd.hpp"
-#include "resource_command.hpp"
 #include "render_command.hpp"
-
+#include "resource_command.hpp"
+#include "resources/fwd.hpp"
 
 namespace siren {
 
@@ -56,9 +55,8 @@ public:
     virtual auto destroy_shader(ShaderHandle handle) -> void = 0;
 
     /** @brief Creates and returns a new @ref GraphicsPipeline given a @ref GraphicsPipelineDescriptor. */
-    [[nodiscard]] virtual auto create_graphics_pipeline(
-        const GraphicsPipelineDescriptor& descriptor
-    ) -> GraphicsPipeline = 0;
+    [[nodiscard]] virtual auto create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+        -> GraphicsPipeline = 0;
     /** @brief Queues the given @ref GraphicsPipeline for deletion. */
     virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void = 0;
 
@@ -71,13 +69,22 @@ public:
     virtual auto flush_delete_queue() -> void = 0;
 
     /** @brief Creates and returns a new @ref ResourceCommandBuffer. */
-    [[nodiscard]] virtual auto record_resource_commands() -> ResourceCommandRecorder = 0;
+    [[nodiscard]] virtual auto record_resource_commands() const -> ResourceCommandRecorder = 0;
     /** @brief Creates and returns a new @ref RenderCommandBuffer. Provides an API for execution tasks. */
-    [[nodiscard]] virtual auto record_render_commands() -> RenderCommandRecorder = 0;
+    [[nodiscard]] virtual auto record_render_commands() const -> RenderCommandRecorder = 0;
     /** @brief Submits a @ref ResourceCommandPacakge for execution. */
-    virtual auto submit(ResourceCommandBuffer&& command_buffer) -> void = 0;
+    virtual auto submit(ResourceCommandBuffer&& command_buffer) const -> void = 0;
     /** @brief Submits a @ref RenderCommandPackage for execution. */
-    virtual auto submit(RenderCommandBuffer&& command_buffer) -> void = 0;
+    virtual auto submit(RenderCommandBuffer&& command_buffer) const -> void = 0;
+
+    /** @brief QOL function that provides a scoped way to record commands and automatically submit them. */
+    template <typename Function>
+        requires(std::is_invocable_v<Function, RenderCommandRecorder&>)
+    auto render_submit(Function&& func) const noexcept -> void {
+        auto cmds = record_render_commands();
+        std::invoke(func, cmds);
+        submit(cmds.finish());
+    }
 
     /** @brief Returns the @ref BufferDescriptor associated with this handle. */
     [[nodiscard]] virtual auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& = 0;
@@ -86,15 +93,13 @@ public:
     /** @brief Returns the @ref SamplerDescriptor associated with this handle. */
     [[nodiscard]] virtual auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& = 0;
     /** @brief Returns the @ref FramebufferDescriptor associated with this handle. */
-    [[nodiscard]] virtual auto framebuffer_descriptor(
-        FramebufferHandle handle
-    ) const -> const FramebufferDescriptor& = 0;
+    [[nodiscard]] virtual auto framebuffer_descriptor(FramebufferHandle handle) const
+        -> const FramebufferDescriptor& = 0;
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& = 0;
     /** @brief Returns the @ref GraphicsPipelineDescriptor associated with this handle. */
-    [[nodiscard]] virtual auto graphics_pipeline_descriptor(
-        GraphicsPipelineHandle handle
-    ) const -> const GraphicsPipelineDescriptor& = 0;
+    [[nodiscard]] virtual auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
+        -> const GraphicsPipelineDescriptor& = 0;
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;
 
