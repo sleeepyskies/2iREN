@@ -18,7 +18,7 @@ namespace siren {
  */
 struct IndexBuffer {
     /** @brief The GPU side index data. */
-    Buffer data;
+    Buffer buffer;
     /** @brief The number of indices. */
     usize count;
     /** @brief The type of the indices. */
@@ -31,7 +31,7 @@ struct IndexBuffer {
  */
 struct VertexBuffer {
     /** @brief The GPU buffer of the vertex data. */
-    Buffer data;
+    Buffer buffer;
     /** @brief Describes the layout of the vertex buffer. */
     Layout layout;
 };

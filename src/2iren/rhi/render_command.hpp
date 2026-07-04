@@ -171,13 +171,13 @@ enum class BeginOperation : u8 {
 struct RenderPassDescriptor {
     /** @brief An optional label. */
     /** @todo Not used anywhere atm */
-    std::optional<std::string> label;
+    std::optional<std::string> label = std::nullopt;
+    /** @brief The action to perform on begin. */
+    BeginOperation begin_operation = BeginOperation::Clear;
+    /** @brief The color to clear the target with on load iff begin_operation == Clear. Defaults to black. */
+    std::optional<RGBA> clear_color = RGBA::black();
     /** @brief The target to draw to. */
     FramebufferHandle target;
-    /** @brief The action to perform on begin. */
-    BeginOperation begin_operation;
-    /** @brief The color to clear the target with on load iff begin_operation == Clear. Defaults to black. */
-    std::optional<RGBA> clear_color;
 };
 
 /**

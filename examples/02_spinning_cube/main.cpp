@@ -29,7 +29,7 @@ const siren::ShaderData vertex_shader{
             v_pos = a_pos;
         })",
 };
-const siren::ShaderData fragment_shader{ .label = std::nullopt, .source = R"(
+const siren::ShaderData fragment_shader{.label = std::nullopt, .source = R"(
         #version 460
         layout(location = 0) in vec3 v_pos;
 
@@ -37,21 +37,21 @@ const siren::ShaderData fragment_shader{ .label = std::nullopt, .source = R"(
 
         void main() {
             FragColor = vec4(v_pos + 0.5, 1.0);
-        })" };
+        })"};
 
 const std::unordered_map<siren::ShaderStage, siren::ShaderData> shaders = {
-    { siren::ShaderStage::Vertex, vertex_shader },
-    { siren::ShaderStage::Fragment, fragment_shader },
+    {siren::ShaderStage::Vertex, vertex_shader},
+    {siren::ShaderStage::Fragment, fragment_shader},
 };
 const siren::ByteBuffer vertices{
-    Vertex{ -0.5f, -0.5f, 0.5f },
-    Vertex{ 0.5f, -0.5f, 0.5f }, // front bottom
-    Vertex{ 0.5f, 0.5f, 0.5f },
-    Vertex{ -0.5f, 0.5f, 0.5f }, // front top
-    Vertex{ -0.5f, -0.5f, -0.5f },
-    Vertex{ 0.5f, -0.5f, -0.5f }, // back bottom
-    Vertex{ 0.5f, 0.5f, -0.5f },
-    Vertex{ -0.5f, 0.5f, -0.5f } // back top
+    Vertex{-0.5f, -0.5f, 0.5f},
+    Vertex{0.5f, -0.5f, 0.5f},
+    Vertex{0.5f, 0.5f, 0.5f},
+    Vertex{-0.5f, 0.5f, 0.5f},
+    Vertex{-0.5f, -0.5f, -0.5f},
+    Vertex{0.5f, -0.5f, -0.5f},
+    Vertex{0.5f, 0.5f, -0.5f},
+    Vertex{-0.5f, 0.5f, -0.5f},
 };
 const siren::ByteBuffer indices = [] {
     siren::ByteBuffer buf;
@@ -70,93 +70,87 @@ const siren::ByteBuffer indices = [] {
 
 int main() {
     // init siren
-    siren::Context ctx{ { .debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto } };
+    siren::Context ctx{{.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}};
 
     siren::Window window({
-            .title       = "2iren",
-            .width       = 1280,
-            .height      = 800,
-            .fullscreen  = false,
-            .vsync       = true,
-            .decorated   = true,
-            .resizable   = true,
-            .transparent = false,
+        .title       = "2iren",
+        .width       = 1280,
+        .height      = 800,
+        .fullscreen  = false,
+        .vsync       = true,
+        .decorated   = true,
+        .resizable   = true,
+        .transparent = false,
     });
 
     auto device    = ctx.create_device(window);
     auto swapchain = device->create_swapchain({
-            .label = std::nullopt,
-            .vsync = true,
+        .label = std::nullopt,
+        .vsync = true,
     });
 
     const auto vertex_buffer  = device->create_buffer({
-            .label = "cube_buffer",
-            .data  = vertices.data(),
-            .size  = vertices.size_bytes(),
-            .usage = siren::BufferUsage::Static,
+         .label = "cube_buffer",
+         .data  = vertices.data(),
+         .size  = vertices.size_bytes(),
+         .usage = siren::BufferUsage::Static,
     });
     const auto index_buffer   = device->create_buffer({
-            .label = "cube_indices",
-            .data  = indices.data(),
-            .size  = indices.size_bytes(),
-            .usage = siren::BufferUsage::Static,
+          .label = "cube_indices",
+          .data  = indices.data(),
+          .size  = indices.size_bytes(),
+          .usage = siren::BufferUsage::Static,
     });
     const auto uniform_buffer = device->create_buffer({
-            .label = "uniform_buffer",
-            .data  = std::nullopt,
-            .size  = sizeof(UboData),
-            .usage = siren::BufferUsage::Dynamic,
+        .label = "uniform_buffer",
+        .data  = std::nullopt,
+        .size  = sizeof(UboData),
+        .usage = siren::BufferUsage::Dynamic,
     });
     const auto layout =
-            siren::LayoutBuilder::start().add(siren::Attribute::Position, 3, siren::DataType::Float32).finish();
+        siren::LayoutBuilder::start().add(siren::Attribute::Position, 3, siren::DataType::Float32).finish();
 
     const auto shader   = device->create_shader({
-            .label  = std::nullopt,
-            .source = shaders,
+          .label  = std::nullopt,
+          .source = shaders,
     });
     const auto pipeline = device->create_graphics_pipeline({
-            .label             = std::nullopt,
-            .layout            = layout,
-            .shader            = shader.handle(),
-            .topology          = siren::PrimitiveTopology::Triangles,
-            .alpha_mode        = siren::AlphaMode::Opaque,
-            .depth_function    = siren::DepthFunction::Less,
-            .back_face_culling = true,
-            .depth_test        = true,
-            .depth_write       = true,
+        .label             = std::nullopt,
+        .layout            = layout,
+        .shader            = shader.handle(),
+        .topology          = siren::PrimitiveTopology::Triangles,
+        .alpha_mode        = siren::AlphaMode::Opaque,
+        .depth_function    = siren::DepthFunction::Less,
+        .back_face_culling = true,
+        .depth_test        = true,
+        .depth_write       = true,
     });
 
-    siren::u32 cnt{ 0 };
+    siren::u32 cnt{0};
     while (!window.should_close()) {
         window.poll_events();
 
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)cnt * 0.01f, glm::vec3{ 0.5f, 1.0f, 0.0f });
-        glm::mat4 view  = glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, -2.0f });
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)cnt * 0.01f, glm::vec3{0.5f, 1.0f, 0.0f});
+        glm::mat4 view  = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, -2.0f});
         glm::mat4 proj  = glm::perspective(glm::radians(45.0f), 1280.0f / 800.0f, 0.1f, 10.0f);
-        const UboData ubodata{ .mat = proj * view * model };
-        siren::ByteBuffer ubo{ ubodata };
+        const UboData ubodata{.mat = proj * view * model};
+        siren::ByteBuffer ubo{ubodata};
 
-        auto resource_cmds = device->record_resource_commands();
-        resource_cmds.upload_to_buffer(uniform_buffer.handle(), ubo, 0);
-        device->submit(resource_cmds.finish());
+        device->resource_submit([&](siren::ResourceCommandRecorder& cmds) -> void {
+            cmds.upload_to_buffer(uniform_buffer.handle(), ubo, 0);
+        });
 
-        auto render_cmds = device->record_render_commands();
-        {
-            auto pass = render_cmds.begin_render_pass({
-                    .label           = std::nullopt,
-                    .target          = swapchain.current_framebuffer(),
-                    .begin_operation = siren::BeginOperation::Clear,
-                    .clear_color     = siren::RGBA::green(),
-            });
-            pass.bind_graphics_pipeline(pipeline.handle());
-            pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
-            pass.bind_index_buffer(index_buffer.handle(), siren::IndexFormat::UInt32);
-            pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
-            pass.draw_indexed((siren::u32)indices.size_as<siren::u32>(), 0);
+        device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
+            cmds.render_pass({.clear_color = siren::RGBA::green(), .target = swapchain.current_framebuffer()},
+                [&](siren::RenderPassRecorder& pass) -> void {
+                    pass.bind_graphics_pipeline(pipeline.handle());
+                    pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
+                    pass.bind_index_buffer(index_buffer.handle(), siren::IndexFormat::UInt32);
+                    pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
+                    pass.draw_indexed(indices.size_as<siren::u32>(), 0);
+                });
+        });
 
-            render_cmds.consume_render_pass(pass.finish());
-        }
-        device->submit(render_cmds.finish());
         device->present(swapchain.handle());
         device->flush_delete_queue();
         cnt++;

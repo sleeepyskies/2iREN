@@ -77,11 +77,20 @@ public:
     /** @brief Submits a @ref RenderCommandPackage for execution. */
     virtual auto submit(RenderCommandBuffer&& command_buffer) const -> void = 0;
 
-    /** @brief QOL function that provides a scoped way to record commands and automatically submit them. */
+    /** @brief QOL function that provides a scoped way to record render commands and automatically submit them. */
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderCommandRecorder&>)
     auto render_submit(Function&& func) const noexcept -> void {
         auto cmds = record_render_commands();
+        std::invoke(func, cmds);
+        submit(cmds.finish());
+    }
+
+    /** @brief QOL function that provides a scoped way to record resource commands and automatically submit them. */
+    template <typename Function>
+        requires(std::is_invocable_v<Function, ResourceCommandRecorder&>)
+    auto resource_submit(Function&& func) const noexcept -> void {
+        auto cmds = record_resource_commands();
         std::invoke(func, cmds);
         submit(cmds.finish());
     }

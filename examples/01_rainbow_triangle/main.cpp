@@ -98,9 +98,9 @@ auto main() -> siren::i32 {
             cmds.render_pass(
                 {
                     .label           = std::nullopt,
-                    .target          = swapchain.current_framebuffer(),
                     .begin_operation = siren::BeginOperation::Clear,
                     .clear_color     = siren::RGBA::black(),
+                    .target          = swapchain.current_framebuffer(),
                 },
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());

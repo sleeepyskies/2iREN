@@ -566,7 +566,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
     ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
     return IndexBuffer{
-        .data   = device.create_buffer({
+        .buffer   = device.create_buffer({
               .label = std::nullopt,
               .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
               .size  = buffer.size_bytes(),
@@ -686,7 +686,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     }
 
     return VertexBuffer{
-        .data   = device.create_buffer({
+        .buffer   = device.create_buffer({
               .label = std::nullopt,
               .data  = buffer.data(), // todo: also does a copy here fuck
               .size  = buffer.size_bytes(),
