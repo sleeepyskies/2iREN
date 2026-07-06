@@ -33,7 +33,7 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
 
 auto Swapchain::descriptor() const -> const SwapchainDescriptor& { return m_device->swapchain_descriptor(m_handle); }
 
-auto Swapchain::current_framebuffer() const -> FramebufferHandle {
+auto Swapchain::next_image() const -> const Image& {
     return m_device->acquire_next_swapchain_target(m_handle);
 }
 

@@ -27,7 +27,6 @@ add_library(
         src/2iren/rhi/backend/gl/render_thread.cpp
 
         src/2iren/rhi/resources/buffer.cpp
-        src/2iren/rhi/resources/framebuffer.cpp
         src/2iren/rhi/resources/graphics_pipeline.cpp
         src/2iren/rhi/resources/image.cpp
         src/2iren/rhi/resources/sampler.cpp
@@ -38,6 +37,7 @@ add_library(
         src/2iren/rhi/layout.cpp
         src/2iren/rhi/render_command.cpp
         src/2iren/rhi/resource_command.cpp
+        src/2iren/rhi/render_target.hpp
 
         src/2iren/sync/thread_pool.cpp
 

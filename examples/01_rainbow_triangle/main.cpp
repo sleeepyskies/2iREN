@@ -1,4 +1,5 @@
 #include "2iren/2iren.hpp"
+#include "2iren/rhi/render_target.hpp"
 #include "2iren/util/byte_buffer.hpp"
 
 struct Vertex {
@@ -95,13 +96,7 @@ auto main() -> siren::i32 {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass(
-                {
-                    .label           = std::nullopt,
-                    .begin_operation = siren::BeginOperation::Clear,
-                    .clear_color     = siren::RGBA::black(),
-                    .target          = swapchain.current_framebuffer(),
-                },
+            cmds.render_pass({.target = siren::RenderTarget{swapchain.next_image().handle()}},
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
                     pass.bind_vertex_buffer(buffer.handle(), 0, 0);

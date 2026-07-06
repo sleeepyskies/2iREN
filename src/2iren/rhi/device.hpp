@@ -44,11 +44,6 @@ public:
     /** @brief Queues the given @ref ImageSampler for deletion. */
     virtual auto destroy_sampler(SamplerHandle handle) -> void = 0;
 
-    /** @brief Creates and returns a new @ref Framebuffer given a @ref FramebufferDescriptor. */
-    [[nodiscard]] virtual auto create_framebuffer(const FramebufferDescriptor& descriptor) -> Framebuffer = 0;
-    /** @brief Queues the given @ref Framebuffer for deletion. */
-    virtual auto destroy_framebuffer(FramebufferHandle handle) -> void = 0;
-
     /** @brief Creates and returns a new @ref Shader given a @ref ShaderDescriptor. */
     [[nodiscard]] virtual auto create_shader(const ShaderDescriptor& descriptor) -> Shader = 0;
     /** @brief Queues the given @ref Shader for deletion. */
@@ -101,9 +96,6 @@ public:
     [[nodiscard]] virtual auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& = 0;
     /** @brief Returns the @ref SamplerDescriptor associated with this handle. */
     [[nodiscard]] virtual auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& = 0;
-    /** @brief Returns the @ref FramebufferDescriptor associated with this handle. */
-    [[nodiscard]] virtual auto framebuffer_descriptor(FramebufferHandle handle) const
-        -> const FramebufferDescriptor& = 0;
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& = 0;
     /** @brief Returns the @ref GraphicsPipelineDescriptor associated with this handle. */
@@ -113,13 +105,10 @@ public:
     [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;
 
     /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
-    [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> FramebufferHandle = 0;
+    [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> const Image& = 0;
 
     /** @brief Presents the back buffer of the given swapchain to the screen. */
     virtual auto present(SwapchainHandle handle) const -> void = 0;
-
-    /** @brief Returns all the attachments belonging to the given @ref Framebuffer.. */
-    virtual auto framebuffer_attachments(FramebufferHandle handle) const -> const FramebufferAttachments& = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> Limits = 0;

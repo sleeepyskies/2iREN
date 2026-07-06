@@ -6,7 +6,6 @@
 #include "2iren/window.hpp"
 
 #include "2iren/rhi/resources/buffer.hpp"
-#include "2iren/rhi/resources/framebuffer.hpp"
 #include "2iren/rhi/resources/graphics_pipeline.hpp"
 #include "2iren/rhi/resources/image.hpp"
 #include "2iren/rhi/resources/sampler.hpp"

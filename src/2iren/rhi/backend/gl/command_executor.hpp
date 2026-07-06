@@ -3,7 +3,6 @@
 #include "2iren/rhi/command_executor.hpp"
 #include "device.hpp"
 
-
 namespace siren {
 
 /**
@@ -13,10 +12,26 @@ namespace siren {
 struct TrackedState {
     GLuint active_vao                      = 0;
     GraphicsPipelineHandle active_pipeline = NullHandle;
-    BindIndexBuffer active_ibo             = {
-        .index_buffer = BufferHandle::invalid(),
-        .index_format = IndexFormat::UInt32
-    };
+    BindIndexBuffer active_ibo = {.index_buffer = BufferHandle::invalid(), .index_format = IndexFormat::UInt32};
+};
+
+/**
+ * @class FramebufferCache
+ * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
+ * they do not exist in sirens main API.
+ * Instead, we use render targets, which consist of images. However, OpenGL requires rendering to an FBO,
+ * so we use this to create/fetch FBOs based on images.
+ *
+ * @todo @note Cached framebuffers are currently never cleaned up. do this homie
+ */
+class FramebufferCache {
+public:
+    auto get_create_for(const GLuint image_id) -> GLuint;
+
+private:
+    auto create_framebuffer(const GLuint image_id) -> GLuint;
+
+    std::unordered_map<GLuint, GLuint> m_cache{};
 };
 
 /**
@@ -45,6 +60,7 @@ public:
 private:
     const RenderResourceState& m_state;
     mutable TrackedState m_tracked_state;
+    mutable FramebufferCache m_framebuffer_cache;
 
     /** @brief Handles @ref UploadImage. */
     auto execute_image_upload(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;
@@ -52,15 +68,12 @@ private:
     auto execute_buffer_upload(const UploadBuffer& cmd, std::span<const u8> data_slice) const -> void;
 
     /** @brief Executes a single @ref RenderPass. */
-    auto execute_pass(
-        const RenderPassDescriptor& descriptor,
-        std::span<const RenderCommand> commands
-    ) const -> void;
+    auto execute_pass(const RenderPassDescriptor& descriptor, std::span<const RenderCommand> commands) const -> void;
 
     /** @brief Handles @ref BindGraphicsPipeline. */
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;
     /** @brief Handles @ref SetViewport. */
-    auto set_viewport(const SetViewport& set_viewport, FramebufferHandle fb_handle) const -> void;
+    auto set_viewport(const SetViewport& set_viewport, const RenderTarget& target) const -> void;
     /** @brief Handles @ref BindVertexBuffer. */
     auto bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const -> void;
     /** @brief Handles @ref BindIndexBuffer. */

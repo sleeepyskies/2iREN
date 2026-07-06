@@ -84,8 +84,8 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     i32 width = 0, height = 0, channels = 0;
     u8* data                 = stbi_load(path->c_str(), &width, &height, &channels, 0);
     const ImageExtent extent = {
-        .width           = static_cast<usize>(width),
-        .height          = static_cast<usize>(height),
+        .width           = static_cast<u32>(width),
+        .height          = static_cast<u32>(height),
         .depth_or_layers = 1,
     };
     const u32 mipmap_levels = config->generate_mipmap_levels ? calc_mipmap_levels(width, height) : 1;

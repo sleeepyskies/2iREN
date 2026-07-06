@@ -6,7 +6,7 @@ namespace siren {
 
 /**
  * @struct SwapchainDescriptor
- * @brief Paramters used to create a new @ref Swapchain.
+ * @brief Parameters used to create a new @ref Swapchain.
  */
 struct SwapchainDescriptor {
     /** @brief An optional label. Not used in OpenGL backend. */
@@ -34,7 +34,7 @@ public:
     [[nodiscard]] auto descriptor() const -> const SwapchainDescriptor&;
 
     /** @brief Returns the next free image managed by this @ref Swapchain to render to. */
-    [[nodiscard]] auto current_framebuffer() const -> FramebufferHandle;
+    [[nodiscard]] auto next_image() const -> const Image&;
 
     /** @brief Presents the back buffer to the screen. */
     auto present() const -> void;

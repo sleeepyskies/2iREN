@@ -6,6 +6,7 @@
 
 #include "2iren/base.hpp"
 #include "2iren/util/color.hpp"
+#include "render_target.hpp"
 #include "resources/buffer.hpp"
 #include "resources/fwd.hpp"
 
@@ -176,8 +177,8 @@ struct RenderPassDescriptor {
     BeginOperation begin_operation = BeginOperation::Clear;
     /** @brief The color to clear the target with on load iff begin_operation == Clear. Defaults to black. */
     std::optional<RGBA> clear_color = RGBA::black();
-    /** @brief The target to draw to. */
-    FramebufferHandle target;
+    /** @brief The @ref RenderTarget to draw to. */
+    RenderTarget target;
 };
 
 /**

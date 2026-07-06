@@ -30,7 +30,43 @@ static constexpr auto extract_cmds(const RenderPass& pass, const std::vector<Ren
 // == MARK: Execution Loops
 // ============================================================================
 
-GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state), m_tracked_state() {}
+auto FramebufferCache::get_create_for(const GLuint image_id) -> GLuint {
+    // first search cache
+    if (const auto it = m_cache.find(image_id); it != m_cache.end()) {
+        return it->second;
+    }
+
+    // otherwise create a new framebuffer
+    const auto fb     = create_framebuffer(image_id);
+    m_cache[image_id] = fb;
+    return fb;
+}
+
+auto FramebufferCache::create_framebuffer(const GLuint image_id) -> GLuint {
+    // note that this is all happening inside the render thread, so we can do as many gl calls as we want directly :D
+    GLuint framebuffer;
+    glCreateFramebuffers(1, &framebuffer);
+
+    // todo: iterate colors once we have more than just one
+    glNamedFramebufferTexture(framebuffer, static_cast<GLenum>((u32)(GL_COLOR_ATTACHMENT0) + (u32)(0)), image_id, 0);
+
+    // todo: setup depth stencil attachment
+    /*
+    if (descriptor.has_depth_stencil && depth_stencil.has_value()) {
+        glNamedFramebufferTexture(
+            framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, this->m_state.image_table.fetch(depth_stencil->handle()), 0);
+    }
+    */
+
+    // check everything worked
+    if (glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        PANIC("Framebuffer could not be created.");
+    }
+
+    return framebuffer;
+}
+
+GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) {}
 
 auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge) -> void {
     for (const auto& cmd : resource_command_pacakge.commands) {
@@ -169,17 +205,12 @@ auto GlCommandExecutor::execute_buffer_upload(const UploadBuffer& cmd, const std
 /// @todo: do we need to reset all state at the start of this function?
 auto GlCommandExecutor::execute_pass(
     const RenderPassDescriptor& descriptor, const std::span<const RenderCommand> commands) const -> void {
-    // default values of opengl default framebuffer
-    GLuint fb_handle       = 0;
-    u32 num_colors         = 1;
-    bool has_depth_stencil = true;
-
-    if (descriptor.target != DEFAULT_FRAMEBUFFER) {
-        fb_handle         = m_state.framebuffer_table.fetch(descriptor.target);
-        const auto& desc  = m_state.framebuffer_table.details(descriptor.target).descriptor;
-        num_colors        = desc.num_colors;
-        has_depth_stencil = desc.has_depth_stencil;
-    }
+    // todo: we assume there is always only a single color attachment, this is due to how RenderTarget is.
+    // we also assume there is no depth stencil for now
+    const GLuint image_id = m_state.image_table.fetch(descriptor.target.color);
+    const GLuint framebuffer      = m_framebuffer_cache.get_create_for(image_id);
+    constexpr u32 num_colors     = 1;
+    const bool has_depth_stencil = false;
 
     // first setup pass
     if (descriptor.begin_operation == BeginOperation::Clear) {
@@ -189,18 +220,14 @@ auto GlCommandExecutor::execute_pass(
         if (descriptor.clear_color.has_value()) {
             color = descriptor.clear_color.value();
         }
-        for (const auto color_index : views::iota(0u, num_colors)) {
-            glClearNamedFramebufferfv(fb_handle, GL_COLOR, static_cast<GLint>(color_index), &color.r);
+        for (const auto color_index : range(num_colors)) {
+            glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(color_index), &color.r);
         }
 
         // clear depth stencil
         if (has_depth_stencil) {
-            glClearNamedFramebufferfi(fb_handle, GL_DEPTH_STENCIL, 0, 1.f, 0);
+            glClearNamedFramebufferfi(framebuffer, GL_DEPTH_STENCIL, 0, 1.f, 0);
         }
-    }
-
-    if (descriptor.begin_operation == BeginOperation::Fuckit) {
-        // do nothing here
     }
 
     // restore default render settings
@@ -302,13 +329,14 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     // pass it in with each draw call.
 }
 
-auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const FramebufferHandle fb_handle) const -> void {
+auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const RenderTarget& target) const -> void {
     // 2iren uses top left as origin, OpenGL uses bottom left, so we must convert
-    // we need the fb size for conversion
-    const auto fb_height = m_state.framebuffer_table.details(fb_handle).descriptor.height;
+    // we need the target size for conversion
+    // assume all attachments are the same size
+    const auto target_height = m_state.image_table.details(target.color).descriptor.extent.height;
 
     const auto x      = set_viewport.x;
-    const auto y      = fb_height - (set_viewport.y + set_viewport.height);
+    const auto y      = target_height - (set_viewport.y + set_viewport.height);
     const auto width  = set_viewport.width;
     const auto height = set_viewport.height;
     glViewport(static_cast<GLint>(x), static_cast<GLint>(y), static_cast<GLsizei>(width), static_cast<GLsizei>(height));

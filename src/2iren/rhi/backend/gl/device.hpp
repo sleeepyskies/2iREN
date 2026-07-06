@@ -1,22 +1,18 @@
 #pragma once
 
-#include <unordered_map>
 #include <glad/gl.h>
+#include <unordered_map>
 
-#include "render_thread.hpp"
 #include "2iren/rhi/device.hpp"
 #include "2iren/rhi/resources/buffer.hpp"
-#include "2iren/rhi/resources/framebuffer.hpp"
 #include "2iren/rhi/resources/graphics_pipeline.hpp"
 #include "2iren/rhi/resources/image.hpp"
 #include "2iren/rhi/resources/sampler.hpp"
 #include "2iren/rhi/resources/shader.hpp"
 #include "2iren/rhi/resources/swapchain.hpp"
-
+#include "render_thread.hpp"
 
 namespace siren {
-
-const inline auto DEFAULT_FRAMEBUFFER = FramebufferHandle{ 0, 0 };
 
 /**
  * @brief Encapsulates a mapped buffer pointer. This is used in streamed @ref Buffer's.
@@ -54,15 +50,6 @@ struct GlSamplerDetails {
     SamplerDescriptor descriptor;
 };
 
-/**
- * @brief Information needed by the OpenGL backend for @ref Framebuffer's
- */
-struct GlFramebufferDetails {
-    /** @brief The descriptor of the @ref Framebuffer. */
-    FramebufferDescriptor descriptor;
-    /** @brief The attachments that belong to this framebuffer. */
-    FramebufferAttachments attachments;
-};
 
 /**
  * @brief Information needed by the OpenGL backend for @ref Shader's
@@ -89,8 +76,8 @@ struct GlSwapchainDetails {
     SwapchainDescriptor descriptor;
     /** @brief Raw handle to the window this @ref Framebuffer is associated with. */
     GLFWwindow* native_handle;
-    /** @brief Essentially a proxy fb. Represents to use the default fb to cmd executor. */
-    FramebufferHandle framebuffer_handle = DEFAULT_FRAMEBUFFER;
+    /** @brief An @ref Image. Since OpenGL abstracts the swapchain away, we just render to a mock image. */
+    std::optional<Image> image; // use optional to avoid the heap allocation, however assume It's always there.
 };
 
 /**
@@ -104,8 +91,6 @@ struct RenderResourceState {
     RenderResourceTable<GLuint, Image, GlImageDetails> image_table;
     /** @brief Sampler handle storage. */
     RenderResourceTable<GLuint, Sampler, GlSamplerDetails> sampler_table;
-    /** @brief Framebuffer handle storage. */
-    RenderResourceTable<GLuint, Framebuffer, GlFramebufferDetails> framebuffer_table;
     /** @brief Shader handle storage. */
     RenderResourceTable<GLuint, Shader, GlShaderDetails> shader_table;
     /**
@@ -137,18 +122,14 @@ public:
     [[nodiscard]] auto create_sampler(const SamplerDescriptor& descriptor) -> Sampler override;
     auto destroy_sampler(SamplerHandle handle) -> void override;
 
-    [[nodiscard]] auto create_framebuffer(const FramebufferDescriptor& descriptor) -> Framebuffer override;
-    auto destroy_framebuffer(FramebufferHandle handle) -> void override;
-
     [[nodiscard]] auto create_shader(const ShaderDescriptor& descriptor) -> Shader override;
     auto destroy_shader(ShaderHandle handle) -> void override;
 
     [[nodiscard]] auto create_swapchain(const SwapchainDescriptor& descriptor) -> Swapchain override;
     auto destroy_swapchain(SwapchainHandle handle) -> void override;
 
-    [[nodiscard]] auto create_graphics_pipeline(
-        const GraphicsPipelineDescriptor& descriptor
-    ) -> GraphicsPipeline override;
+    [[nodiscard]] auto create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+        -> GraphicsPipeline override;
     auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void override;
 
     auto flush_delete_queue() -> void override;
@@ -161,21 +142,14 @@ public:
     [[nodiscard]] auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& override;
     [[nodiscard]] auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& override;
     [[nodiscard]] auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& override;
-    [[nodiscard]] auto framebuffer_descriptor(FramebufferHandle handle) const -> const FramebufferDescriptor& override;
     [[nodiscard]] auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& override;
-    [[nodiscard]] auto graphics_pipeline_descriptor(
-        GraphicsPipelineHandle handle
-    ) const -> const GraphicsPipelineDescriptor& override;
+    [[nodiscard]] auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
+        -> const GraphicsPipelineDescriptor& override;
     [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
 
-    [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> FramebufferHandle override;
+    [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> const Image& override;
     auto present(SwapchainHandle handle) const -> void override;
 
-    [[nodiscard]] auto framebuffer_attachments(
-        FramebufferHandle handle
-    ) const -> const FramebufferAttachments& override;
-
-    /** @todo: Implement some way to query this ig */
     [[nodiscard]] auto limits() const -> Limits override;
 
 private:
@@ -192,17 +166,11 @@ private:
      * objects.
      */
     enum class ResourceType {
-        /** @brief A @ref Buffer. */
         Buffer,
-        /** @brief An @ref Image. */
         Image,
-        /** @brief A @ref Sampler. */
         Sampler,
-        /** @brief A @ref Framebuffer. */
         Framebuffer,
-        /** @brief A @ref Shader. */
         Shader,
-        /** @brief A @ref GraphicsPipeline. */
         GraphicsPipeline,
     };
 

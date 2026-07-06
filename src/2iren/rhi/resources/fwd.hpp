@@ -9,11 +9,6 @@ class Buffer;
 struct BufferDescriptor;
 using BufferHandle = ResourceHandle<Buffer>;
 
-class Framebuffer;
-struct FramebufferAttachments;
-struct FramebufferDescriptor;
-using FramebufferHandle = ResourceHandle<Framebuffer>;
-
 class GraphicsPipeline;
 struct GraphicsPipelineDescriptor;
 using GraphicsPipelineHandle = ResourceHandle<GraphicsPipeline>;

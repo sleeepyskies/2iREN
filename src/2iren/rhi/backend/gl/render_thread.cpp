@@ -23,7 +23,7 @@ RenderThread::RenderThread(const Window& window) {
     inner->thread = std::thread{ &RenderThread::run, this, window.handle()};
 }
 
-RenderThread::~RenderThread() { { }
+RenderThread::~RenderThread() {
     m_terminate = true;
     m_condition.notify_all();
 
@@ -65,22 +65,31 @@ auto RenderThread::run(GLFWwindow* window) const -> void {
 
     while (true) {
         std::queue<RenderTask> local_tasks;
+        bool stop = false;
 
         m_inner.run_guarded([&] (UniqueGuard<Inner>& inner) {
             m_condition.wait(inner, [&inner, this] {
                 return m_terminate || !inner->tasks.empty();
             });
 
-            if (m_terminate&& inner->tasks.empty()){ return; }
+            if (m_terminate && inner->tasks.empty()) {
+                stop = true;
+                return;
+            }
 
             // grab all tasks since is only one thread anyway and avoid multiple locks then
             std::swap(local_tasks, inner->tasks);
         });
 
+        if (stop) {
+            break;
+        }
+
         while (!local_tasks.empty()) {
             local_tasks.front()(); // <-- we call the fn here to incase u didn't see ()()
             local_tasks.pop();
             m_task_count.fetch_sub(1);
+            m_task_count.notify_all();
         }
     }
 }
