@@ -15,6 +15,24 @@
 namespace siren {
 
 /**
+ * @class FramebufferCache
+ * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
+ * they do not exist in sirens main API.
+ * Instead, we use render targets, which consist of images. However, OpenGL requires rendering to an FBO,
+ * so we use this to create/fetch FBOs based on images.
+ *
+ * @todo @note Cached framebuffers are currently never cleaned up. do this homie
+ */
+class FramebufferCache {
+public:
+    [[nodiscard]] auto get_create_for(const GLuint image_id) -> GLuint;
+
+private:
+    [[nodiscard]] auto create_framebuffer(const GLuint image_id) -> GLuint;
+    std::unordered_map<GLuint, GLuint> m_cache{};
+};
+
+/**
  * @brief Encapsulates a mapped buffer pointer. This is used in streamed @ref Buffer's.
  */
 struct MappedBufferPtr {
@@ -49,7 +67,6 @@ struct GlSamplerDetails {
     /** @brief The descriptor of the @ref Sampler. */
     SamplerDescriptor descriptor;
 };
-
 
 /**
  * @brief Information needed by the OpenGL backend for @ref Shader's
@@ -104,6 +121,8 @@ struct RenderResourceState {
      * @note GL doesn't have an exposed concept of a swapchain, so we store a meaningless void* here.
      */
     RenderResourceTable<void*, Swapchain, GlSwapchainDetails> swapchain_table;
+    /** @brief Manages fetching cached OpenGL framebuffers based on images. */
+    mutable FramebufferCache framebuffer_cache;
 };
 
 class GlDevice final : public Device {

@@ -22,6 +22,8 @@ namespace siren {
 
 // todo: add logging
 
+constexpr GLuint DEFAULT_FRAMEBUFFER = 0;
+
 using namespace siren;
 
 /// helper to create an optional label of form "prefix-suffix"
@@ -31,6 +33,44 @@ static auto make_label(const std::optional<std::string>& prefix, const std::stri
         return *prefix + "-" + std::string(suffix);
     }
     return std::nullopt;
+}
+
+auto FramebufferCache::get_create_for(const GLuint image_id) -> GLuint {
+    // first search cache
+    if (const auto it = m_cache.find(image_id); it != m_cache.end()) {
+        return it->second;
+    }
+
+    // otherwise create a new framebuffer
+    const auto fb     = create_framebuffer(image_id);
+    m_cache[image_id] = fb;
+    return fb;
+}
+
+auto FramebufferCache::create_framebuffer(const GLuint image_id) -> GLuint {
+    // note that this is all happening inside the render thread, so we can do as many gl calls as we want directly :D
+    GLuint framebuffer;
+    glCreateFramebuffers(1, &framebuffer);
+
+    // todo: iterate colors once we have more than just one
+    glNamedFramebufferTexture(framebuffer, static_cast<GLenum>((u32)(GL_COLOR_ATTACHMENT0) + (u32)(0)), image_id, 0);
+
+    // todo: setup depth stencil attachment
+    /*
+    if (descriptor.has_depth_stencil && depth_stencil.has_value()) {
+        glNamedFramebufferTexture(
+            framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, this->m_state.image_table.fetch(depth_stencil->handle()), 0);
+    }
+    */
+
+    // check everything worked
+    if (glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        PANIC("Framebuffer could not be created.");
+    }
+
+    log::trace("Created framebuffer with OpenGL ID {}", image_id);
+
+    return framebuffer;
 }
 
 GlDevice::GlDevice(const Window& window) : m_primary_window(window), m_render_thread(window) {}
@@ -342,7 +382,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
         glfwSwapInterval(descriptor.vsync);
     });
 
-    log::trace("Created Swapchain");
+    log::trace("Created Swapchain with handle {}", swapchain_handle.packed());
     return Swapchain{this, swapchain_handle};
 }
 
@@ -497,8 +537,27 @@ auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const
 }
 
 auto GlDevice::present(const SwapchainHandle handle) const -> void {
-    auto window = m_state.swapchain_table.details(handle).native_handle;
-    m_render_thread.spawn([window] { glfwSwapBuffers(window); });
+    // blit the offscreen image to the default framebuffer, then swap buffers
+    auto* window            = m_state.swapchain_table.details(handle).native_handle;
+    const auto image_handle = m_state.swapchain_table.details(handle).image->handle();
+    const auto image_id     = m_state.image_table.fetch(image_handle);
+    const auto& img_desc    = m_state.image_table.details(image_handle).descriptor;
+    const auto width        = img_desc.extent.width;
+    const auto height       = img_desc.extent.height;
+
+    m_render_thread.spawn([this, window, image_id, width, height] -> void {
+        // clang-format off
+        const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(image_id);
+        glBlitNamedFramebuffer(
+            /* from*/ offscreen_fb, /* to */ DEFAULT_FRAMEBUFFER,
+            0, 0, width, height,
+            0, 0, width, height,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST
+        );
+        // clang-format on
+
+        glfwSwapBuffers(window);
+    });
 }
 
 auto GlDevice::limits() const -> Limits { return Limits{}; }

@@ -127,6 +127,7 @@ int main() {
     });
 
     siren::u32 cnt{0};
+    siren::log::info("Starting main loop");
     while (!window.should_close()) {
         window.poll_events();
 
@@ -141,7 +142,11 @@ int main() {
         });
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.clear_color = siren::RGBA::green(), .target = swapchain.current_framebuffer()},
+            cmds.render_pass(
+                {
+                    .clear_color = siren::RGBA::green(),
+                    .target      = siren::RenderTarget{swapchain.next_image().handle()},
+                },
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
                     pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);

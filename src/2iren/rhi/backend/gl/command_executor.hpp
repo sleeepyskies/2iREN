@@ -16,25 +16,6 @@ struct TrackedState {
 };
 
 /**
- * @class FramebufferCache
- * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
- * they do not exist in sirens main API.
- * Instead, we use render targets, which consist of images. However, OpenGL requires rendering to an FBO,
- * so we use this to create/fetch FBOs based on images.
- *
- * @todo @note Cached framebuffers are currently never cleaned up. do this homie
- */
-class FramebufferCache {
-public:
-    auto get_create_for(const GLuint image_id) -> GLuint;
-
-private:
-    auto create_framebuffer(const GLuint image_id) -> GLuint;
-
-    std::unordered_map<GLuint, GLuint> m_cache{};
-};
-
-/**
  * @class GlCommandExecutor
  * @brief The OpenGL specific @ref CommandExecutor.
  */
@@ -60,7 +41,6 @@ public:
 private:
     const RenderResourceState& m_state;
     mutable TrackedState m_tracked_state;
-    mutable FramebufferCache m_framebuffer_cache;
 
     /** @brief Handles @ref UploadImage. */
     auto execute_image_upload(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;

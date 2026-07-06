@@ -5,6 +5,7 @@
 
 #include "2iren/base.hpp"
 #include "2iren/util/color.hpp"
+#include "2iren/util/log.hpp"
 #include "render_thread.hpp"
 #include "util.hpp"
 
@@ -30,41 +31,6 @@ static constexpr auto extract_cmds(const RenderPass& pass, const std::vector<Ren
 // == MARK: Execution Loops
 // ============================================================================
 
-auto FramebufferCache::get_create_for(const GLuint image_id) -> GLuint {
-    // first search cache
-    if (const auto it = m_cache.find(image_id); it != m_cache.end()) {
-        return it->second;
-    }
-
-    // otherwise create a new framebuffer
-    const auto fb     = create_framebuffer(image_id);
-    m_cache[image_id] = fb;
-    return fb;
-}
-
-auto FramebufferCache::create_framebuffer(const GLuint image_id) -> GLuint {
-    // note that this is all happening inside the render thread, so we can do as many gl calls as we want directly :D
-    GLuint framebuffer;
-    glCreateFramebuffers(1, &framebuffer);
-
-    // todo: iterate colors once we have more than just one
-    glNamedFramebufferTexture(framebuffer, static_cast<GLenum>((u32)(GL_COLOR_ATTACHMENT0) + (u32)(0)), image_id, 0);
-
-    // todo: setup depth stencil attachment
-    /*
-    if (descriptor.has_depth_stencil && depth_stencil.has_value()) {
-        glNamedFramebufferTexture(
-            framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, this->m_state.image_table.fetch(depth_stencil->handle()), 0);
-    }
-    */
-
-    // check everything worked
-    if (glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        PANIC("Framebuffer could not be created.");
-    }
-
-    return framebuffer;
-}
 
 GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) {}
 
@@ -207,8 +173,8 @@ auto GlCommandExecutor::execute_pass(
     const RenderPassDescriptor& descriptor, const std::span<const RenderCommand> commands) const -> void {
     // todo: we assume there is always only a single color attachment, this is due to how RenderTarget is.
     // we also assume there is no depth stencil for now
-    const GLuint image_id = m_state.image_table.fetch(descriptor.target.color);
-    const GLuint framebuffer      = m_framebuffer_cache.get_create_for(image_id);
+    const GLuint image_id        = m_state.image_table.fetch(descriptor.target.color);
+    const GLuint framebuffer     = m_state.framebuffer_cache.get_create_for(image_id);
     constexpr u32 num_colors     = 1;
     const bool has_depth_stencil = false;
 
