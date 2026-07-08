@@ -545,6 +545,7 @@ auto GlDevice::present(const SwapchainHandle handle) const -> void {
     const auto width        = img_desc.extent.width;
     const auto height       = img_desc.extent.height;
 
+    // basically, we just blit swapchain image fbo to default fbo
     m_render_thread.spawn([this, window, image_id, width, height] -> void {
         // clang-format off
         const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(image_id);
@@ -557,6 +558,23 @@ auto GlDevice::present(const SwapchainHandle handle) const -> void {
         // clang-format on
 
         glfwSwapBuffers(window);
+    });
+}
+
+auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) const -> void {
+    // opengl doesnt have image blitting, so we get_create() cached fbos for images and then blit between the fbos.
+    const auto source_id      = m_state.image_table.fetch(source);
+    const auto destination_id = m_state.image_table.fetch(destination);
+    const auto& source_desc   = m_state.image_table.details(source).descriptor;
+
+    m_render_thread.spawn([source_id, destination_id, source_desc = source_desc]() -> void {
+        // clang-format off
+        glCopyImageSubData(
+            source_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
+            destination_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
+            source_desc.extent.width, source_desc.extent.height, 1
+        );
+        // clang-format on
     });
 }
 

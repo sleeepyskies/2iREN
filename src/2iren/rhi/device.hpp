@@ -110,6 +110,10 @@ public:
     /** @brief Presents the back buffer of the given swapchain to the screen. */
     virtual auto present(SwapchainHandle handle) const -> void = 0;
 
+    /** @brief Copies the content of an @ref Image to another @ref Image. @note Assumes source and destination have the
+     * same size. */
+    virtual auto blit(ImageHandle source, ImageHandle destination) const -> void = 0;
+
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> Limits = 0;
 };

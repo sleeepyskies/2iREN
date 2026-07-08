@@ -168,6 +168,7 @@ public:
 
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> const Image& override;
     auto present(SwapchainHandle handle) const -> void override;
+    auto blit(ImageHandle source, ImageHandle destination) const -> void override;
 
     [[nodiscard]] auto limits() const -> Limits override;
 
