@@ -13,9 +13,9 @@
 
 namespace siren {
 
-Window::Window(const WindowDescriptor& descriptor)  {
+Window::Window(const WindowDescriptor& descriptor) {
     GLFWmonitor* monitor = nullptr;
-    if (descriptor.fullscreen) {
+    if (descriptor.initial_mode == WindowMode::Fullscreen) {
         monitor = glfwGetPrimaryMonitor();
     }
 
@@ -37,12 +37,26 @@ Window::Window(const WindowDescriptor& descriptor)  {
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_FALSE);
     }
 
-    m_handle = glfwCreateWindow(
-        (i32)descriptor.width, (i32)descriptor.height, descriptor.title.c_str(), monitor, nullptr
-    );
+    m_handle =
+        glfwCreateWindow((i32)descriptor.width, (i32)descriptor.height, descriptor.title.c_str(), monitor, nullptr);
     ASSERT(m_handle, "Failed to create GLFW window");
 
     // don't set vsync here, render thread should do this since its context dependent
+
+    // take over values
+    {
+        m_window_mode = descriptor.initial_mode;
+
+        i32 w, h;
+        glfwGetWindowSize(m_handle, &w, &h);
+        m_size.set(glm::uvec2(w, h));
+
+        i32 x, y;
+        glfwGetWindowPos(m_handle, &x, &y);
+        m_position.set(glm::uvec2(x, y));
+
+        m_title.set(descriptor.title);
+    }
 
     log::info("Window created successfully: {}x{}", descriptor.width, descriptor.height);
     glfwDefaultWindowHints();
@@ -57,55 +71,35 @@ Window::~Window() {
     glfwTerminate();
 }
 
-auto Window::handle() const noexcept -> GLFWwindow* {
-    return m_handle;
-}
+auto Window::handle() const noexcept -> GLFWwindow* { return m_handle; }
 
-auto Window::width() const noexcept -> u32 {
-    return size().x;
-}
+auto Window::width() const noexcept -> u32 { return size().x; }
 
-auto Window::height() const noexcept -> u32 {
-    return size().y;
-}
+auto Window::height() const noexcept -> u32 { return size().y; }
 
-auto Window::size() const noexcept -> glm::uvec2 {
-    return m_size.get();
-}
+auto Window::size() const noexcept -> glm::uvec2 { return m_size.get(); }
 
-auto Window::position() const noexcept -> glm::ivec2 {
-    return m_position.get();
-}
+auto Window::position() const noexcept -> glm::ivec2 { return m_position.get(); }
 
-auto Window::title() const noexcept -> std::string {
-    return m_title.get();
-}
+auto Window::title() const noexcept -> std::string { return m_title.get(); }
 
-auto Window::is_minimized() const noexcept -> bool {
-    return m_window_mode.load() == WindowMode::Minimized;
-}
+auto Window::is_minimized() const noexcept -> bool { return m_window_mode.load() == WindowMode::Minimized; }
 
-auto Window::is_maximized() const noexcept -> bool {
-    return m_window_mode.load() == WindowMode::Maximized;
-}
-auto Window::is_fullscreen() const noexcept -> bool {
-    return m_window_mode.load() == WindowMode::Fullscreen;
-}
+auto Window::is_maximized() const noexcept -> bool { return m_window_mode.load() == WindowMode::Maximized; }
+auto Window::is_fullscreen() const noexcept -> bool { return m_window_mode.load() == WindowMode::Fullscreen; }
 
-auto Window::should_close() const noexcept -> bool {
-    return m_handle == nullptr || glfwWindowShouldClose(m_handle);
-}
+auto Window::should_close() const noexcept -> bool { return m_handle == nullptr || glfwWindowShouldClose(m_handle); }
 
 auto Window::set_title(const std::string& title) const -> void {
-    m_requests.lock()->emplace_back([this, title]{ glfwSetWindowTitle(m_handle, title.c_str()); });
+    m_requests.lock()->emplace_back([this, title] { glfwSetWindowTitle(m_handle, title.c_str()); });
 }
 
 auto Window::minimize() const -> void {
-    m_requests.lock()->emplace_back([this]{ glfwIconifyWindow(m_handle); });
+    m_requests.lock()->emplace_back([this] { glfwIconifyWindow(m_handle); });
 }
 
 auto Window::maximize() const -> void {
-    m_requests.lock()->emplace_back([this]{ glfwMaximizeWindow(m_handle); });
+    m_requests.lock()->emplace_back([this] { glfwMaximizeWindow(m_handle); });
 }
 
 auto Window::set_fullscreen(const bool val) const -> void {
@@ -124,28 +118,25 @@ auto Window::set_fullscreen(const bool val) const -> void {
         cached_h = size().y;
     }
 
-    m_requests.lock()->emplace_back(
-        [this, val]{
-            if (val) {
-                const auto monitor = glfwGetPrimaryMonitor();
-                const auto mode    = glfwGetVideoMode(monitor);
-                glfwSetWindowMonitor(m_handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                this->m_window_mode = WindowMode::Fullscreen;
-            } else {
-                glfwSetWindowMonitor(m_handle, nullptr, cached_x, cached_y, (i32)cached_w, (i32)cached_h, 0);
-            }
+    m_requests.lock()->emplace_back([this, val] {
+        if (val) {
+            const auto monitor = glfwGetPrimaryMonitor();
+            const auto mode    = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(m_handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            this->m_window_mode = WindowMode::Fullscreen;
+        } else {
+            glfwSetWindowMonitor(m_handle, nullptr, cached_x, cached_y, (i32)cached_w, (i32)cached_h, 0);
         }
-    );
+    });
 }
 
 auto Window::set_size(glm::uvec2 size) const -> void {
     m_requests.lock()->emplace_back(
-        [this, size]{ glfwSetWindowSize(m_handle, static_cast<i32>(size.x), static_cast<i32>(size.y)); }
-    );
+        [this, size] { glfwSetWindowSize(m_handle, static_cast<i32>(size.x), static_cast<i32>(size.y)); });
 }
 
 auto Window::set_position(glm::ivec2 position) const -> void {
-    m_requests.lock()->emplace_back([this, position]{ glfwSetWindowPos(m_handle, position.x, position.y); });
+    m_requests.lock()->emplace_back([this, position] { glfwSetWindowPos(m_handle, position.x, position.y); });
 }
 
 auto Window::poll_events() const -> void {

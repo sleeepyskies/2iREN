@@ -194,7 +194,7 @@ public:
         const AssetPath& path = AssetPath::invalid()
     ) -> StrongHandle<A> {
         ensure_asset_registered<A>();
-        log::debug("Attempting to add new asset of type {}", typename_of<A>());
+        log::trace("Attempting to add new asset of type {}", typename_of<A>());
 
         return m_data.storage.run_exclusive(
             [asset = std::move(asset), &path] (auto& storage) mutable {
@@ -514,7 +514,7 @@ template <IsAsset A>
     std::optional<typename AssetLoader<A>::ConfigType> config
 ) -> StrongHandle<A> {
     ensure_asset_registered<A>();
-    log::trace("Loading new asset from path {}", path);
+    log::debug("Loading new asset from path {}", path);
 
     // generate new or fetch weak handle from cache
     if (const auto cached = search_cache<A>(path); cached) {

@@ -1,15 +1,14 @@
 #pragma once
 
-#include <functional>
-#include <atomic>
-#include <vector>
 #include <GLFW/glfw3.h>
+#include <atomic>
+#include <functional>
 #include <glm/vec2.hpp>
+#include <vector>
 
 #include "2iren/base.hpp"
 #include "2iren/sync/mutex.hpp"
 #include "rhi/fwd.hpp"
-
 
 namespace siren {
 
@@ -38,8 +37,6 @@ struct WindowDescriptor {
     u32 width = 1280;
     /** @brief The initial height of the window */
     u32 height = 720;
-    /** @brief If the window loads in fullscreen mode. */
-    bool fullscreen = false;
     /** @brief If vsync is enabled. */
     bool vsync = true;
     /** @brief If the window has a title bar. */
@@ -48,6 +45,8 @@ struct WindowDescriptor {
     bool resizable = true;
     /** @brief If the window is transparent. */
     bool transparent = false;
+    /** @brief The initial mode the window should load as. */
+    WindowMode initial_mode = WindowMode::Normal;
 };
 
 /**
@@ -56,6 +55,8 @@ struct WindowDescriptor {
  * @note Atm, this acts as a semi WindowManager and single Window instance.
  * Since siren does not make use of multiple windows at the moment, this
  * is however fine.
+ * @warning Must be created on the main thread!
+ * @todo Add glfw callbacks, we never update window state atm.
  */
 class Window {
 public:

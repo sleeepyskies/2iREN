@@ -510,9 +510,9 @@ static auto check_gltf_primitive(const cgltf_primitive& primitve) -> AssetLoadEr
 
 static auto validate_index_type(const cgltf_component_type type) -> AssetLoadError {
     if (type == cgltf_component_type_r_8u) {
-        log::debug("Surface has index type is UInt8, will be converted to UInt32.");
+        log::trace("Surface has index type is UInt8, will be converted to UInt32.");
     } else if (type == cgltf_component_type_r_16u) {
-        log::debug("Surface has index type is UInt16, will be converted to UInt32.");
+        log::trace("Surface has index type is UInt16, will be converted to UInt32.");
     } else if (type == cgltf_component_type_r_32u) {
         // do nothing, log nothing is fine
     } else {

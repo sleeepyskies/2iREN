@@ -134,7 +134,7 @@ auto GlDevice::destroy_buffer(const BufferHandle handle) -> void {
 }
 
 auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
-    ASSERT(descriptor.extent.width > 0 || descriptor.extent.height > 0 || descriptor.extent.depth_or_layers > 0,
+    ASSERT(descriptor.extent.width > 0 && descriptor.extent.height > 0 && descriptor.extent.depth_or_layers > 0,
         "Cannot create an empty image.");
     const auto image_handle = m_state.image_table.reserve();
     m_render_thread.spawn([image_handle, descriptor, this] {
