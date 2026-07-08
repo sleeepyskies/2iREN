@@ -66,7 +66,7 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     }
 
     // init async stuffs
-    if constexpr (!single_threaded) {
+    if constexpr (!SINGLE_THREADED) {
         ThreadPool::init();
     }
 
@@ -78,7 +78,7 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
 }
 
 Context::~Context() {
-    if constexpr (!single_threaded) {
+    if constexpr (!SINGLE_THREADED) {
         ThreadPool::shutdown();
     }
 }

@@ -6,7 +6,7 @@
 namespace siren {
 
 ThreadPool::ThreadPool(const i32 thread_count) {
-    if constexpr (!single_threaded) {
+    if constexpr (!SINGLE_THREADED) {
         i32 count;
         if (thread_count < 0) {
             count = std::max(std::jthread::hardware_concurrency() + thread_count, 1u);

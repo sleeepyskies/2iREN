@@ -111,7 +111,7 @@ inline void log(
         std::vformat(fmt, args)
     );
 
-    if constexpr (single_threaded) {
+    if constexpr (SINGLE_THREADED) {
         std::cout << msg << std::endl;
     } else {
         detail::log_mutex.run([msg = std::move(msg)]{ std::cout << msg << std::endl; });

@@ -23,7 +23,7 @@ enum class Backend {
 };
 
 /** @brief Toggles single threaded mode in siren. */
-inline constexpr bool single_threaded = true;
+inline constexpr bool SINGLE_THREADED = true;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;

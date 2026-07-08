@@ -14,7 +14,7 @@ static auto load_gl_function_pointers(GLFWwindow* window) -> void {
 }
 
 RenderThread::RenderThread(const Window& window) {
-    if constexpr (single_threaded) {
+    if constexpr (SINGLE_THREADED) {
         load_gl_function_pointers(window.handle());
         return;
     }
@@ -38,7 +38,7 @@ RenderThread::~RenderThread() {
 }
 
 auto RenderThread::spawn(RenderTask&& task) const -> void {
-    if constexpr (single_threaded) {
+    if constexpr (SINGLE_THREADED) {
         task();
         return;
     }

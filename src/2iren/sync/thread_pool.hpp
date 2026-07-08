@@ -88,7 +88,7 @@ public:
 
         auto future = packaged_task.get_future();
 
-        if constexpr (single_threaded) {
+        if constexpr (SINGLE_THREADED) {
             packaged_task();
         } else {
             // unlock before notifying so the thread doesn't have to wait
@@ -117,7 +117,7 @@ public:
     auto spawn_detached(Func&& func, Args&&... args) -> void {
         Task task = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 
-        if constexpr (single_threaded) {
+        if constexpr (SINGLE_THREADED) {
             // runs immediately on this thread.
             task();
         } else {
