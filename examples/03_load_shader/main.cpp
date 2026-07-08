@@ -65,11 +65,12 @@ int main() {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.target = swapchain.current_framebuffer()}, [&](siren::RenderPassRecorder& pass) -> void {
-                pass.bind_graphics_pipeline(pipeline.handle());
-                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_arrays(0, 3);
-            });
+            cmds.render_pass({.target = siren::RenderTarget{swapchain.next_image().handle()}},
+                [&](siren::RenderPassRecorder& pass) -> void {
+                    pass.bind_graphics_pipeline(pipeline.handle());
+                    pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+                    pass.draw_arrays(0, 3);
+                });
         });
 
         device->present(swapchain.handle());
