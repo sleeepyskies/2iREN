@@ -1,6 +1,5 @@
 #include "layout.hpp"
 
-
 namespace siren {
 
 /// @todo: do we need to account for padding here?
@@ -43,25 +42,21 @@ constexpr auto DataType::to_string() const -> std::string_view {
     }
 }
 
-auto LayoutBuilder::start() -> LayoutBuilder { return LayoutBuilder{ }; }
+auto LayoutBuilder::start() noexcept -> LayoutBuilder { return LayoutBuilder{}; }
 
 auto LayoutBuilder::finish() -> Layout {
     return Layout{
         .components = std::move(m_components),
-        .stride = m_offset,
+        .stride     = m_offset,
     };
 }
 
-auto LayoutBuilder::add(
-    const Attribute attribute,
-    const u32 count,
-    const DataType type
-) -> LayoutBuilder& {
+auto LayoutBuilder::add(const Attribute attribute, const u32 count, const DataType type) -> LayoutBuilder& {
     const Component component{
-        .type = type,
-        .size = count,
-        .offset = m_offset,
-        .location = m_components.size(),
+        .type      = type,
+        .size      = count,
+        .offset    = m_offset,
+        .location  = m_components.size(),
         .attribute = attribute,
     };
 

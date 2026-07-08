@@ -578,15 +578,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
 }
 
 static auto load_vertex_layout(const cgltf_primitive&) -> Layout {
-    // we enforce a default vertex layout atm in 2iren. This means, every vertex buffer
-    // is built the same, even if the gltf file only specifies a position attribute.
-    return LayoutBuilder::start()
-        .add(Attribute::Position, 4, DataType::Float32)
-        .add(Attribute::Normal, 4, DataType::Float32)
-        .add(Attribute::Color, 4, DataType::Float32)
-        .add(Attribute::Texture, 2, DataType::Float32)
-        .add(Attribute::Tangent, 4, DataType::Float32)
-        .finish();
+    return DEFAULT_VERTEX_LAYOUT;
 
     // code below returns the actual layout
     /*

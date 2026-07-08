@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vector>
 #include <libassert/assert.hpp>
+#include <vector>
 
 #include "2iren/base.hpp"
-
 
 namespace siren {
 
@@ -26,13 +25,21 @@ enum class Attribute : u8 {
  */
 struct DataType {
     enum Value {
-        Int8, Int16, Int32, Int64,
-        UInt8, UInt16, UInt32, UInt64,
-        Float16, Float32, Float64,
+        Int8,
+        Int16,
+        Int32,
+        Int64,
+        UInt8,
+        UInt16,
+        UInt32,
+        UInt64,
+        Float16,
+        Float32,
+        Float64,
     } value;
 
     // ReSharper disable once CppNonExplicitConvertingConstructor
-    constexpr DataType(const Value v) : value(v) { }
+    constexpr DataType(const Value v) : value(v) {}
     // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
@@ -79,7 +86,7 @@ public:
      * @brief Entry function for creating a @ref VertexLayout.
      * @return A newly created @ref VertexLayoutBuilder.
      */
-    static auto start() -> LayoutBuilder;
+    static auto start() noexcept -> LayoutBuilder;
 
     /** @brief Finishes the construction and returns a @ref VertexLayout instance. */
     auto finish() -> Layout;
@@ -95,17 +102,25 @@ public:
      * This creates a new element within the layout of a vec3f representing position.
      * @return A reference to the builder.
      */
-    auto add(
-        Attribute attribute,
-        u32 count,
-        DataType type
-    ) -> LayoutBuilder&;
+    auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
 
 private:
     LayoutBuilder() = default;
 
-    std::vector<Component> m_components{ };
-    usize m_offset{ 0 };
+    std::vector<Component> m_components{};
+    usize m_offset{0};
 };
+
+/**
+ * @brief The default vertex layout of 2iren. This is a temp solution, but provides some consistency when writing
+ * shaders.
+ */
+const Layout DEFAULT_VERTEX_LAYOUT = LayoutBuilder::start()
+                                         .add(Attribute::Position, 4, DataType::Float32)
+                                         .add(Attribute::Normal, 4, DataType::Float32)
+                                         .add(Attribute::Color, 4, DataType::Float32)
+                                         .add(Attribute::Texture, 2, DataType::Float32)
+                                         .add(Attribute::Tangent, 4, DataType::Float32)
+                                         .finish();
 
 } // namespace siren
