@@ -63,10 +63,8 @@ auto FramebufferCache::create_framebuffer(const GLuint image_id) -> GLuint {
     }
     */
 
-    // check everything worked
-    if (glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        PANIC("Framebuffer could not be created.");
-    }
+    ASSERT(glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        "Framebuffer could not be created.");
 
     log::trace("Created framebuffer with OpenGL ID {}", image_id);
 

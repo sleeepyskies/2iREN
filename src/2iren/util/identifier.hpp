@@ -1,21 +1,23 @@
 #pragma once
 
-#include <limits>
 #include <compare>
-#include "2iren/base.hpp"
+#include <limits>
 
+#include "2iren/base.hpp"
+#include "type_info.hpp"
 
 namespace siren {
 
 namespace detail {
 struct NullHandle_t {
     template <typename Handle>
-    constexpr operator Handle() const { return Handle::invalid(); }
+    constexpr operator Handle() const {
+        return Handle::invalid();
+    }
 };
-}
+} // namespace detail
 
-
-inline constexpr auto NullHandle = detail::NullHandle_t{ };
+inline constexpr auto NullHandle = detail::NullHandle_t{};
 
 /**
  * @struct Identifier
@@ -47,11 +49,8 @@ protected:
     IdType m_id = INVALID_ID;
 
     constexpr Identifier() noexcept = default;
-    constexpr Identifier(
-        const IndexType idx,
-        const GenerationType gen,
-        const Meta meta
-    ) noexcept : m_id(pack(idx, gen, meta)) { }
+    constexpr Identifier(const IndexType idx, const GenerationType gen, const Meta meta) noexcept :
+        m_id(pack(idx, gen, meta)) {}
 
 public:
     Identifier(const Identifier&)            = default;
@@ -71,12 +70,10 @@ public:
         return static_cast<GenerationType>((m_id >> 16) & 0xFFFF);
     }
     /** @brief Returns the meta of this id. */
-    [[nodiscard]] constexpr auto meta() const noexcept -> Meta {
-        return static_cast<Meta>(m_id & 0xFFFF);
-    }
+    [[nodiscard]] constexpr auto meta() const noexcept -> Meta { return static_cast<Meta>(m_id & 0xFFFF); }
 
     /** @brief Simple factory method to return an invalid Identifier. */
-    [[nodiscard]] constexpr static auto invalid() noexcept -> Identifier { return T{ }; }
+    [[nodiscard]] constexpr static auto invalid() noexcept -> Identifier { return T{}; }
 
     /** @brief Checks if the handle is valid aka has a non 0 inner value. */
     [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return m_id != INVALID_ID; }
@@ -89,14 +86,13 @@ public:
     /** @brief Equality comparison based on the inner 64-bit value. */
     [[nodiscard]] friend bool operator==(const Identifier&, const Identifier&) = default;
 
-protected:
+    /** @brief Default to_string implementation for all Identifiers. */
+    constexpr auto to_string() const noexcept -> std::string {
+        return std::format("Identifier<{}>({})", typename_of<T>(), packed());
+    }
 
 private:
-    static constexpr auto pack(
-        const IndexType idx,
-        const GenerationType gen,
-        const Meta meta
-    ) -> IdType {
+    static constexpr auto pack(const IndexType idx, const GenerationType gen, const Meta meta) -> IdType {
         IdType id = 0;
         id += static_cast<IdType>(idx) << 32;
         id += static_cast<IdType>(gen) << 16;
@@ -117,6 +113,6 @@ struct NullIdentifier_t {
 };
 
 /** @brief Constant used to express any null value for @ref Identifier64. */
-inline NullIdentifier_t NullID{ };
+inline NullIdentifier_t NullID{};
 
 } // namespace siren
