@@ -156,6 +156,34 @@ public:
     }
 
     /**
+     * @brief Attempts to find and return the asset that the provided handle points to.
+     * @warning Crashes on failure, use with caution.
+     * @tparam A The specific asset type.
+     * @param handle A handle to the asset.
+     * @return The asset if it can be found on the server, otherwise a nullptr.
+     */
+    template <IsAsset A>
+    [[nodiscard]] auto get_unsafe(const StrongHandle<A> handle) const -> const A& {
+        auto* asset = get(handle);
+        ASSERT(asset, std::format("Failed to get asset from handle {}", handle));
+        return *asset;
+    }
+
+    /**
+     * @brief Attempts to find and return the asset that the provided handle points to.
+     * @warning Crashes on failure, use with caution.
+     * @tparam A The specific asset type.
+     * @param handle A handle to the asset.
+     * @return The asset if it can be found on the server, otherwise a nullptr.
+     */
+    template <IsAsset A>
+    [[nodiscard]] auto get_unsafe(const StrongHandle<A> handle) -> A& {
+        auto* asset = get(handle);
+        ASSERT(asset, std::format("Failed to get asset from handle {}", handle));
+        return *asset;
+    }
+
+    /**
      * @brief Loads an asset from disk, as well as recursively loading all of its dependencies.
      * @tparam A The asset type of the to be loaded asset.
      * @param path The string asset path of the asset to load. @see AssetPath for format options.
