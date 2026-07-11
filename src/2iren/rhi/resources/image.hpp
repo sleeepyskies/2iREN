@@ -57,7 +57,7 @@ enum class ImageFormat {
  */
 struct ImageDescriptor {
     /** @brief An optional label. Mainly used for debugging. */
-    std::optional<std::string> label;
+    std::optional<std::string> label = std::nullopt;
     /** @brief The format of the image data (num channels/bytes per channel). */
     ImageFormat format;
     /** @brief Size of the image. */

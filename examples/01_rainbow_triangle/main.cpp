@@ -82,19 +82,28 @@ auto main() -> siren::i32 {
         .depth_write       = true,
     });
 
+    const auto color = device->create_image({
+        .format        = siren::ImageFormat::RGBA8,
+        .extent        = siren::ImageExtent{.width = window.width(), .height = window.height()},
+        .dimension     = siren::ImageDimension::D2,
+        .mipmap_levels = 1,
+    });
+    const siren::RenderTarget target{color.handle()};
+
     while (!window.should_close()) {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.target = siren::RenderTarget{swapchain.next_image().handle()}},
-                [&](siren::RenderPassRecorder& pass) -> void {
+            cmds.render_pass(
+                {.target = siren::RenderTarget{target.color}}, [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
                     pass.bind_vertex_buffer(buffer.handle(), 0, 0);
                     pass.draw_arrays(0, 3);
                 });
         });
 
-        device->present(swapchain.handle());
+        device->blit(target.color, swapchain.next_image().handle());
+        swapchain.present();
         device->flush_delete_queue();
     }
 
