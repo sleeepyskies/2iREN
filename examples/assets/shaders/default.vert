@@ -12,11 +12,11 @@ layout(location = 3) out vec2 v_texture;
 layout(location = 4) out vec4 v_tangent;
 
 void main() {
-    gl_Position = a_position;
-    v_position = gl_Position;
-
+    v_position = a_position;
     v_normal = a_normal;
     v_color = a_color;
     v_texture = a_texture;
     v_tangent = a_tangent;
+
+    gl_Position = v_position;
 }

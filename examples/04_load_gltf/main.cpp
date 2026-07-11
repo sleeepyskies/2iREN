@@ -46,20 +46,12 @@ auto main() -> siren::i32 {
         .alpha_mode        = siren::AlphaMode::Opaque,
         .depth_function    = siren::DepthFunction::Less,
         .back_face_culling = true,
-        .depth_test        = true,
-        .depth_write       = true,
+        .depth_test        = false,
+        .depth_write       = false,
     });
 
     const auto& gltf  = server.get_unsafe(gltfh);
     const auto& scene = server.get_unsafe(*gltf.default_scene);
-
-    const auto color = device->create_image({
-        .format        = siren::ImageFormat::RGBA8,
-        .extent        = siren::ImageExtent{.width = window.width(), .height = window.height()},
-        .dimension     = siren::ImageDimension::D2,
-        .mipmap_levels = 1,
-    });
-    const siren::RenderTarget target{color.handle()};
 
     // main render loop
     siren::log::info("Starting render loop.");
@@ -67,7 +59,7 @@ auto main() -> siren::i32 {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.clear_color = siren::RGBA::red(), .target = target},
+            cmds.render_pass({.clear_color = siren::RGBA::red(), .target = siren::RenderTarget{swapchain.next_image().handle()}},
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
 
@@ -77,7 +69,6 @@ auto main() -> siren::i32 {
                 });
         });
 
-        device->blit(target.color, swapchain.next_image().handle());
         swapchain.present();
         device->flush_delete_queue();
     }

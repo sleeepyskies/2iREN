@@ -624,11 +624,11 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     for (usize i = 0; i < primitive.attributes_count; i++) {
         const auto& attribute = primitive.attributes[i];
         switch (const auto type = attribute.type) {
-            case cgltf_attribute_type_position: positions = primitive.attributes->data; break;
-            case cgltf_attribute_type_normal: normals = primitive.attributes->data; break;
-            case cgltf_attribute_type_color: colors = primitive.attributes->data; break;
-            case cgltf_attribute_type_texcoord: textures = primitive.attributes->data; break;
-            case cgltf_attribute_type_tangent: tangents = primitive.attributes->data; break;
+            case cgltf_attribute_type_position: positions = attribute.data; break;
+            case cgltf_attribute_type_normal: normals = attribute.data; break;
+            case cgltf_attribute_type_color: colors = attribute.data; break;
+            case cgltf_attribute_type_texcoord: textures = attribute.data; break;
+            case cgltf_attribute_type_tangent: tangents = attribute.data; break;
 
             case cgltf_attribute_type_joints:
             case cgltf_attribute_type_weights:
@@ -645,17 +645,17 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     ASSERT(positions, "Surface does not contain a positional attribute!");
 
     for (usize i = 0; i < count; i++) {
-        std::array<f32, 4> position = {0.f, 0.f, 0.f, 0.f};
+        std::array<f32, 4> position = {0.f, 0.f, 0.f, 1.f};
         cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
         buffer.append(position);
 
-        std::array<f32, 4> normal = {0.f, 1.f, 1.f, 1.f};
+        std::array<f32, 4> normal = {0.f, 1.f, 0.f, 0.f};
         if (normals) {
             cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
         }
         buffer.append(normal);
 
-        std::array<f32, 4> color = {0.5f, 0.f, 0.5f, 1.0f};
+        std::array<f32, 4> color = {1.f, 1.f, 1.f, 1.f};
         if (colors) {
             cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 4);
         }
