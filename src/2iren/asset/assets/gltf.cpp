@@ -566,11 +566,11 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
     ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
     return IndexBuffer{
-        .buffer   = device.create_buffer({
-              .label = std::nullopt,
-              .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
-              .size  = buffer.size_bytes(),
-              .usage = BufferUsage::Static,
+        .buffer = device.create_buffer({
+            .label = std::nullopt,
+            .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
+            .size  = buffer.size_bytes(),
+            .usage = BufferUsage::Static,
         }),
         .count  = index_count,
         .format = IndexFormat::UInt32,
@@ -649,40 +649,37 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
         cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
         buffer.append(position);
 
+        std::array<f32, 4> normal = {0.f, 1.f, 1.f, 1.f};
         if (normals) {
-            std::array<f32, 4> normal = {0.f, 1.f, 1.f, 1.f};
             cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
-            buffer.append(normal);
         }
+        buffer.append(normal);
 
+        std::array<f32, 4> color = {0.5f, 0.f, 0.5f, 1.0f};
         if (colors) {
-            std::array<f32, 4> color = {0.5f, 0.f, 0.5f, 1.0f};
             cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 4);
-            buffer.append(color);
         }
+        buffer.append(color);
 
+        std::array<f32, 2> texture = {0.f, 0.f};
         if (textures) {
-            std::array<f32, 2> texture = {
-                0.f,
-                0.f,
-            };
-            cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 3);
-            buffer.append(texture);
+            cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 2);
         }
+        buffer.append(texture);
 
+        std::array<f32, 4> tangent = {1.f, 0.f, 0.f, 1.f};
         if (tangents) {
-            std::array<f32, 4> tangent = {1.f, 0.f, 0.f, 1.f};
             cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
-            buffer.append(tangent);
         }
+        buffer.append(tangent);
     }
 
     return VertexBuffer{
-        .buffer   = device.create_buffer({
-              .label = std::nullopt,
-              .data  = buffer.data(), // todo: also does a copy here fuck
-              .size  = buffer.size_bytes(),
-              .usage = BufferUsage::Static,
+        .buffer = device.create_buffer({
+            .label = std::nullopt,
+            .data  = buffer.data(), // todo: also does a copy here fuck
+            .size  = buffer.size_bytes(),
+            .usage = BufferUsage::Static,
         }),
         .layout = layout,
     };
@@ -908,11 +905,8 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
         default_scene = (*scenes)[data->scene - data->scenes];
     }
 
-    ctx.finish(std::make_unique<Gltf>(std::move(*scenes),
-        std::move(default_scene),
-        std::move(*meshes),
-        std::move(*materials),
-        std::move(*nodes)));
+    ctx.finish(std::make_unique<Gltf>(
+        std::move(*scenes), std::move(default_scene), std::move(*meshes), std::move(*materials), std::move(*nodes)));
 
     log::debug("gltf file successfully loaded into asset {}", ctx.handle());
 
