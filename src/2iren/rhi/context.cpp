@@ -31,6 +31,7 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     libassert::set_failure_handler(
         [] (const libassert::assertion_info& info){
             log::error("{}", info);
+            std::abort();
         }
     );
     glfwSetErrorCallback(
