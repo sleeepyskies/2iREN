@@ -175,6 +175,7 @@ auto GlCommandExecutor::execute_pass(
     // we also assume there is no depth stencil for now
     const GLuint image_id        = m_state.image_table.fetch(descriptor.target.color);
     const GLuint framebuffer     = m_state.framebuffer_cache.get_create_for(image_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     constexpr u32 num_colors     = 1;
     const bool has_depth_stencil = false;
 

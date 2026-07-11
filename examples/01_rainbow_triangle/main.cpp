@@ -47,17 +47,7 @@ const siren::ByteBuffer vertices{
 auto main() -> siren::i32 {
     // init siren
     siren::Context ctx{{.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}};
-
-    siren::Window window({
-        .title       = "2iren",
-        .width       = 1280,
-        .height      = 800,
-        .fullscreen  = false,
-        .vsync       = true,
-        .decorated   = true,
-        .resizable   = true,
-        .transparent = false,
-    });
+    siren::Window window;
 
     auto device    = ctx.create_device(window);
     auto swapchain = device->create_swapchain({

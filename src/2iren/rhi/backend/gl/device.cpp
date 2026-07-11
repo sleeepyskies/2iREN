@@ -22,7 +22,7 @@ namespace siren {
 
 // todo: add logging
 
-constexpr GLuint DEFAULT_FRAMEBUFFER = 0;
+constexpr GLuint GL_DEFAULT_FRAMEBUFFER = 0;
 
 using namespace siren;
 
@@ -548,7 +548,7 @@ auto GlDevice::present(const SwapchainHandle handle) const -> void {
         // clang-format off
         const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(image_id);
         glBlitNamedFramebuffer(
-            /* from*/ offscreen_fb, /* to */ DEFAULT_FRAMEBUFFER,
+            /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
             0, 0, width, height,
             0, 0, width, height,
             GL_COLOR_BUFFER_BIT, GL_NEAREST

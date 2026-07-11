@@ -32,7 +32,7 @@ enum class WindowMode {
  */
 struct WindowDescriptor {
     /** @brief The initial title of the window. */
-    std::string title = "Siren";
+    std::string title = "2iREN";
     /** @brief The initial width of the window */
     u32 width = 1280;
     /** @brief The initial height of the window */
@@ -60,7 +60,7 @@ struct WindowDescriptor {
  */
 class Window {
 public:
-    explicit Window(const WindowDescriptor& descriptor);
+    explicit Window(const WindowDescriptor& descriptor = {});
     ~Window();
 
     Window(const Window&)                      = delete;

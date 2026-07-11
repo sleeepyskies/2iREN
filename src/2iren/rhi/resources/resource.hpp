@@ -38,8 +38,9 @@ struct ResourceHandle : Identifier<ResourceHandle<Tag>> {
 
     static constexpr auto invalid() noexcept -> ResourceHandle { return ResourceHandle{}; }
 
-    constexpr auto to_string() const noexcept -> std::string {
-        return std::format("{}Handle({})", typename_of<Tag>(), this->packed());
+    /** @brief Stringifies the ResourceHandle. */
+    [[nodiscard]] constexpr auto to_string() const noexcept -> std::string {
+        return std::format("{}Handle(index={}, generation={})", typename_of<Tag>(), this->index(), this->generation());
     }
 };
 
@@ -79,6 +80,11 @@ public:
 
     /** @brief Returns the underlying native handle for this resource. */
     [[nodiscard]] auto handle() const noexcept -> HandleType { return m_handle; }
+
+    /** @brief Stringifies the resource. */
+    [[nodiscard]] auto to_string() const noexcept -> std::string {
+        return std::format("{}({})", typename_of<Resource>(), m_handle.packed());
+    }
 
 protected:
     Device* m_device;

@@ -187,7 +187,7 @@ auto RenderPassRecorder::finish() -> RenderPassResult {
 auto RenderCommandRecorder::begin_render_pass(
     const RenderPassDescriptor& descriptor
 ) const noexcept -> RenderPassRecorder {
-    return RenderPassRecorder{ std::move(descriptor) };
+    return RenderPassRecorder{ descriptor };
 }
 
 auto RenderCommandRecorder::consume_render_pass(const RenderPassResult& commands) noexcept -> void {
