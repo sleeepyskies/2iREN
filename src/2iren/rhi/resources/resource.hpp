@@ -184,9 +184,7 @@ public:
     /** @brief Gets the api handle associated with this proxy handle iff valid. */
     [[nodiscard]] auto fetch(const HandleType proxy_handle) const noexcept -> ApiHandleType {
         auto inner = m_inner.read();
-        if (!is_valid_id(proxy_handle, *inner)) {
-            return ApiHandleType{0};
-        }
+        ASSERT(is_valid_id(proxy_handle, *inner), "Attempting to fetch an invalid handle.");
         return inner->table[proxy_handle.index()].api_handle;
     }
 

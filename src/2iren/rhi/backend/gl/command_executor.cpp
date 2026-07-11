@@ -31,7 +31,6 @@ static constexpr auto extract_cmds(const RenderPass& pass, const std::vector<Ren
 // == MARK: Execution Loops
 // ============================================================================
 
-
 GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) {}
 
 auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge) -> void {
@@ -173,8 +172,8 @@ auto GlCommandExecutor::execute_pass(
     const RenderPassDescriptor& descriptor, const std::span<const RenderCommand> commands) const -> void {
     // todo: we assume there is always only a single color attachment, this is due to how RenderTarget is.
     // we also assume there is no depth stencil for now
-    const GLuint image_id        = m_state.image_table.fetch(descriptor.target.color);
-    const GLuint framebuffer     = m_state.framebuffer_cache.get_create_for(image_id);
+    const GLuint image_id    = m_state.image_table.fetch(descriptor.target.color);
+    const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(image_id);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     constexpr u32 num_colors     = 1;
     const bool has_depth_stencil = false;
@@ -241,17 +240,22 @@ auto GlCommandExecutor::execute_pass(
 }
 
 auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {
-    auto& gp_table           = m_state.graphics_pipeline_table;
-    const auto va_handle     = gp_table.fetch(bind.pipeline_handle);
-    const auto shader_handle = gp_table.details(bind.pipeline_handle).shader_program_handle;
-    const auto& desc         = gp_table.details(bind.pipeline_handle).descriptor;
+    auto& pipeline_table = m_state.graphics_pipeline_table;
+    auto& shader_table   = m_state.shader_table;
+
+    const auto& pipeline_descriptor = pipeline_table.details(bind.pipeline_handle).descriptor;
+    const auto vertex_arrayid = pipeline_table.fetch(bind.pipeline_handle);
+
+    const auto shaderid  = shader_table.fetch(pipeline_descriptor.shader);
+
+    const auto& desc = pipeline_table.details(bind.pipeline_handle).descriptor;
 
     m_tracked_state.active_pipeline = bind.pipeline_handle;
-    m_tracked_state.active_vao      = va_handle;
+    m_tracked_state.active_vao      = vertex_arrayid;
 
     // bind the shader and vertex array == vertex layout
-    glUseProgram(shader_handle);
-    glBindVertexArray(va_handle);
+    glUseProgram(shaderid);
+    glBindVertexArray(vertex_arrayid);
 
     // set render state
     switch (desc.alpha_mode) {

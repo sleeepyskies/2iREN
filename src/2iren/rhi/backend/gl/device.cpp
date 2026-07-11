@@ -286,7 +286,7 @@ auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
         }
 
         // link all stages together into a program
-        const GLuint program = glCreateProgram();
+        const auto program = glCreateProgram();
         for (const auto& shader : shader_ids) {
             glAttachShader(program, shader);
         }
@@ -430,9 +430,8 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
             glVertexArrayAttribBinding(vertex_array, static_cast<GLuint>(index), 0);
         }
 
-        m_state.graphics_pipeline_table.link(pipeline_handle,
-            vertex_array,
-            GlGraphicsPipelineDetails{.descriptor = descriptor, .shader_program_handle = program_handle});
+        m_state.graphics_pipeline_table.link(
+            pipeline_handle, vertex_array, GlGraphicsPipelineDetails{.descriptor = descriptor});
     });
 
     log::trace("Created graphics pipeline with handle {}", pipeline_handle.packed());

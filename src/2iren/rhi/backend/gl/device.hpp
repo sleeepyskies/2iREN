@@ -84,8 +84,6 @@ struct GlShaderDetails {
 struct GlGraphicsPipelineDetails {
     /** @brief The descriptor of the @ref GraphicsPipeline. */
     GraphicsPipelineDescriptor descriptor;
-    /** @brief The cached shader program ID. Avoids performing @ref AssetServer lookups during rendering. */
-    GLuint shader_program_handle;
 };
 
 struct GlSwapchainDetails {

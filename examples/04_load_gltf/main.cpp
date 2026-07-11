@@ -1,5 +1,3 @@
-#include <unordered_map>
-
 #include "2iren/2iren.hpp"
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/asset/assets/gltf.hpp"

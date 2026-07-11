@@ -279,8 +279,8 @@ constexpr auto shader_stage_to_gl(const ShaderStage shader_stage) -> GLenum {
     switch (shader_stage) {
         case ShaderStage::Vertex: return GL_VERTEX_SHADER;
         case ShaderStage::Fragment: return GL_FRAGMENT_SHADER;
-        case ShaderStage::Geometry: return GL_GEOMETRY_SHADER;
-        case ShaderStage::Compute: return GL_COMPUTE_SHADER;
+        case ShaderStage::Geometry:
+        case ShaderStage::Compute:
         case ShaderStage::Task:
         case ShaderStage::Mesh:
         default: UNREACHABLE();
