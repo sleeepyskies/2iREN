@@ -19,16 +19,7 @@ const siren::ByteBuffer vertices{
 
 int main() {
     siren::Context ctx{{.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}};
-    siren::Window window({
-        .title       = "2iren",
-        .width       = 1280,
-        .height      = 800,
-        .fullscreen  = false,
-        .vsync       = true,
-        .decorated   = true,
-        .resizable   = true,
-        .transparent = false,
-    });
+    siren::Window window;
     auto device = ctx.create_device(window);
     siren::AssetServer server{*device};
 
