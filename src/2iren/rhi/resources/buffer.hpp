@@ -8,6 +8,7 @@
 
 
 namespace siren {
+class ByteBuffer;
 
 /**
  * @brief Defines the usage of a Buffer.
@@ -50,7 +51,7 @@ public:
  */
 struct BufferDescriptor {
     /** @brief An optional label. Mainly useful for debugging. */
-    std::optional<std::string> label;
+    std::optional<std::string> label = std::nullopt;
     /**
      * @brief Optional initial data. If present, performs a direct upload.
      * @note This is dropped by the @ref Buffer once owned by it. Therefore,
@@ -58,7 +59,7 @@ struct BufferDescriptor {
      * @todo remove this? idk
      * @todo should this field actually be a @ref ByteBuffer instead?
      */
-    std::optional<std::vector<u8>> data;
+    std::optional<std::vector<u8>> data = std::nullopt;
     /** @brief The initial size of the buffer in bytes. */
     usize size;
     /** @brief The intended use of the buffer. */
@@ -81,6 +82,9 @@ public:
 
     /** @brief Returns the descriptor of this Buffer. */
     [[nodiscard]] auto descriptor() const noexcept -> const BufferDescriptor&;
+
+    /** @brief Utility function to upload data to this Buffer. */
+    auto upload(const ByteBuffer& data, u32 offset = 0) const noexcept -> void;
 };
 
 } // namespace siren
