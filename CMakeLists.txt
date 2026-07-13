@@ -54,7 +54,7 @@ add_library(
         src/2iren/util/filesystem.cpp
         src/2iren/util/stb_image.cpp
         src/2iren/util/cgltf.cpp
-        src/2iren/util/stb_image.hpp
+        src/2iren/util/camera.cpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

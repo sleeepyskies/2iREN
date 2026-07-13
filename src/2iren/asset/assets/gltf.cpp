@@ -567,7 +567,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
 
     return IndexBuffer{
         .buffer = device.create_buffer({
-            .label = std::nullopt,
+            .label = "Index Buffer",
             .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a ByteBuffer instead?
             .size  = buffer.size_bytes(),
             .usage = BufferUsage::Static,
@@ -676,7 +676,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
 
     return VertexBuffer{
         .buffer = device.create_buffer({
-            .label = std::nullopt,
+            .label = "Vertex Buffer",
             .data  = buffer.data(), // todo: also does a copy here fuck
             .size  = buffer.size_bytes(),
             .usage = BufferUsage::Static,

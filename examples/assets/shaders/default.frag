@@ -10,5 +10,5 @@ layout(binding = 0) uniform sampler2D u_texture;
 layout(location = 0) out vec4 FragColor;
 
 void main() {
-    FragColor = vec4(1);
+    FragColor = v_position;
 }
