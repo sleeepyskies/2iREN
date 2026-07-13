@@ -34,7 +34,7 @@ public:
     [[nodiscard]] auto descriptor() const -> const SwapchainDescriptor&;
 
     /** @brief Returns the next free image managed by this @ref Swapchain to render to. */
-    [[nodiscard]] auto next_image() const -> const Image&;
+    [[nodiscard]] auto next_image() const -> ImageHandle;
 
     /** @brief Presents the back buffer to the screen. */
     auto present() const -> void;

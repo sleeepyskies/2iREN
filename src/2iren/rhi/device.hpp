@@ -105,7 +105,7 @@ public:
     [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;
 
     /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
-    [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> const Image& = 0;
+    [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle = 0;
 
     /** @brief Presents the back buffer of the given swapchain to the screen. */
     virtual auto present(SwapchainHandle handle) const -> void = 0;

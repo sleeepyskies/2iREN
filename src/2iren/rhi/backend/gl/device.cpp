@@ -35,38 +35,51 @@ static auto make_label(const std::optional<std::string>& prefix, const std::stri
     return std::nullopt;
 }
 
-auto FramebufferCache::get_create_for(const GLuint image_id) -> GLuint {
+auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
-    if (const auto it = m_cache.find(image_id); it != m_cache.end()) {
+    const Key key{
+        .colors        = target.colors,
+        .depth_stencil = target.depth_stencil.value_or(NullHandle),
+    };
+    if (const auto it = m_cache.find(key); it != m_cache.end()) {
         return it->second;
     }
 
     // otherwise create a new framebuffer
-    const auto fb     = create_framebuffer(image_id);
-    m_cache[image_id] = fb;
+    const auto fb = create_framebuffer(target);
+    m_cache[key]  = fb;
     return fb;
 }
 
-auto FramebufferCache::create_framebuffer(const GLuint image_id) -> GLuint {
+auto FramebufferCache::Hasher::operator()(const Key& key) const -> usize {
+    // ty mr chatgpt, idk nun bout this
+    usize hash   = 0;
+    auto combine = [&hash](const usize value) { hash ^= value + 0x9e3779b9 + (hash << 6) + (hash >> 2); };
+    for (const auto image : key.colors)
+        combine(image.hash());
+    if (key.depth_stencil.is_valid()) {
+        combine(key.depth_stencil.hash());
+    }
+    return hash;
+}
+
+auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint {
     // note that this is all happening inside the render thread, so we can do as many gl calls as we want directly :D
     GLuint framebuffer;
     glCreateFramebuffers(1, &framebuffer);
 
-    // todo: iterate colors once we have more than just one
-    glNamedFramebufferTexture(framebuffer, static_cast<GLenum>((u32)(GL_COLOR_ATTACHMENT0) + (u32)(0)), image_id, 0);
-
-    // todo: setup depth stencil attachment
-    /*
-    if (descriptor.has_depth_stencil && depth_stencil.has_value()) {
-        glNamedFramebufferTexture(
-            framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, this->m_state.image_table.fetch(depth_stencil->handle()), 0);
+    for (const auto [index, handle] : views::enumerate(target.colors)) {
+        const auto image_id = m_image_table.fetch(handle);
+        glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0 + index, image_id, 0);
     }
-    */
+
+    if (target.depth_stencil.has_value()) {
+        const auto image_id = m_image_table.fetch(*target.depth_stencil);
+        glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
+    }
 
     ASSERT(glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
         "Framebuffer could not be created.");
-
-    log::trace("Created framebuffer with OpenGL ID {}", image_id);
 
     return framebuffer;
 }
@@ -374,7 +387,11 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
             GlSwapchainDetails{
                 .descriptor    = descriptor,
                 .native_handle = m_primary_window.handle(),
-                .image         = std::move(image),
+                .target =
+                    GlSwapchainDetails::Target{
+                        .render_target = RenderTarget{.colors = {image.handle()}, .depth_stencil = std::nullopt},
+                        .image         = std::move(image),
+                    },
             });
 
         glfwSwapInterval(descriptor.vsync);
@@ -529,27 +546,24 @@ auto GlDevice::swapchain_descriptor(const SwapchainHandle handle) const -> const
     return m_state.swapchain_table.details(handle).descriptor;
 }
 
-auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const -> const Image& {
-    return m_state.swapchain_table.details(handle).image.value();
+auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const -> ImageHandle {
+    return m_state.swapchain_table.details(handle).target->image.handle();
 }
 
 auto GlDevice::present(const SwapchainHandle handle) const -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
-    auto* window            = m_state.swapchain_table.details(handle).native_handle;
-    const auto image_handle = m_state.swapchain_table.details(handle).image->handle();
-    const auto image_id     = m_state.image_table.fetch(image_handle);
-    const auto& img_desc    = m_state.image_table.details(image_handle).descriptor;
-    const auto width        = img_desc.extent.width;
-    const auto height       = img_desc.extent.height;
+    auto* window         = m_state.swapchain_table.details(handle).native_handle;
+    const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
+    const auto [w, h, _] = m_state.image_table.details(target.colors[0]).descriptor.extent;
 
     // basically, we just blit swapchain image fbo to default fbo
-    m_render_thread.spawn([this, window, image_id, width, height] -> void {
+    m_render_thread.spawn([this, window, target, w, h] -> void {
         // clang-format off
-        const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(image_id);
+        const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(target);
         glBlitNamedFramebuffer(
             /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
-            0, 0, width, height,
-            0, 0, width, height,
+            0, 0, w, h,
+            0, 0, w, h,
             GL_COLOR_BUFFER_BIT, GL_NEAREST
         );
         // clang-format on
@@ -559,7 +573,7 @@ auto GlDevice::present(const SwapchainHandle handle) const -> void {
 }
 
 auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) const -> void {
-    // opengl doesnt have image blitting, so we get_create() cached fbos for images and then blit between the fbos.
+    // opengl doesn't have image blitting, so we get_create() cached fbos for images and then blit between the fbos.
     const auto source_id      = m_state.image_table.fetch(source);
     const auto destination_id = m_state.image_table.fetch(destination);
     const auto& source_desc   = m_state.image_table.details(source).descriptor;

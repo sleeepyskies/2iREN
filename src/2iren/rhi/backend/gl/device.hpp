@@ -15,24 +15,6 @@
 namespace siren {
 
 /**
- * @class FramebufferCache
- * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
- * they do not exist in sirens main API.
- * Instead, we use render targets, which consist of images. However, OpenGL requires rendering to an FBO,
- * so we use this to create/fetch FBOs based on images.
- *
- * @todo @note Cached framebuffers are currently never cleaned up. do this homie
- */
-class FramebufferCache {
-public:
-    [[nodiscard]] auto get_create_for(const GLuint image_id) -> GLuint;
-
-private:
-    [[nodiscard]] auto create_framebuffer(const GLuint image_id) -> GLuint;
-    std::unordered_map<GLuint, GLuint> m_cache{};
-};
-
-/**
  * @brief Encapsulates a mapped buffer pointer. This is used in streamed @ref Buffer's.
  */
 struct MappedBufferPtr {
@@ -91,8 +73,44 @@ struct GlSwapchainDetails {
     SwapchainDescriptor descriptor;
     /** @brief Raw handle to the window this @ref Framebuffer is associated with. */
     GLFWwindow* native_handle;
-    /** @brief An @ref Image. Since OpenGL abstracts the swapchain away, we just render to a mock image. */
-    std::optional<Image> image; // use optional to avoid the heap allocation, however assume It's always there.
+    struct Target {
+        RenderTarget render_target;
+        Image image;
+    };
+    /** @brief An @ref RenderTarget. Since OpenGL abstracts the swapchain away, we just render to a mock this. */
+    std::optional<Target> target; // assume is always set, used over unique ptr
+};
+
+/**
+ * @class FramebufferCache
+ * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
+ * they do not exist in sirens main API.
+ * Instead, we use render targets, which consist of images. However, OpenGL requires rendering to an FBO,
+ * so we use this to create/fetch FBOs based on images.
+ *
+ * @todo @note Cached framebuffers are currently never cleaned up. do this homie
+ */
+class FramebufferCache {
+public:
+    explicit FramebufferCache(const RenderResourceTable<GLuint, Image, GlImageDetails>& image_table) :
+        m_image_table{image_table} {};
+
+    [[nodiscard]] auto get_create_for(const RenderTarget& target) -> GLuint;
+
+private:
+    struct Key {
+        std::vector<ImageHandle> colors;
+        ImageHandle depth_stencil; // set to NullHandle if not present
+        auto operator==(const Key& key) const -> bool = default;
+    };
+
+    struct Hasher {
+        auto operator()(const Key& key) const -> usize;
+    };
+
+    [[nodiscard]] auto create_framebuffer(const RenderTarget& target) -> GLuint;
+    std::unordered_map<Key, GLuint, Hasher> m_cache{};
+    const RenderResourceTable<GLuint, Image, GlImageDetails>& m_image_table;
 };
 
 /**
@@ -120,7 +138,7 @@ struct RenderResourceState {
      */
     RenderResourceTable<void*, Swapchain, GlSwapchainDetails> swapchain_table;
     /** @brief Manages fetching cached OpenGL framebuffers based on images. */
-    mutable FramebufferCache framebuffer_cache;
+    mutable FramebufferCache framebuffer_cache{image_table};
 };
 
 class GlDevice final : public Device {
@@ -164,7 +182,7 @@ public:
         -> const GraphicsPipelineDescriptor& override;
     [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
 
-    [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> const Image& override;
+    [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle override;
     auto present(SwapchainHandle handle) const -> void override;
     auto blit(ImageHandle source, ImageHandle destination) const -> void override;
 
