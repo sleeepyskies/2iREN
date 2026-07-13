@@ -59,6 +59,7 @@ static const std::vector<std::string> HDR  = {"exr", "hdr"};
         case ImageFormat::RGB8:
         case ImageFormat::RGBA8:
         case ImageFormat::RGB16f:
+        case ImageFormat::RG32f:
         case ImageFormat::Depth24Stencil8:
         case ImageFormat::Unknown: return false;
 

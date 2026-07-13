@@ -30,7 +30,6 @@ struct LoaderTraits<ShaderAsset> {
 /**
  * @brief Loader for shaders.
  * See @ref Shader
- *
  */
 class ShaderLoader final : public AssetLoader<ShaderAsset> {
 public:

@@ -58,17 +58,53 @@ enum class DepthFunction {
     NotEqual,
 };
 
+/**
+ * @brief Defines the function to apply to two alpha values when blending.
+ * Aka for: alpha1 . alpha2
+ * This will define the behavior of '.'.
+ */
+enum class BlendFunction {
+    /** @brief Adds together the two alpha values. */
+    Add,
+    /** @brief Subtracts the second alpha value from the first. */
+    Subtract,
+    /** @brief Subtracts the first alpha value from the second. */
+    ReverseSubtract,
+    /** @brief Takes the minimum of both alpha values. */
+    Min,
+    /** @brief Takes the maximum of both alpha values. */
+    Max,
+};
+
+/**
+ * @brief Defines what weights to multiply with the
+ */
+enum class BlendFactor {
+    /** @brief Multiplies all values with 0. */
+    Erase,
+    /** @brief Multiplies all values with 1. */
+    Identity,
+    /** @brief Multiplies all values with the source alpha. */
+    SourceAlpha,
+    /** @brief Multiplies all values with (1 - source alpha). */
+    SourceOneMinusAlpha,
+    /** @brief Multiplies all values with the destination alpha. */
+    DestinationAlpha,
+};
+
 struct GraphicsPipelineDescriptor {
     /** @brief An optional label for the @ref GraphicsPipeline. Mainly used for debugging. */
-    std::optional<std::string> label;
+    std::optional<std::string> label = std::nullopt;
     /** @brief How the shader interprets vertex data. */
-    Layout layout;
+    Layout layout = DEFAULT_VERTEX_LAYOUT;
     /** @brief The shader to use. */
     ShaderHandle shader;
     /** @brief How to draw vertex data. */
     PrimitiveTopology topology = PrimitiveTopology::Triangles;
     /** @brief Surface transparency type. */
     AlphaMode alpha_mode = AlphaMode::Opaque;
+    /** @brief Only used if alpha_mode == Blend. Defines the function used to combine alpha values. */
+    BlendFunction blend_function = BlendFunction::Add;
     /** @brief Depth function. */
     DepthFunction depth_function = DepthFunction::Less;
     /** @brief Whether back face is culled. */

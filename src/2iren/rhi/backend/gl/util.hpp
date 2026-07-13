@@ -112,6 +112,7 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case ImageFormat::RGBA8: return GL_RGBA8;
         case ImageFormat::sRGBA8: return GL_SRGB8_ALPHA8;
         case ImageFormat::RGB16f: return GL_RGB16F;
+        case ImageFormat::RG32f: return GL_RG32F;
         case ImageFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
         default: UNREACHABLE();
     }
@@ -128,6 +129,7 @@ constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> Imag
         case GL_RGBA8: return ImageFormat::RGBA8;
         case GL_SRGB8_ALPHA8: return ImageFormat::sRGBA8;
         case GL_RGB16F: return ImageFormat::RGB16f;
+        case GL_RG32F: return ImageFormat::RG32f;
         case GL_DEPTH24_STENCIL8: return ImageFormat::Depth24Stencil8;
         default: return ImageFormat::Unknown;
     }
@@ -140,6 +142,8 @@ constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> Imag
 constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
     switch (format) {
         case ImageFormat::R8: return GL_RED;
+
+        case ImageFormat::RG32f: return GL_RG;
 
         case ImageFormat::RGB16f:
         case ImageFormat::RGB8:
@@ -302,6 +306,22 @@ constexpr auto depth_func_to_gl(const DepthFunction depth_function) -> GLenum {
         case DepthFunction::Greater: return GL_GREATER;
         case DepthFunction::GreaterEqual: return GL_GEQUAL;
         case DepthFunction::NotEqual: return GL_NOTEQUAL;
+        default: UNREACHABLE();
+    }
+}
+
+/**
+ * @brief Converts a siren @ref BlendFunction to its native GLenum version.
+ * @param blend_function The @ref BlendFunction to convert.
+ * @return A converted GLenum.
+ */
+constexpr auto blend_function_to_gl(const BlendFunction blend_function) -> GLenum {
+    switch (blend_function) {
+        case BlendFunction::Add: return GL_FUNC_ADD;
+        case BlendFunction::Subtract: return GL_FUNC_SUBTRACT;
+        case BlendFunction::ReverseSubtract: return GL_FUNC_REVERSE_SUBTRACT;
+        case BlendFunction::Min: return GL_MIN;
+        case BlendFunction::Max: return GL_MAX;
         default: UNREACHABLE();
     }
 }

@@ -170,13 +170,11 @@ auto GlCommandExecutor::execute_buffer_upload(const UploadBuffer& cmd, const std
 /// @todo: do we need to reset all state at the start of this function?
 auto GlCommandExecutor::execute_pass(
     const RenderPassDescriptor& descriptor, const std::span<const RenderCommand> commands) const -> void {
-    // todo: we assume there is always only a single color attachment, this is due to how RenderTarget is.
-    // we also assume there is no depth stencil for now
-    const GLuint image_id    = m_state.image_table.fetch(descriptor.target.color);
-    const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(image_id);
+    const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
+
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    constexpr u32 num_colors     = 1;
-    const bool has_depth_stencil = false;
+    const u32 num_colors         = descriptor.target.colors.size();
+    const bool has_depth_stencil = descriptor.target.depth_stencil.has_value();
 
     // first setup pass
     if (descriptor.begin_operation == BeginOperation::Clear) {
@@ -244,9 +242,9 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     auto& shader_table   = m_state.shader_table;
 
     const auto& pipeline_descriptor = pipeline_table.details(bind.pipeline_handle).descriptor;
-    const auto vertex_arrayid = pipeline_table.fetch(bind.pipeline_handle);
+    const auto vertex_arrayid       = pipeline_table.fetch(bind.pipeline_handle);
 
-    const auto shaderid  = shader_table.fetch(pipeline_descriptor.shader);
+    const auto shaderid = shader_table.fetch(pipeline_descriptor.shader);
 
     const auto& desc = pipeline_table.details(bind.pipeline_handle).descriptor;
 
@@ -273,6 +271,10 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
             glEnable(GL_BLEND);
             break;
         }
+    }
+
+    if (desc.alpha_mode == AlphaMode::Blend) {
+        glBlendEquation(gl::blend_function_to_gl(desc.blend_function));
     }
 
     glDepthFunc(gl::depth_func_to_gl(desc.depth_function));
@@ -304,7 +306,7 @@ auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const Rend
     // 2iren uses top left as origin, OpenGL uses bottom left, so we must convert
     // we need the target size for conversion
     // assume all attachments are the same size
-    const auto target_height = m_state.image_table.details(target.color).descriptor.extent.height;
+    const auto target_height = m_state.image_table.details(target.colors[0]).descriptor.extent.height;
 
     const auto x      = set_viewport.x;
     const auto y      = target_height - (set_viewport.y + set_viewport.height);

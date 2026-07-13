@@ -36,18 +36,20 @@ struct ImageExtent {
 enum class ImageFormat {
     /** @brief Invalid or uninitialized format */
     Unknown = 0,
-    /** @brief 1-channel 8-bit red */
+    /** @brief 1-channel 8-bit R. */
     R8,
-    /** @brief 3-channel 8-bit linear RGB */
+    /** @brief 3-channel 8-bit linear RGB. */
     RGB8,
-    /** @brief 3-channel 8-bit sRGB */
+    /** @brief 3-channel 8-bit sRGB. */
     sRGB8,
-    /** @brief 4-channel 8-bit linear RGBA */
+    /** @brief 4-channel 8-bit linear RGBA. */
     RGBA8,
-    /** @brief 4-channel 8-bit sRGB */
+    /** @brief 4-channel 8-bit sRGB. */
     sRGBA8,
-    /** @brief 3-channel 16-bit float HDR RGB */
+    /** @brief 3-channel 16-bit float HDR RGB. */
     RGB16f,
+    /** @brief 2-channel 32-bit float HDR RG. */
+    RG32f,
     /** @brief Depth-stencil format (24-bit depth, 8-bit stencil) */
     Depth24Stencil8,
 };

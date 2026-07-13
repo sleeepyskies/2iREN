@@ -27,8 +27,8 @@ static auto file_not_found(const std::string_view path) -> AssetLoadError {
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
-static auto invalid_format(const std::string_view path) -> AssetLoadError {
-    log::warn("Invalid YAML syntax in shader file: {}.", path);
+static auto invalid_format(const std::string_view path, const std::string_view msg = "") -> AssetLoadError {
+    log::warn("Invalid YAML syntax in shader file: {}. Message: {}", path, msg);
     return std::unexpected(AssetErrorCode::InvalidFormat);
 }
 
@@ -115,7 +115,7 @@ auto ShaderLoader::load(
         ctx.finish(std::make_unique<ShaderAsset>(std::move(shader), std::move(map)));
         return { };
     } catch (const YAML::ParserException& e) {
-        return invalid_format(path->string());
+        return invalid_format(path->string(), e.msg);
     } catch (const YAML::BadFile& e) {
         return file_not_found(path->string());
     }

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vector>
 #include <libassert/assert.hpp>
+#include <vector>
 
-#include "fwd.hpp"
 #include "2iren/base.hpp"
-
+#include "2iren/util/byte_buffer.hpp"
+#include "fwd.hpp"
 
 namespace siren {
 class ByteBuffer;
@@ -28,7 +28,7 @@ public:
     enum Value : u8 {
         UInt8,
         UInt16,
-        UInt32
+        UInt32,
     } value;
 
     /** @brief Returns the size of this format in bytes. */
@@ -41,7 +41,7 @@ public:
         }
     }
 
-    IndexFormat(const Value v) : value(v) { }
+    IndexFormat(const Value v) : value(v) {}
     constexpr operator Value() const { return value; }
 };
 
