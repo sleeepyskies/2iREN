@@ -88,21 +88,20 @@ auto main() -> siren::i32 {
         .dimension     = siren::ImageDimension::D2,
         .mipmap_levels = 1,
     });
-    const siren::RenderTarget target{color.handle()};
+    const siren::RenderTarget target{.colors = {color.handle()}, .depth_stencil = std::nullopt};
 
     while (!window.should_close()) {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass(
-                {.target = siren::RenderTarget{target.color}}, [&](siren::RenderPassRecorder& pass) -> void {
-                    pass.bind_graphics_pipeline(pipeline.handle());
-                    pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                    pass.draw_arrays(0, 3);
-                });
+            cmds.render_pass({.target = target}, [&](siren::RenderPassRecorder& pass) -> void {
+                pass.bind_graphics_pipeline(pipeline.handle());
+                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+                pass.draw_arrays(0, 3);
+            });
         });
 
-        device->blit(target.color, swapchain.next_image().handle());
+        device->blit(target.colors[0], swapchain.next_image());
         swapchain.present();
         device->flush_delete_queue();
     }

@@ -54,7 +54,8 @@ int main() {
         window.poll_events();
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.target = siren::RenderTarget{swapchain.next_image().handle()}},
+            cmds.render_pass(
+                {.target = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt}},
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
                     pass.bind_vertex_buffer(buffer.handle(), 0, 0);

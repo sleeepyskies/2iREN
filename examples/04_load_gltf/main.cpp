@@ -76,7 +76,8 @@ auto main() -> siren::i32 {
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
             cmds.render_pass(
-                {.clear_color = siren::RGBA::red(), .target = siren::RenderTarget{swapchain.next_image().handle()}},
+                {.clear_color = siren::RGBA::red(),
+                    .target   = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt}},
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
                     pass.bind_uniform_buffer(ubo.handle(), 0);

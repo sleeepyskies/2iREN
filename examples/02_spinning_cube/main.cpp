@@ -135,7 +135,7 @@ int main() {
             cmds.render_pass(
                 {
                     .clear_color = siren::RGBA::green(),
-                    .target      = siren::RenderTarget{swapchain.next_image().handle()},
+                    .target = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt},
                 },
                 [&](siren::RenderPassRecorder& pass) -> void {
                     pass.bind_graphics_pipeline(pipeline.handle());
