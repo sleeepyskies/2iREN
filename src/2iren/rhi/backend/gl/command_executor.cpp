@@ -173,24 +173,19 @@ auto GlCommandExecutor::execute_pass(
     const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    const u32 num_colors         = descriptor.target.colors.size();
-    const bool has_depth_stencil = descriptor.target.depth_stencil.has_value();
 
-    // first setup pass
-    if (descriptor.begin_operation == BeginOperation::Clear) {
-        RGBA color = descriptor.clear_color.value_or(RGBA::black());
-
-        // clear color attachments
-        if (descriptor.clear_color.has_value()) {
-            color = descriptor.clear_color.value();
+    for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
+        if (attachment.begin_operation != BeginOperation::Clear) {
+            continue;
         }
-        for (const auto color_index : range(num_colors)) {
-            glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(color_index), &color.r);
-        }
+        glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_value.r);
+    }
 
-        // clear depth stencil
-        if (has_depth_stencil) {
-            glClearNamedFramebufferfi(framebuffer, GL_DEPTH_STENCIL, 0, 1.f, 0);
+    if (descriptor.target.depth_stencil.has_value() &&
+        descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
+        const auto& attachment = *descriptor.target.depth_stencil;
+        if (attachment.begin_operation == BeginOperation::Clear) {
+            glClearNamedFramebufferfv(framebuffer, GL_DEPTH_STENCIL, 0, &attachment.clear_value.r);
         }
     }
 
@@ -306,7 +301,7 @@ auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const Rend
     // 2iren uses top left as origin, OpenGL uses bottom left, so we must convert
     // we need the target size for conversion
     // assume all attachments are the same size
-    const auto target_height = m_state.image_table.details(target.colors[0]).descriptor.extent.height;
+    const auto target_height = m_state.image_table.details(target.colors[0].image).descriptor.extent.height;
 
     const auto x      = set_viewport.x;
     const auto y      = target_height - (set_viewport.y + set_viewport.height);

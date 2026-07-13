@@ -159,13 +159,6 @@ struct RenderCommand {
     }
 };
 
-enum class BeginOperation : u8 {
-    /** @brief Clears the target a single color. */
-    Clear,
-    /** @brief Does nothing. */
-    Fuckit,
-};
-
 /**
  * @brief Struct used to initialize and begin a new render pass.
  */
@@ -173,10 +166,6 @@ struct RenderPassDescriptor {
     /** @brief An optional label. */
     /** @todo Not used anywhere atm */
     std::optional<std::string> label = std::nullopt;
-    /** @brief The action to perform on begin. */
-    BeginOperation begin_operation = BeginOperation::Clear;
-    /** @brief The color to clear the target with on load iff begin_operation == Clear. Defaults to black. */
-    std::optional<RGBA> clear_color = RGBA::black();
     /** @brief The @ref RenderTarget to draw to. */
     RenderTarget target;
 };

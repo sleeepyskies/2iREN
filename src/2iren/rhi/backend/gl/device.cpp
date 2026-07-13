@@ -38,8 +38,8 @@ static auto make_label(const std::optional<std::string>& prefix, const std::stri
 auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
     const Key key{
-        .colors        = target.colors,
-        .depth_stencil = target.depth_stencil.value_or(NullHandle),
+        .colors        = target.colors | views::transform(&Attachment::image) | ranges::to<std::vector>(),
+        .depth_stencil = target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
     };
     if (const auto it = m_cache.find(key); it != m_cache.end()) {
         return it->second;
@@ -68,13 +68,13 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
     GLuint framebuffer;
     glCreateFramebuffers(1, &framebuffer);
 
-    for (const auto [index, handle] : views::enumerate(target.colors)) {
-        const auto image_id = m_image_table.fetch(handle);
+    for (const auto [index, attachment] : views::enumerate(target.colors)) {
+        const auto image_id = m_image_table.fetch(attachment.image);
         glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0 + index, image_id, 0);
     }
 
     if (target.depth_stencil.has_value()) {
-        const auto image_id = m_image_table.fetch(*target.depth_stencil);
+        const auto image_id = m_image_table.fetch(target.depth_stencil->image);
         glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
     }
 
@@ -382,6 +382,8 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
             .mipmap_levels = 1,
         });
 
+        Attachment attachment{.image = image.handle()};
+
         m_state.swapchain_table.link(swapchain_handle,
             nullptr,
             GlSwapchainDetails{
@@ -389,7 +391,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
                 .native_handle = m_primary_window.handle(),
                 .target =
                     GlSwapchainDetails::Target{
-                        .render_target = RenderTarget{.colors = {image.handle()}, .depth_stencil = std::nullopt},
+                        .render_target = RenderTarget{.colors = {std::move(attachment)}, .depth_stencil = std::nullopt},
                         .image         = std::move(image),
                     },
             });
@@ -554,7 +556,7 @@ auto GlDevice::present(const SwapchainHandle handle) const -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
     auto* window         = m_state.swapchain_table.details(handle).native_handle;
     const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
-    const auto [w, h, _] = m_state.image_table.details(target.colors[0]).descriptor.extent;
+    const auto [w, h, _] = m_state.image_table.details(target.colors[0].image).descriptor.extent;
 
     // basically, we just blit swapchain image fbo to default fbo
     m_render_thread.spawn([this, window, target, w, h] -> void {
