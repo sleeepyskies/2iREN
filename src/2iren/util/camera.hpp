@@ -8,7 +8,7 @@
 namespace siren {
 
 struct PerspectiveCameraDescriptor {
-    glm::vec3 position{0.f, -5.f, -5.f};
+    glm::vec3 position{0.f, -3.f, -2.f};
     f32 yaw{0.f};
     f32 pitch{0.f};
     f32 aspect{1280.f / 720.f};

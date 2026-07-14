@@ -10,7 +10,9 @@ namespace siren {
 enum class BeginOperation : u8 {
     /** @brief Clears the target a single color. */
     Clear,
-    /** @brief Does nothing. */
+    /** @brief Keeps the content of the attachment. */
+    Preserve,
+    /** @brief Idk does something ig... */
     Fuckit,
 };
 
@@ -18,8 +20,9 @@ enum class BeginOperation : u8 {
  * @brief Describes an attachment of a @ref RenderTarget as well as how to handle it.
  */
 struct Attachment {
-    /** @brief The value to clear the image with. */
     glm::vec4 clear_value          = glm::vec4{0.0};
+    f32 clear_depth                = 1.f;
+    i32 clear_stencil              = 0;
     BeginOperation begin_operation = BeginOperation::Clear;
     ImageHandle image;
 };

@@ -175,17 +175,24 @@ auto GlCommandExecutor::execute_pass(
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
-        if (attachment.begin_operation != BeginOperation::Clear) {
+        if (attachment.begin_operation == BeginOperation::Clear) {
+            glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_value.r);
+        } else if (attachment.begin_operation == BeginOperation::Preserve) {
             continue;
+        } else if (attachment.begin_operation == BeginOperation::Fuckit) {
+            // invalidate previous data
+            const auto attachment_enum = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index);
+            glInvalidateNamedFramebufferData(framebuffer, 1, &attachment_enum);
         }
-        glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_value.r);
     }
 
-    if (descriptor.target.depth_stencil.has_value() &&
-        descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
-        const auto& attachment = *descriptor.target.depth_stencil;
-        if (attachment.begin_operation == BeginOperation::Clear) {
-            glClearNamedFramebufferfv(framebuffer, GL_DEPTH_STENCIL, 0, &attachment.clear_value.r);
+    if (descriptor.target.depth_stencil.has_value()) {
+        if (descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
+            const auto& attachment = *descriptor.target.depth_stencil;
+            if (attachment.begin_operation == BeginOperation::Clear) {
+                glClearNamedFramebufferfi(
+                    framebuffer, GL_DEPTH_STENCIL, 0, attachment.clear_depth, attachment.clear_stencil);
+            }
         }
     }
 
