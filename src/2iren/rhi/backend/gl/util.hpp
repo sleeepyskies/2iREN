@@ -24,8 +24,9 @@ constexpr auto img_filter_to_gl(const ImageFilterMode mode) -> GLenum {
     switch (mode) {
         case ImageFilterMode::Nearest: return GL_NEAREST;
         case ImageFilterMode::Linear: return GL_LINEAR;
-        default: UNREACHABLE();
+        case ImageFilterMode::None: PANIC();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -59,8 +60,8 @@ constexpr auto img_wrap_to_gl(const ImageWrapMode mode) -> GLenum {
         case ImageWrapMode::Mirror: return GL_MIRRORED_REPEAT;
         case ImageWrapMode::ClampEdge: return GL_CLAMP_TO_EDGE;
         case ImageWrapMode::ClampBorder: return GL_CLAMP_TO_BORDER;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -84,8 +85,9 @@ constexpr auto img_dim_to_gl(const ImageDimension dim) -> GLenum {
         case ImageDimension::D1: return GL_TEXTURE_1D;
         case ImageDimension::D2: return GL_TEXTURE_2D;
         case ImageDimension::D3: return GL_TEXTURE_3D;
-        default: UNREACHABLE();
+        case ImageDimension::Cube: PANIC();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -114,8 +116,9 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case ImageFormat::RGB16f: return GL_RGB16F;
         case ImageFormat::RG32f: return GL_RG32F;
         case ImageFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
-        default: UNREACHABLE();
+        case ImageFormat::Unknown: PANIC();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -131,7 +134,7 @@ constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> Imag
         case GL_RGB16F: return ImageFormat::RGB16f;
         case GL_RG32F: return ImageFormat::RG32f;
         case GL_DEPTH24_STENCIL8: return ImageFormat::Depth24Stencil8;
-        default: return ImageFormat::Unknown;
+        default: PANIC();
     }
 }
 
@@ -154,8 +157,9 @@ constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
 
         case ImageFormat::Depth24Stencil8: return GL_DEPTH_STENCIL;
 
-        default: UNREACHABLE();
+        case ImageFormat::Unknown: PANIC();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -167,8 +171,8 @@ constexpr auto img_compare_mode_to_gl(const ImageCompareMode mode) -> GLint {
     switch (mode) {
         case ImageCompareMode::None: return GL_NONE;
         case ImageCompareMode::Compare: return GL_COMPARE_REF_TO_TEXTURE;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -199,8 +203,8 @@ constexpr auto img_compare_fn_to_gl(const ImageCompareFn func) -> GLenum {
         case ImageCompareFn::Greater: return GL_GREATER;
         case ImageCompareFn::NotEqual: return GL_NOTEQUAL;
         case ImageCompareFn::GreaterEqual: return GL_GEQUAL;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -242,8 +246,8 @@ constexpr auto img_to_target_gl(const ImageExtent extent, const ImageDimension d
         // 6 layers = 1 cube. > 6 layers = Array of cubes.
         case ImageDimension::Cube:
             return (extent.depth_or_layers > 6) ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -286,9 +290,9 @@ constexpr auto shader_stage_to_gl(const ShaderStage shader_stage) -> GLenum {
         case ShaderStage::Geometry:
         case ShaderStage::Compute:
         case ShaderStage::Task:
-        case ShaderStage::Mesh:
-        default: UNREACHABLE();
+        case ShaderStage::Mesh: PANIC();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -306,8 +310,8 @@ constexpr auto depth_func_to_gl(const DepthFunction depth_function) -> GLenum {
         case DepthFunction::Greater: return GL_GREATER;
         case DepthFunction::GreaterEqual: return GL_GEQUAL;
         case DepthFunction::NotEqual: return GL_NOTEQUAL;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -322,8 +326,25 @@ constexpr auto blend_function_to_gl(const BlendFunction blend_function) -> GLenu
         case BlendFunction::ReverseSubtract: return GL_FUNC_REVERSE_SUBTRACT;
         case BlendFunction::Min: return GL_MIN;
         case BlendFunction::Max: return GL_MAX;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
+}
+
+/**
+ * @brief Converts a siren @ref BlendFactor to its native GLenum version.
+ * @param factor The @ref BlendFactor to convert.
+ * @return A converted GLenum.
+ */
+constexpr auto blend_factor_to_gl(const BlendFactor factor) -> GLenum {
+    switch (factor) {
+        case BlendFactor::Zero: return GL_ZERO;
+        case BlendFactor::One: return GL_ONE;
+        case BlendFactor::SourceAlpha: return GL_SRC_ALPHA;
+        case BlendFactor::OneMinusSourceAlpha: return GL_ONE_MINUS_SRC_ALPHA;
+        case BlendFactor::DestinationAlpha: return GL_DST_ALPHA;
+        case BlendFactor::OneMinusDestinationAlpha: return GL_ONE_MINUS_DST_ALPHA;
+    }
+    UNREACHABLE();
 }
 
 /**
@@ -339,8 +360,8 @@ constexpr auto topology_to_gl(const PrimitiveTopology topology) -> GLenum {
         case PrimitiveTopology::Triangles: return GL_TRIANGLES;
         case PrimitiveTopology::TriangleStrip: return GL_TRIANGLE_STRIP;
         case PrimitiveTopology::TriangleFan: return GL_TRIANGLE_FAN;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -353,8 +374,8 @@ constexpr auto index_format_to_gl(const IndexFormat format) -> GLenum {
         case IndexFormat::UInt8: return GL_UNSIGNED_BYTE;
         case IndexFormat::UInt16: return GL_UNSIGNED_SHORT;
         case IndexFormat::UInt32: return GL_UNSIGNED_INT;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 /**
@@ -377,8 +398,8 @@ constexpr auto siren_datatype_to_gl(const DataType type) -> GLenum {
         case DataType::Float16: return GL_HALF_FLOAT;
         case DataType::Float32: return GL_FLOAT;
         case DataType::Float64: return GL_DOUBLE;
-        default: UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 } // namespace siren::gl

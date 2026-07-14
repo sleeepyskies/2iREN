@@ -81,15 +81,17 @@ enum class BlendFunction {
  */
 enum class BlendFactor {
     /** @brief Multiplies all values with 0. */
-    Erase,
+    Zero,
     /** @brief Multiplies all values with 1. */
-    Identity,
-    /** @brief Multiplies all values with the source alpha. */
+    One,
+    /** @brief Multiplies with source alpha. */
     SourceAlpha,
-    /** @brief Multiplies all values with (1 - source alpha). */
-    SourceOneMinusAlpha,
-    /** @brief Multiplies all values with the destination alpha. */
+    /** @brief Multiplies with destination alpha. */
     DestinationAlpha,
+    /** @brief Multiplies with (1 - source alpha). */
+    OneMinusSourceAlpha,
+    /** @brief Multiplies with (1 - destination alpha). */
+    OneMinusDestinationAlpha,
 };
 
 struct GraphicsPipelineDescriptor {
@@ -107,6 +109,10 @@ struct GraphicsPipelineDescriptor {
     BlendFunction blend_function = BlendFunction::Add;
     /** @brief Depth function. */
     DepthFunction depth_function = DepthFunction::Less;
+    /** @brief The @ref BlendFactor to affect the source. */
+    BlendFactor source_blend_factor = BlendFactor::Alpha;
+    /** @brief The @ref BlendFactor to affect the destination. */
+    BlendFactor dest_blend_factor = BlendFactor::OneMinusAlpha;
     /** @brief Whether back face is culled. */
     bool back_face_culling = true;
     /** @brief Whether to perform the depth test. */

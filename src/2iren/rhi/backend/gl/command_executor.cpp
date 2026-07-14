@@ -272,6 +272,8 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
         glBlendEquation(gl::blend_function_to_gl(desc.blend_function));
     }
 
+    glBlendFunc(gl::blend_factor_to_gl(desc.source_blend_factor), gl::blend_factor_to_gl(desc.dest_blend_factor));
+
     glDepthFunc(gl::depth_func_to_gl(desc.depth_function));
 
     if (desc.back_face_culling) {
