@@ -258,7 +258,6 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
         }
         case AlphaMode::Blend: {
             glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             break;
         }
         case AlphaMode::Mask: {
@@ -273,7 +272,6 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     }
 
     glBlendFunc(gl::blend_factor_to_gl(desc.source_blend_factor), gl::blend_factor_to_gl(desc.dest_blend_factor));
-
     glDepthFunc(gl::depth_func_to_gl(desc.depth_function));
 
     if (desc.back_face_culling) {
