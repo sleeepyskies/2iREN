@@ -26,7 +26,9 @@ enum class RenderCommandType : u8 {
     BindVertexBuffer,
     BindIndexBuffer,
     BindUniformBuffer,
-    BindImage,
+
+    BindSampledImage,
+    BindStorageImage,
 
     DrawArrays,
     DrawIndexed,
@@ -87,9 +89,23 @@ struct BindUniformBuffer {
 };
 
 /**
- * @brief Binds an @ref Image.
+ * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap sampling.
+ * This also allows only for read access and uses texture coordinates instead of pixel coordinates.
  */
-struct BindImage {
+struct BindSampledImage {
+    /** @brief The @ref Image to bind. */
+    ImageHandle image;
+    /** @brief The @ref Sampler to use. */
+    SamplerHandle sampler;
+    /** @brief The slot to bind to. */
+    u32 slot;
+};
+
+/**
+ * @brief Binds an @ref Image for direct pixel access. This applies no filtering or mip map sampling.
+ * This also allows for read write access and uses raw pixel coordinates instead of texture coordinates.
+ */
+struct BindStorageImage {
     /** @brief The image to bind. */
     ImageHandle image;
     /** @brief The slot to bind to. */
@@ -126,7 +142,8 @@ struct RenderCommand {
         BindVertexBuffer bind_vertex_buffer;
         BindIndexBuffer bind_index_buffer;
         BindUniformBuffer bind_uniform_buffer;
-        BindImage bind_image;
+        BindSampledImage bind_sampled_image;
+        BindStorageImage bind_storage_image;
         DrawArrays draw_arrays;
         DrawIndexed draw_indexed;
     } command;
@@ -146,8 +163,10 @@ struct RenderCommand {
             return command.bind_index_buffer;
         } else if constexpr (std::is_same_v<Command, BindUniformBuffer>) {
             return command.bind_uniform_buffer;
-        } else if constexpr (std::is_same_v<Command, BindImage>) {
-            return command.bind_image;
+        } else if constexpr (std::is_same_v<Command, BindSampledImage>) {
+            return command.bind_sampled_image;
+        } else if constexpr (std::is_same_v<Command, BindStorageImage>) {
+            return command.bind_storage_image;
         } else if constexpr (std::is_same_v<Command, DrawArrays>) {
             return command.draw_arrays;
         } else if constexpr (std::is_same_v<Command, DrawIndexed>) {
@@ -240,11 +259,19 @@ public:
     auto bind_uniform_buffer(BufferHandle uniform_buffer, u32 slot) noexcept -> void;
 
     /**
-     * @brief Binds an @ref Image to the given slot.
+     * @brief Binds an @ref Image to the given slot for sampled access.
+     * @param image The @ref Image to bind to the slot.
+     * @param sampler The @ref Sampler to access the @ref Image through.
+     * @param slot The slot to bind to.
+     */
+    auto bind_sampled_image(ImageHandle image, SamplerHandle sampler, u32 slot) noexcept -> void;
+
+    /**
+     * @brief Binds an @ref Image to the given slot for direct access.
      * @param image The @ref Image to bind to the slot.
      * @param slot The slot to bind to.
      */
-    auto bind_image(ImageHandle image, u32 slot) noexcept -> void;
+    auto bind_storage_image(ImageHandle image, u32 slot) noexcept -> void;
 
     /**
      * @brief Draws from the currently bound vertex buffer(s) non indexed.
@@ -277,9 +304,10 @@ private:
     /** @brief The tracked uniform buffers. */
     /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_uniform_buffers;
-    /** @brief The tracked uniform buffers. */
-    /** @todo replace with an array? */
-    std::unordered_map<u32, ImageHandle> m_active_image_handles;
+    /** @brief The tracked sampled images. */
+    std::unordered_map<u32, ImageHandle> m_sampled_images;
+    /** @brief The tracked storage images. */
+    std::unordered_map<u32, ImageHandle> m_storage_images;
     /** @brief The bound index buffer (we need to check index type too hence the struct). */
     std::optional<BindIndexBuffer> m_active_index_buffer;
 };

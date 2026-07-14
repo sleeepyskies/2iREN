@@ -214,8 +214,12 @@ auto GlCommandExecutor::execute_pass(
                 bind_uniform_buffer(cmd.as<BindUniformBuffer>());
                 break;
             }
-            case RenderCommandType::BindImage: {
-                bind_image(cmd.as<BindImage>());
+            case RenderCommandType::BindSampledImage: {
+                bind_sampled_image(cmd.as<BindSampledImage>());
+                break;
+            }
+            case RenderCommandType::BindStorageImage: {
+                bind_storage_image(cmd.as<BindStorageImage>());
                 break;
             }
             case RenderCommandType::DrawArrays: {
@@ -331,10 +335,20 @@ auto GlCommandExecutor::bind_uniform_buffer(const BindUniformBuffer& bind_unifor
     glBindBufferBase(GL_UNIFORM_BUFFER, bind_uniform_buffer.slot, ubo);
 }
 
-auto GlCommandExecutor::bind_image(const BindImage& bind_image) const -> void {
-    const auto img   = m_state.image_table.fetch(bind_image.image);
-    const auto& desc = m_state.image_table.details(bind_image.image).descriptor;
-    glBindImageTexture(bind_image.slot, img, 0, true, 0, GL_READ_ONLY, gl::img_format_to_gl_internal(desc.format));
+auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void {
+    const auto img = m_state.image_table.fetch(bind_sampled_image.image);
+
+    glActiveTexture(GL_TEXTURE0 + bind_sampled_image.slot);
+    glBindTexture(GL_TEXTURE_2D, img);
+
+    glBindSampler(bind_sampled_image.slot, m_state.sampler_table.fetch(bind_sampled_image.sampler));
+}
+
+auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_image) const -> void {
+    const auto img   = m_state.image_table.fetch(bind_storage_image.image);
+    const auto& desc = m_state.image_table.details(bind_storage_image.image).descriptor;
+    glBindImageTexture(
+        bind_storage_image.slot, img, 0, true, 0, GL_READ_ONLY, gl::img_format_to_gl_internal(desc.format));
 }
 
 auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
