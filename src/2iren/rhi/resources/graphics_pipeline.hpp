@@ -110,9 +110,9 @@ struct GraphicsPipelineDescriptor {
     /** @brief Depth function. */
     DepthFunction depth_function = DepthFunction::Less;
     /** @brief The @ref BlendFactor to affect the source. */
-    BlendFactor source_blend_factor = BlendFactor::Alpha;
+    BlendFactor source_blend_factor = BlendFactor::SourceAlpha;
     /** @brief The @ref BlendFactor to affect the destination. */
-    BlendFactor dest_blend_factor = BlendFactor::OneMinusAlpha;
+    BlendFactor dest_blend_factor = BlendFactor::OneMinusSourceAlpha;
     /** @brief Whether back face is culled. */
     bool back_face_culling = true;
     /** @brief Whether to perform the depth test. */
