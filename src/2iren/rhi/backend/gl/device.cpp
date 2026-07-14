@@ -78,6 +78,14 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
         glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
     }
 
+    // makes the buffers drawable
+    std::vector<GLenum> draw_buffers;
+    draw_buffers.reserve(target.colors.size());
+    for (const usize index : range(target.colors.size())) {
+        draw_buffers.push_back(GL_COLOR_ATTACHMENT0 + index);
+    }
+    glNamedFramebufferDrawBuffers(framebuffer, draw_buffers.size(), draw_buffers.data());
+
     ASSERT(glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
         "Framebuffer could not be created.");
 
