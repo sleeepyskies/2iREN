@@ -18,7 +18,7 @@ public:
 
     // setters
 
-    auto set_base_color(const RGBA& value) noexcept -> void;
+    auto set_base_color(const Rgba& value) noexcept -> void;
     auto set_metallic(f32 value) noexcept -> void;
     auto set_roughness(f32 value) noexcept -> void;
     auto set_base_color_tex(const StrongHandle<Texture>& handle) noexcept -> void;
@@ -79,7 +79,7 @@ public:
 
     // getters
 
-    [[nodiscard]] auto base_color() const noexcept -> const RGBA&;
+    [[nodiscard]] auto base_color() const noexcept -> const Rgba&;
     [[nodiscard]] auto metallic() const noexcept -> f32;
     [[nodiscard]] auto roughness() const noexcept -> f32;
     [[nodiscard]] auto base_color_tex() const noexcept -> const StrongHandle<Texture>&;
@@ -141,7 +141,7 @@ public:
 private:
     std::string m_name;
 
-    RGBA m_base_color{ 1.0f };
+    Rgba m_base_color{ 1.0f };
     f32 m_metallic                                 = 1.0f;
     f32 m_roughness                                = 1.0f;
     StrongHandle<Texture> m_base_color_tex         = StrongHandle<Texture>::invalid();

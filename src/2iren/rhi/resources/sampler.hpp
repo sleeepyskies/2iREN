@@ -81,7 +81,7 @@ struct SamplerDescriptor {
     /** @brief Tells the gpu the lowest resolution mipmap it can use. */
     f32 lod_max = 0.f;
     /** @brief A custom user specified color for the image border. */
-    std::optional<RGBA> border_color = std::nullopt;
+    std::optional<Rgba> border_color = std::nullopt;
     /** @brief Tells the gpu how to sample depth. */
     ImageCompareMode compare_mode = ImageCompareMode::None;
     /** @brief The function with which to sample depth. */

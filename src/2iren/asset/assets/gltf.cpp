@@ -269,7 +269,7 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
 
         if (gltf_material.has_pbr_metallic_roughness) {
             const auto& pbr_mr = gltf_material.pbr_metallic_roughness;
-            mat->set_base_color(RGBA{glm::make_vec4(pbr_mr.base_color_factor)});
+            mat->set_base_color(Rgba{glm::make_vec4(pbr_mr.base_color_factor)});
             mat->set_metallic(pbr_mr.metallic_factor);
             mat->set_roughness(pbr_mr.roughness_factor);
             if (pbr_mr.base_color_texture.texture) {

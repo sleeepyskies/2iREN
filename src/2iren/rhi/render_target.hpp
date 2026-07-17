@@ -1,5 +1,9 @@
 #pragma once
 
+#include <optional>
+#include <vector>
+
+#include "2iren/util/color.hpp"
 #include "resources/fwd.hpp"
 
 namespace siren {
@@ -12,19 +16,46 @@ enum class BeginOperation : u8 {
     Clear,
     /** @brief Keeps the content of the attachment. */
     Preserve,
-    /** @brief Idk does something ig... */
+    /** @brief Doesnt even load the previous data. */
     Fuckit,
 };
 
-/**
- * @brief Describes an attachment of a @ref RenderTarget as well as how to handle it.
- */
 struct Attachment {
-    glm::vec4 clear_value          = glm::vec4{0.0};
-    f32 clear_depth                = 1.f;
-    i32 clear_stencil              = 0;
-    BeginOperation begin_operation = BeginOperation::Clear;
+    enum class Kind : u8 { Color, DepthStencil } kind;
     ImageHandle image;
+    BeginOperation begin_operation;
+    union Data {
+        struct {
+            Rgba clear_color;
+        } color;
+
+        struct {
+            f32 clear_depth;
+            i32 clear_stencil;
+        } depth_stencil;
+    } data;
+
+    static auto create_color(const ImageHandle image, const BeginOperation op, const Rgba color) -> Attachment {
+        return Attachment{
+            .kind            = Kind::Color,
+            .image           = image,
+            .begin_operation = op,
+            .data            = {.color = {.clear_color = color}},
+        };
+    }
+
+    static auto create_depth_stencil(
+        const ImageHandle image, const BeginOperation op, const f32 clear_depth, const i32 clear_stencil)
+        -> Attachment {
+        return Attachment{
+            .kind            = Kind::DepthStencil,
+            .image           = image,
+            .begin_operation = op,
+            .data            = {.depth_stencil = {.clear_depth = clear_depth, .clear_stencil = clear_stencil}},
+        };
+    }
+
+    constexpr operator Kind() const { return kind; }
 };
 
 /**

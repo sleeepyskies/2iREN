@@ -5,15 +5,15 @@
 #include <string>
 
 #define DEFINE_RGBA(name, r, g, b, a)                                                                                  \
-    [[nodiscard]] static constexpr auto name() noexcept -> RGBA { return {r, g, b, a}; }
+    [[nodiscard]] static constexpr auto name() noexcept -> Rgba { return {r, g, b, a}; }
 
 namespace siren {
 
 /**
- * @struct RGBA
+ * @struct Rgba
  * @brief A four channel color.
  */
-struct RGBA {
+struct Rgba {
     /** @brief The red color channel. */
     float r;
     /** @brief The green color channel. */
@@ -24,20 +24,20 @@ struct RGBA {
     float a;
 
     /** @brief Construct from an existing GLM vector. */
-    constexpr explicit RGBA(const glm::vec4& v) noexcept : r(v.r), g(v.g), b(v.b), a(v.a) {}
+    constexpr explicit Rgba(const glm::vec4& v) noexcept : r(v.r), g(v.g), b(v.b), a(v.a) {}
     /** @brief Defaults constructs a pure black color. */
-    constexpr RGBA() noexcept : r(0), g(0), b(0), a(1.0f) {}
+    constexpr Rgba() noexcept : r(0), g(0), b(0), a(1) {}
     /** @brief Constructs a new RGBA with the provided value for each channel, but alpha as 1.0f. */
-    constexpr explicit RGBA(const float val) noexcept : r(val), g(val), b(val), a(1.0f) {}
+    constexpr explicit Rgba(const float val) noexcept : r(val), g(val), b(val), a(1) {}
     /** @brief Constructs a new RGBA with the provided value for each color channel and using the given alpha. */
-    constexpr RGBA(const float color, const float alpha) noexcept : r(color), g(color), b(color), a(alpha) {}
+    constexpr Rgba(const float color, const float alpha) noexcept : r(color), g(color), b(color), a(alpha) {}
     /** @brief Constructs a new RGBA color provided the given values. */
-    constexpr RGBA(const float r, const float g, const float b, const float a) noexcept : r(r), g(g), b(b), a(a) {}
+    constexpr Rgba(const float r, const float g, const float b, const float a) noexcept : r(r), g(g), b(b), a(a) {}
 
-    RGBA(const RGBA&)            = default;
-    RGBA(RGBA&&)                 = default;
-    RGBA& operator=(const RGBA&) = default;
-    RGBA& operator=(RGBA&&)      = default;
+    Rgba(const Rgba&)            = default;
+    Rgba(Rgba&&)                 = default;
+    Rgba& operator=(const Rgba&) = default;
+    Rgba& operator=(Rgba&&)      = default;
 
     /** @brief Formats this RGBA as a string. */
     [[nodiscard]] auto to_string() -> std::string { return std::format("RGBA({}, {}, {}, {})", r, g, b, a); }
@@ -46,50 +46,50 @@ struct RGBA {
     [[nodiscard]] constexpr auto to_vec4() const noexcept -> glm::vec4 { return glm::vec4{r, g, b, a}; }
 
     /** @brief Equality comparison of two RGBA values. */
-    [[nodiscard]] auto operator==(const RGBA&) const noexcept -> bool = default;
+    [[nodiscard]] auto operator==(const Rgba&) const noexcept -> bool = default;
 
     /** @brief Component wise addition. */
-    [[nodiscard]] constexpr auto operator+(const RGBA& o) const noexcept -> RGBA {
+    [[nodiscard]] constexpr auto operator+(const Rgba& o) const noexcept -> Rgba {
         return {r + o.r, g + o.g, b + o.b, a + o.a};
     }
     /** @brief Component wise subtraction. */
-    [[nodiscard]] constexpr auto operator-(const RGBA& o) const noexcept -> RGBA {
+    [[nodiscard]] constexpr auto operator-(const Rgba& o) const noexcept -> Rgba {
         return {r - o.r, g - o.g, b - o.b, a - o.a};
     }
     /** @brief Component wise multiplication. */
-    [[nodiscard]] constexpr auto operator*(const RGBA& o) const noexcept -> RGBA {
+    [[nodiscard]] constexpr auto operator*(const Rgba& o) const noexcept -> Rgba {
         return {r * o.r, g * o.g, b * o.b, a * o.a};
     }
     /** @brief Scalar multiplication. */
-    [[nodiscard]] constexpr auto operator*(const float s) const noexcept -> RGBA {
+    [[nodiscard]] constexpr auto operator*(const float s) const noexcept -> Rgba {
         return {r * s, g * s, b * s, a * s};
     }
     /** @brief Scalar division. */
-    [[nodiscard]] constexpr auto operator/(const float s) const noexcept -> RGBA {
+    [[nodiscard]] constexpr auto operator/(const float s) const noexcept -> Rgba {
         return {r / s, g / s, b / s, a / s};
     }
     /** @brief Adds two RGBA values. */
-    [[nodiscard]] constexpr auto operator+=(const RGBA& o) noexcept -> RGBA& {
+    [[nodiscard]] constexpr auto operator+=(const Rgba& o) noexcept -> Rgba& {
         *this = *this + o;
         return *this;
     }
     /** @brief Subtracts two RGBA values. */
-    constexpr auto operator-=(const RGBA& o) noexcept -> RGBA& {
+    constexpr auto operator-=(const Rgba& o) noexcept -> Rgba& {
         *this = *this - o;
         return *this;
     }
     /** @brief Multiplies two RGBA values. */
-    constexpr auto operator*=(const RGBA& o) noexcept -> RGBA& {
+    constexpr auto operator*=(const Rgba& o) noexcept -> Rgba& {
         *this = *this * o;
         return *this;
     }
     /** @brief Multiplies an RGBA with a scalar. */
-    constexpr auto operator*=(const float s) noexcept -> RGBA& {
+    constexpr auto operator*=(const float s) noexcept -> Rgba& {
         *this = *this * s;
         return *this;
     }
     /** @brief Divides an RGBA with a scalar. */
-    constexpr auto operator/=(const float s) noexcept -> RGBA& {
+    constexpr auto operator/=(const float s) noexcept -> Rgba& {
         *this = *this / s;
         return *this;
     }

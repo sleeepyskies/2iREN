@@ -134,7 +134,7 @@ int main() {
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
             cmds.render_pass(
                 {
-                    .clear_color = siren::RGBA::green(),
+                    .clear_color = siren::Rgba::green(),
                     .target = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt},
                 },
                 [&](siren::RenderPassRecorder& pass) -> void {

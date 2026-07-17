@@ -5,7 +5,7 @@ namespace siren {
 
 // setters
 
-void PBRMaterialAsset::set_base_color(const RGBA& value) noexcept { m_base_color = value; }
+void PBRMaterialAsset::set_base_color(const Rgba& value) noexcept { m_base_color = value; }
 void PBRMaterialAsset::set_metallic(const f32 value) noexcept { m_metallic = value; }
 void PBRMaterialAsset::set_roughness(const f32 value) noexcept { m_roughness = value; }
 
@@ -166,7 +166,7 @@ void PBRMaterialAsset::set_unlit(const bool value) noexcept {
 
 // getters
 
-const RGBA& PBRMaterialAsset::base_color() const noexcept { return m_base_color; }
+const Rgba& PBRMaterialAsset::base_color() const noexcept { return m_base_color; }
 f32 PBRMaterialAsset::metallic() const noexcept { return m_metallic; }
 f32 PBRMaterialAsset::roughness() const noexcept { return m_roughness; }
 

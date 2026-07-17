@@ -174,9 +174,15 @@ auto GlCommandExecutor::execute_pass(
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
+    // reset some pipeline state to prevent state bleeds (tySM OpenGL :D)
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glStencilMask(0xFF);
+
     for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
         if (attachment.begin_operation == BeginOperation::Clear) {
-            glClearNamedFramebufferfv(framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_value.r);
+            glClearNamedFramebufferfv(
+                framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.data.color.clear_color.r);
         } else if (attachment.begin_operation == BeginOperation::Preserve) {
             continue;
         } else if (attachment.begin_operation == BeginOperation::Fuckit) {
@@ -189,10 +195,11 @@ auto GlCommandExecutor::execute_pass(
     if (descriptor.target.depth_stencil.has_value()) {
         if (descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
             const auto& attachment = *descriptor.target.depth_stencil;
-            if (attachment.begin_operation == BeginOperation::Clear) {
-                glClearNamedFramebufferfi(
-                    framebuffer, GL_DEPTH_STENCIL, 0, attachment.clear_depth, attachment.clear_stencil);
-            }
+            glClearNamedFramebufferfi(framebuffer,
+                GL_DEPTH_STENCIL,
+                0,
+                attachment.data.depth_stencil.clear_depth,
+                attachment.data.depth_stencil.clear_stencil);
         }
     }
 

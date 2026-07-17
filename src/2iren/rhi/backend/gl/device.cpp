@@ -390,7 +390,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
             .mipmap_levels = 1,
         });
 
-        Attachment attachment{.image = image.handle()};
+        auto attachment = Attachment::create_color(image.handle(), BeginOperation::Clear, Rgba::black());
 
         m_state.swapchain_table.link(swapchain_handle,
             nullptr,
@@ -399,7 +399,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
                 .native_handle = m_primary_window.handle(),
                 .target =
                     GlSwapchainDetails::Target{
-                        .render_target = RenderTarget{.colors = {std::move(attachment)}, .depth_stencil = std::nullopt},
+                        .render_target = RenderTarget{.colors = {attachment}, .depth_stencil = std::nullopt},
                         .image         = std::move(image),
                     },
             });
