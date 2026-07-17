@@ -38,7 +38,7 @@ static auto make_label(const std::optional<std::string>& prefix, const std::stri
 auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
     const Key key{
-        .colors        = target.colors | views::transform(&Attachment::image) | ranges::to<std::vector>(),
+        .colors        = target.colors | views::transform(&ColorAttachment::image) | ranges::to<std::vector>(),
         .depth_stencil = target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
     };
     if (const auto it = m_cache.find(key); it != m_cache.end()) {
@@ -390,7 +390,11 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
             .mipmap_levels = 1,
         });
 
-        auto attachment = Attachment::create_color(image.handle(), BeginOperation::Clear, Rgba::black());
+        auto attachment = ColorAttachment{
+            .image           = image.handle(),
+            .begin_operation = BeginOperation::Clear,
+            .clear_color     = Rgba::black(),
+        };
 
         m_state.swapchain_table.link(swapchain_handle,
             nullptr,

@@ -182,7 +182,7 @@ auto GlCommandExecutor::execute_pass(
     for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
         if (attachment.begin_operation == BeginOperation::Clear) {
             glClearNamedFramebufferfv(
-                framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.data.color.clear_color.r);
+                framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_color.r);
         } else if (attachment.begin_operation == BeginOperation::Preserve) {
             continue;
         } else if (attachment.begin_operation == BeginOperation::Fuckit) {
@@ -198,8 +198,8 @@ auto GlCommandExecutor::execute_pass(
             glClearNamedFramebufferfi(framebuffer,
                 GL_DEPTH_STENCIL,
                 0,
-                attachment.data.depth_stencil.clear_depth,
-                attachment.data.depth_stencil.clear_stencil);
+                attachment.clear_depth,
+                attachment.clear_stencil);
         }
     }
 
