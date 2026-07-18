@@ -17,7 +17,7 @@ struct Asset { };
 template <typename A>
 concept IsAsset = std::derived_from<A, Asset>;
 
-struct AssetID;
+struct AssetId;
 
 class WeakHandle;
 

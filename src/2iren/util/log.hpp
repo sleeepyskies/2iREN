@@ -91,6 +91,8 @@ inline auto init(const std::string_view lvl) -> void {
  * @param loc The source code location of the log call.
  * @param fmt The format string.
  * @param args The type-erased format arguments.
+ *
+ * @todo can we make log output a shortened filepath? it does absolute one atm
  */
 inline void log(
     const Level lvl,
@@ -101,7 +103,7 @@ inline void log(
 ) {
     if (lvl < level) { return; }
 
-    const auto msg = std::format(
+    auto msg = std::format(
         "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
         color_code,
         lvl.to_string(),
@@ -190,7 +192,7 @@ concept HasToString = requires(const T& t) {
 
 template<HasToString T>
 struct std::formatter<T> {
-    constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto parse(format_parse_context& ctx) const {
         return ctx.begin();
     }
 

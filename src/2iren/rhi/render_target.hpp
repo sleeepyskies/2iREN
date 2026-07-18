@@ -41,7 +41,7 @@ struct DepthStencilAttachment {
  */
 struct RenderTarget {
     std::vector<ColorAttachment> colors;
-    std::optional<DepthStencilAttachment> depth_stencil;
+    std::optional<DepthStencilAttachment> depth_stencil = std::nullopt;
 };
 
 } // namespace siren

@@ -245,7 +245,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 }
 
 static auto load_materials(const cgltf_data* data, const std::vector<StrongHandle<Texture>>& textures, LoadContext& ctx)
-    -> std::expected<std::vector<StrongHandle<PBRMaterialAsset>>, AssetErrorCode> {
+    -> std::expected<std::vector<StrongHandle<MaterialAsset>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Material"};
 
     const auto get_texture = [&textures, &data](
@@ -257,13 +257,13 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
         return textures[idx];
     };
 
-    std::vector<StrongHandle<PBRMaterialAsset>> vec;
+    std::vector<StrongHandle<MaterialAsset>> vec;
     vec.reserve(data->materials_count);
 
     for (usize material_idx = 0; material_idx < data->materials_count; material_idx++) {
         const auto& gltf_material = data->materials[material_idx];
         const auto name           = name_gen.next(gltf_material.name);
-        auto mat                  = std::make_unique<PBRMaterialAsset>(name);
+        auto mat                  = std::make_unique<MaterialAsset>(name);
 
         // metallic roughness and specular glossiness are mutually exclusive. we stick to just metallic roughness
 
@@ -686,7 +686,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
 }
 
 static auto load_meshes(
-    const cgltf_data* data, const std::vector<StrongHandle<PBRMaterialAsset>>& materials, LoadContext& ctx)
+    const cgltf_data* data, const std::vector<StrongHandle<MaterialAsset>>& materials, LoadContext& ctx)
     -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
     // surface names scoped are scoped to the gltf due to asset label system.
     NameIDGenerator mesh_name_generator{.fallback = "Mesh"};
@@ -721,7 +721,7 @@ static auto load_meshes(
             auto vertex_buffer = load_vertex_buffer(gltf_prim, ctx.device());
 
             const auto& material_handle = (gltf_prim.material == nullptr)
-                ? ctx.fetch_default<PBRMaterialAsset>()
+                ? ctx.fetch_default<MaterialAsset>()
                 : materials[gltf_prim.material - data->materials];
 
             auto surface = std::make_unique<Surface>(

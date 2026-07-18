@@ -23,8 +23,8 @@ static constexpr auto get_buffer_slice(const std::vector<u8>& buffer, const usiz
 static constexpr auto extract_cmds(const RenderPass& pass, const std::vector<RenderCommand>& commands)
     -> std::span<const RenderCommand> {
     ASSERT(pass.start < commands.size(), "RenderPass has an invalid start index.");
-    ASSERT(pass.start <= commands.size(), "RenderPass has more commands than available");
-    return std::span(commands.data() + pass.start, pass.count);
+    ASSERT(pass.start + pass.count <= commands.size(), "RenderPass has more commands than available");
+    return {commands.data() + pass.start, pass.count};
 }
 
 // ============================================================================
@@ -182,7 +182,7 @@ auto GlCommandExecutor::execute_pass(
     for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
         if (attachment.begin_operation == BeginOperation::Clear) {
             glClearNamedFramebufferfv(
-                framebuffer, GL_COLOR, static_cast<GLint>(index), &attachment.clear_color.r);
+                framebuffer, GL_COLOR, static_cast<GLint>(index), (float*)&attachment.clear_color.r);
         } else if (attachment.begin_operation == BeginOperation::Preserve) {
             continue;
         } else if (attachment.begin_operation == BeginOperation::Fuckit) {
@@ -195,11 +195,8 @@ auto GlCommandExecutor::execute_pass(
     if (descriptor.target.depth_stencil.has_value()) {
         if (descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
             const auto& attachment = *descriptor.target.depth_stencil;
-            glClearNamedFramebufferfi(framebuffer,
-                GL_DEPTH_STENCIL,
-                0,
-                attachment.clear_depth,
-                attachment.clear_stencil);
+            glClearNamedFramebufferfi(
+                framebuffer, GL_DEPTH_STENCIL, 0, attachment.clear_depth, attachment.clear_stencil);
         }
     }
 
@@ -271,7 +268,7 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     // set render state
     switch (desc.alpha_mode) {
         case AlphaMode::Opaque: {
-            glEnable(GL_BLEND);
+            glDisable(GL_BLEND);
             break;
         }
         case AlphaMode::Blend: {

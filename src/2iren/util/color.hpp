@@ -15,13 +15,13 @@ namespace siren {
  */
 struct Rgba {
     /** @brief The red color channel. */
-    float r;
+    f32 r;
     /** @brief The green color channel. */
-    float g;
+    f32 g;
     /** @brief The blue color channel. */
-    float b;
+    f32 b;
     /** @brief The alpha channel. */
-    float a;
+    f32 a;
 
     /** @brief Construct from an existing GLM vector. */
     constexpr explicit Rgba(const glm::vec4& v) noexcept : r(v.r), g(v.g), b(v.b), a(v.a) {}
@@ -94,6 +94,10 @@ struct Rgba {
         return *this;
     }
 
+    /** @brief All values set to 0. */
+    DEFINE_RGBA(zero, 0.f, 0.f, 0.f, 0.f)
+    /** @brief All values set to 1. */
+    DEFINE_RGBA(one, 1.f, 1.f, 1.f, 1.f)
     /** @brief A pure black color. */
     DEFINE_RGBA(black, 0.f, 0.f, 0.f, 1.f)
     /** @brief A gray color. */

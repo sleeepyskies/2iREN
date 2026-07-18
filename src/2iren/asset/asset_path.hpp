@@ -4,6 +4,7 @@
 #include <optional>
 #include <memory>
 
+#include "2iren/util/log.hpp"
 #include "2iren/util/hashed_string.hpp"
 
 

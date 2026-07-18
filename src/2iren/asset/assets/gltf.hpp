@@ -2,13 +2,12 @@
 
 #include <vector>
 
-#include "2iren/asset/fwd.hpp"
-#include "mesh.hpp"
-#include "pbr_material.hpp"
-#include "2iren/base.hpp"
 #include "2iren/asset/asset_handle.hpp"
 #include "2iren/asset/asset_loader.hpp"
-
+#include "2iren/asset/fwd.hpp"
+#include "2iren/base.hpp"
+#include "material.hpp"
+#include "mesh.hpp"
 
 namespace siren {
 
@@ -52,7 +51,7 @@ struct Gltf : Asset {
         std::vector<StrongHandle<GltfScene>>&& scenes,
         std::optional<StrongHandle<GltfScene>>&& default_scene,
         std::vector<StrongHandle<Mesh>>&& meshes,
-        std::vector<StrongHandle<PBRMaterialAsset>>&& materials,
+        std::vector<StrongHandle<MaterialAsset>>&& materials,
         std::vector<StrongHandle<GltfNode>>&& nodes
     ) : scenes(std::move(scenes)),
         default_scene(std::move(default_scene)),
@@ -67,7 +66,7 @@ struct Gltf : Asset {
     /** @brief All meshes loaded from the gltf. */
     std::vector<StrongHandle<Mesh>> meshes;
     /** @brief All materials loaded from the gltf. */
-    std::vector<StrongHandle<PBRMaterialAsset>> materials;
+    std::vector<StrongHandle<MaterialAsset>> materials;
     /** @brief All textures loaded from the gltf. */
     std::vector<StrongHandle<Texture>> textures;
     /** @brief All nodes loaded from the gltf. */

@@ -25,7 +25,7 @@ template <IsAsset A>
 template <IsAsset A>
 [[nodiscard]] auto make_strong(const WeakHandle weak) -> StrongHandle<A> {
     ASSERT(
-        weak.id().type() == AssetID::type_id<A>(),
+        weak.id().type() == AssetId::type_id<A>(),
         std::format("WeakHandle type mismatch during promotion! Expected StrongHandle<{}>", typename_of<A>())
     );
 
@@ -43,8 +43,8 @@ template <IsAsset A>
 [[nodiscard]] auto pool_cast(AssetPoolBase* base) -> AssetPool<A>& {
     ASSERT(base != nullptr, "Attempted to pool_cast a nullptr!");
     ASSERT(
-        base->type_id() == AssetID::type_id<A>(),
-        std::format("Invalid pool cast! Pool holds type {}, expected {}", base->type_id(), AssetID::type_id<A>())
+        base->type_id() == AssetId::type_id<A>(),
+        std::format("Invalid pool cast! Pool holds type {}, expected {}", base->type_id(), AssetId::type_id<A>())
     );
     return *static_cast<AssetPool<A>*>(base);
 }
@@ -59,8 +59,8 @@ template <IsAsset A>
 [[nodiscard]] auto pool_cast(const AssetPoolBase* base) -> const AssetPool<A>& {
     ASSERT(base != nullptr, "Attempted to pool_cast a nullptr!");
     ASSERT(
-        base->type_id() == AssetID::type_id<A>(),
-        std::format("Invalid pool cast! Pool holds type {}, expected {}", base->type_id(), AssetID::type_id<A>())
+        base->type_id() == AssetId::type_id<A>(),
+        std::format("Invalid pool cast! Pool holds type {}, expected {}", base->type_id(), AssetId::type_id<A>())
     );
     return *static_cast<const AssetPool<A>*>(base);
 }

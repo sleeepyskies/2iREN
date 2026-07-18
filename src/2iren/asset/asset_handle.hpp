@@ -2,6 +2,7 @@
 
 #include <libassert/assert.hpp>
 
+#include "2iren/util/log.hpp"
 #include "asset_id.hpp"
 #include "asset_path.hpp"
 #include "asset_pool.hpp"
@@ -15,12 +16,12 @@ namespace siren {
  */
 class WeakHandle {
 public:
-    using TypeID = AssetID::TypeID;
+    using TypeID = AssetId::TypeID;
 
     /** @brief Default constructs an invalid handle. */
     WeakHandle() = default;
     /** @brief Constructs a new WeakHandle. */
-    WeakHandle(const AssetID id, AssetPoolBase* pool, const AssetPath& path) : m_path(path), m_id(id), m_pool(pool) {}
+    WeakHandle(const AssetId id, AssetPoolBase* pool, const AssetPath& path) : m_path(path), m_id(id), m_pool(pool) {}
 
     /** @brief Constructs a new invalid WeakHandle. */
     static auto invalid() -> WeakHandle { return WeakHandle{}; }
@@ -31,7 +32,7 @@ public:
     WeakHandle& operator=(WeakHandle&&)      = default;
 
     /** @brief Returns the @ref AssetID of this WeakHandle. */
-    [[nodiscard]] auto id() const noexcept -> AssetID { return m_id; }
+    [[nodiscard]] auto id() const noexcept -> AssetId { return m_id; }
     /** @brief Returns the @ref AssetPoolBase pointer of this WeakHandle. */
     [[nodiscard]]
     constexpr auto pool() const noexcept -> AssetPoolBase* {
@@ -40,7 +41,7 @@ public:
     /** @brief Returns the original asset path of this WeakHandle. */
     [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& { return m_path; }
     /** @brief Returns the string representation of this handle. */
-    [[nodiscard]] auto to_string() const -> std::string { return std::format("Weak({})", m_id.packed()); }
+    [[nodiscard]] auto to_string() const -> std::string { return std::format("Weak({})", m_id); }
 
     /** @brief Equality comparison operator. */
     [[nodiscard]] constexpr auto operator==(const WeakHandle& other) const -> bool { return id() == other.id(); }
@@ -49,7 +50,7 @@ private:
     /** @brief The @ref AssetPath to the referenced asset. */
     AssetPath m_path = AssetPath::invalid();
     /** @brief The raw untyped handle. */
-    AssetID m_id = NullHandle;
+    AssetId m_id = NullHandle;
     /** @brief The pool this handles asset belongs to. */
     AssetPoolBase* m_pool{ nullptr };
 };
@@ -83,9 +84,9 @@ public:
         }
     }
 
-    StrongHandle(const AssetID& id, AssetPool<A>& pool, const AssetPath& asset_path) :
+    StrongHandle(const AssetId& id, AssetPool<A>& pool, const AssetPath& asset_path) :
         m_weak(WeakHandle{ id, &pool, asset_path }) {
-        ASSERT(AssetID::type_id<A>() == id.type(),
+        ASSERT(AssetId::type_id<A>() == id.type(),
                 "Cannot construct a StrongHandle if AssetID and AssetPool types do not match.");
         pool.inc_ref(id);
     }
@@ -125,7 +126,7 @@ public:
     }
 
     /** @brief Returns the raw untyped version of this handle. */
-    [[nodiscard]] constexpr auto id() const noexcept -> AssetID { return m_weak.id(); }
+    [[nodiscard]] constexpr auto id() const noexcept -> AssetId { return m_weak.id(); }
     /** @brief Returns the typed AssetPool reference where the referenced asset is stored. */
     [[nodiscard]] auto pool() const -> AssetPool<A>& { return *dynamic_cast<AssetPool<A>*>(m_weak.pool()); }
     /** @brief Returns the AssetPath of the referenced asset. */

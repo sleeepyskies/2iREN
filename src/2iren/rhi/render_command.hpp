@@ -5,7 +5,6 @@
 #include <unordered_map>
 
 #include "2iren/base.hpp"
-#include "2iren/util/color.hpp"
 #include "render_target.hpp"
 #include "resources/buffer.hpp"
 #include "resources/fwd.hpp"

@@ -12,9 +12,9 @@ namespace siren {
 /**
  * @brief A Basic PBR material that closely follows the GLTF specs.
  */
-class PBRMaterialAsset : public Asset {
+class MaterialAsset : public Asset {
 public:
-    explicit PBRMaterialAsset(const std::string& name) : m_name(name) { }
+    explicit MaterialAsset(const std::string& name) : m_name(name) { }
 
     // setters
 

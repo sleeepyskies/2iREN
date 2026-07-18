@@ -3,9 +3,9 @@
 #include <vector>
 
 #include "../asset_handle.hpp"
-#include "pbr_material.hpp"
 #include "2iren/base.hpp"
 #include "2iren/rhi/resources/buffer.hpp"
+#include "material.hpp"
 
 // todo: do we want to store buffer data CPU side as well?
 
@@ -39,7 +39,7 @@ struct VertexBuffer {
 struct Surface : Asset {
     Surface(
         const std::string& name,
-        const StrongHandle<PBRMaterialAsset>& material,
+        const StrongHandle<MaterialAsset>& material,
         IndexBuffer&& index_buffer,
         VertexBuffer&& vertex_buffer
     ) : name(name),
@@ -50,7 +50,7 @@ struct Surface : Asset {
     /** @brief The name of the surface. */
     std::string name;
     /** @brief The material to use for this surface. */
-    StrongHandle<PBRMaterialAsset> material;
+    StrongHandle<MaterialAsset> material;
     /** @brief The indices of the Surface. */
     IndexBuffer index_buffer;
     /** @brief The vertices of the Surface. */
