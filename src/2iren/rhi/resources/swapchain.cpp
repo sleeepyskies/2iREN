@@ -3,13 +3,9 @@
 #include "2iren/rhi/device.hpp"
 #include "2iren/window.hpp"
 
-
 namespace siren {
 
-Swapchain::Swapchain(
-    Device* device,
-    const SwapchainHandle handle
-) : Base(device, handle) { }
+Swapchain::Swapchain(Device* device, const SwapchainHandle handle) : Base(device, handle) {}
 
 Swapchain::~Swapchain() {
     if (m_device && m_handle.is_valid()) {
@@ -17,7 +13,7 @@ Swapchain::~Swapchain() {
     }
 }
 
-Swapchain::Swapchain(Swapchain&& other) noexcept : Base(std::move(other)) { }
+Swapchain::Swapchain(Swapchain&& other) noexcept : Base(std::move(other)) {}
 
 Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
     if (this != &other) {
@@ -33,12 +29,12 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
 
 auto Swapchain::descriptor() const -> const SwapchainDescriptor& { return m_device->swapchain_descriptor(m_handle); }
 
-auto Swapchain::next_image() const -> ImageHandle {
-    return m_device->acquire_next_swapchain_target(m_handle);
-}
+auto Swapchain::next_image() const -> ImageHandle { return m_device->acquire_next_swapchain_target(m_handle); }
 
-auto Swapchain::present() const -> void {
-    m_device->present(m_handle);
+auto Swapchain::present() const -> void { m_device->present(m_handle); }
+
+auto Swapchain::present_overlay(OverlayFunction&& overlay) const -> void {
+    m_device->present(m_handle, std::move(overlay));
 }
 
 } // namespace siren

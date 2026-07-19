@@ -38,9 +38,12 @@ public:
      */
     auto execute(RenderCommandBuffer&& render_command_package) -> void override;
 
+    [[nodiscard]] auto statistics() const -> const Statistics& override;
+
 private:
     const RenderResourceState& m_state;
     mutable TrackedState m_tracked_state;
+    mutable Statistics m_statistics{};
 
     /** @brief Handles @ref UploadImage. */
     auto execute_image_upload(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;

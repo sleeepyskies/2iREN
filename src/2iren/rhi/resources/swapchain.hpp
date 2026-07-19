@@ -1,5 +1,6 @@
 #pragma once
 
+#include "2iren/rhi/device.hpp"
 #include "fwd.hpp"
 
 namespace siren {
@@ -38,5 +39,11 @@ public:
 
     /** @brief Presents the back buffer to the screen. */
     auto present() const -> void;
+
+    /**
+     * @brief Presents the back buffer to the screen and also executes the overlay function.
+     * @todo this api isn't great, but works for now and keeps hard dependency in 2iren core for ImGui out.
+     */
+    auto present_overlay(OverlayFunction&& overlay) const -> void;
 };
 } // namespace siren

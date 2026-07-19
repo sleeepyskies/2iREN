@@ -525,6 +525,7 @@ auto GlDevice::submit(ResourceCommandBuffer&& command_buffer) const -> void {
     m_render_thread.spawn([this, cmds = std::move(command_buffer)]() mutable -> void {
         GlCommandExecutor executor{this->m_state};
         executor.execute(std::move(cmds));
+        m_statistics.set(m_statistics.get() + executor.statistics());
     });
 }
 
@@ -532,6 +533,7 @@ auto GlDevice::submit(RenderCommandBuffer&& command_buffer) const -> void {
     m_render_thread.spawn([this, cmds = std::move(command_buffer)]() mutable -> void {
         GlCommandExecutor executor{this->m_state};
         executor.execute(std::move(cmds));
+        m_statistics.set(m_statistics.get() + executor.statistics());
     });
 }
 
@@ -564,16 +566,24 @@ auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const
     return m_state.swapchain_table.details(handle).target->image.handle();
 }
 
-auto GlDevice::present(const SwapchainHandle handle) const -> void {
+auto GlDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) const -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
     auto* window         = m_state.swapchain_table.details(handle).native_handle;
     const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
     const auto [w, h, _] = m_state.image_table.details(target.colors[0].image).descriptor.extent;
 
     // basically, we just blit swapchain image fbo to default fbo
-    m_render_thread.spawn([this, window, target, w, h] -> void {
+    m_render_thread.spawn([this, window, target, w, h, overlay = std::move(overlay)] -> void {
         // clang-format off
         const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(target);
+
+        // iff there is an overlay, we have to bind its fbo so it can perform the custom render logic
+        if (overlay) {
+            glBindFramebuffer(GL_FRAMEBUFFER, offscreen_fb);
+            glViewport(0, 0, w, h);
+            overlay();
+        }
+
         glBlitNamedFramebuffer(
             /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
             0, 0, w, h,
@@ -604,5 +614,9 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
 }
 
 auto GlDevice::limits() const -> Limits { return Limits{}; }
+
+auto GlDevice::statistics() const -> Statistics {
+    return m_statistics.consume();
+}
 
 } // namespace siren

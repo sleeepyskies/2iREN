@@ -32,7 +32,7 @@ struct ShaderStage {
     constexpr operator Value() const { return value; }
 
     /** @brief Returns the string representation of this value. */
-    constexpr auto to_string() const -> std::string_view {
+    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (value) {
             case Vertex: return "Vertex";
             case Fragment: return "Fragment";

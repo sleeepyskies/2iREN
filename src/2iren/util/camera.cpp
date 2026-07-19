@@ -34,7 +34,7 @@ auto PerspectiveCamera::projection() const noexcept -> glm::mat4 {
 }
 
 auto PerspectiveCameraController::update(PerspectiveCamera&) -> void {
-    // pass
+    return;
 }
 
 auto PerspectiveCameraController::speed() const noexcept -> f32 { return m_speed; }

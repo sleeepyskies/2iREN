@@ -7,12 +7,64 @@
 namespace siren {
 
 /**
+ * @struct Statistics
+ * @brief Collects statistics regarding the amount and types of operations
+ * performed by the rendering backend.
+ */
+struct Statistics {
+    /** @brief The number of @ref BindGraphicsPipeline commands. */
+    u32 count_bind_graphics_pipeline;
+    /** @brief The number of @ref SetViewport commands. */
+    u32 count_set_viewport;
+    /** @brief The number of @ref BindVertexBuffer commands. */
+    u32 count_bind_vertex_buffer;
+    /** @brief The number of @ref BindIndexBuffer commands. */
+    u32 count_bind_index_buffer;
+    /** @brief The number of @ref BindUniformBuffer commands. */
+    u32 count_bind_uniform_buffer;
+    /** @brief The number of @ref BindSampledImage commands. */
+    u32 count_bind_sampled_image;
+    /** @brief The number of @ref BindStorageImage commands. */
+    u32 count_bind_storage_image;
+    /** @brief The number of @ref DrawArrays commands. */
+    u32 count_draw_arrays;
+    /** @brief The number of @ref DrawIndexed commands. */
+    u32 count_draw_indexed;
+    /** @brief The number of @ref UploadBuffer commands. */
+    u32 count_upload_buffer;
+    /** @brief The number of @ref UploadImage commands. */
+    u32 count_upload_image;
+
+    auto operator+=(const Statistics& rhs) noexcept -> Statistics& {
+        count_bind_graphics_pipeline += rhs.count_bind_graphics_pipeline;
+        count_set_viewport += rhs.count_set_viewport;
+        count_bind_vertex_buffer += rhs.count_bind_vertex_buffer;
+        count_bind_index_buffer += rhs.count_bind_index_buffer;
+        count_bind_uniform_buffer += rhs.count_bind_uniform_buffer;
+        count_bind_sampled_image += rhs.count_bind_sampled_image;
+        count_bind_storage_image += rhs.count_bind_storage_image;
+        count_draw_arrays += rhs.count_draw_arrays;
+        count_draw_indexed += rhs.count_draw_indexed;
+        count_upload_buffer += rhs.count_upload_buffer;
+        count_upload_image += rhs.count_upload_image;
+        return *this;
+    }
+
+    friend auto operator+(Statistics lhs, const Statistics& rhs) noexcept -> Statistics {
+        lhs += rhs;
+        return lhs;
+    }
+};
+
+/**
  * @brief Defines the hardware limits of the current backend.
  * @todo impl this
  */
 struct Limits {
     u32 max_buffer_slots;
 };
+
+using OverlayFunction = std::function<void()>;
 
 /**
  * @brief The Device manages the lifetime of @ref RenderResource objects.
@@ -107,8 +159,9 @@ public:
     /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
     [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle = 0;
 
-    /** @brief Presents the back buffer of the given swapchain to the screen. */
-    virtual auto present(SwapchainHandle handle) const -> void = 0;
+    /// todo: i'm not super happy with this api, maybe a more formal overlay system would be better
+    /** @brief Presents the back buffer of the given swapchain to the screen and also executes a custom overlay function. */
+    virtual auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void = 0;
 
     /** @brief Copies the content of an @ref Image to another @ref Image. @note Assumes source and destination have the
      * same size. */
@@ -116,6 +169,9 @@ public:
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> Limits = 0;
+
+    /** @brief Returns the accumulated rendering backend statistics since the last time this function was called. */
+    [[nodiscard]] virtual auto statistics() const -> Statistics = 0;
 };
 
 } // namespace siren

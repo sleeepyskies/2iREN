@@ -59,12 +59,15 @@ auto GlCommandExecutor::execute(RenderCommandBuffer&& render_command_package) ->
     }
 }
 
+auto GlCommandExecutor::statistics() const -> const Statistics& { return m_statistics; }
+
 // ============================================================================
 // == MARK: Resource Commands
 // ============================================================================
 
 auto GlCommandExecutor::execute_image_upload(const UploadImage& cmd, const std::span<const u8> data_slice) const
     -> void {
+    m_statistics.count_upload_image++;
     // just upload it all in one go, this should be fine even for cube maps
     const auto gl_handle = m_state.image_table.fetch(cmd.image_handle);
     const auto& desc     = m_state.image_table.details(cmd.image_handle).descriptor;
@@ -122,6 +125,8 @@ auto GlCommandExecutor::execute_image_upload(const UploadImage& cmd, const std::
 
 auto GlCommandExecutor::execute_buffer_upload(const UploadBuffer& cmd, const std::span<const u8> data_slice) const
     -> void {
+    m_statistics.count_upload_buffer++;
+
     const auto gl_handle = m_state.buffer_table.fetch(cmd.buffer_handle);
     const auto& desc     = m_state.buffer_table.details(cmd.buffer_handle).descriptor;
 
@@ -245,9 +250,13 @@ auto GlCommandExecutor::execute_pass(
     }
 
     // clean up pass
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {
+    m_statistics.count_bind_graphics_pipeline++;
+
     auto& pipeline_table = m_state.graphics_pipeline_table;
     auto& shader_table   = m_state.shader_table;
 
@@ -313,6 +322,7 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
 }
 
 auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const RenderTarget& target) const -> void {
+    m_statistics.count_set_viewport++;
     // 2iren uses top left as origin, OpenGL uses bottom left, so we must convert
     // we need the target size for conversion
     // assume all attachments are the same size
@@ -326,6 +336,7 @@ auto GlCommandExecutor::set_viewport(const SetViewport& set_viewport, const Rend
 }
 
 auto GlCommandExecutor::bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const -> void {
+    m_statistics.count_bind_vertex_buffer++;
     const auto vbo            = m_state.buffer_table.fetch(bind_vertex_buffer.vertex_buffer);
     const auto& pipeline_desc = m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
     glVertexArrayVertexBuffer(m_tracked_state.active_vao,
@@ -336,17 +347,20 @@ auto GlCommandExecutor::bind_vertex_buffer(const BindVertexBuffer& bind_vertex_b
 }
 
 auto GlCommandExecutor::bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const -> void {
+    m_statistics.count_bind_index_buffer++;
     const auto ibo             = m_state.buffer_table.fetch(bind_index_buffer.index_buffer);
     m_tracked_state.active_ibo = bind_index_buffer;
     glVertexArrayElementBuffer(m_tracked_state.active_vao, ibo);
 }
 
 auto GlCommandExecutor::bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void {
+    m_statistics.count_bind_uniform_buffer++;
     const auto ubo = m_state.buffer_table.fetch(bind_uniform_buffer.uniform_buffer);
     glBindBufferBase(GL_UNIFORM_BUFFER, bind_uniform_buffer.slot, ubo);
 }
 
 auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void {
+    m_statistics.count_bind_sampled_image++;
     const auto img = m_state.image_table.fetch(bind_sampled_image.image);
 
     glActiveTexture(GL_TEXTURE0 + bind_sampled_image.slot);
@@ -356,6 +370,7 @@ auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_
 }
 
 auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_image) const -> void {
+    m_statistics.count_bind_storage_image++;
     const auto img   = m_state.image_table.fetch(bind_storage_image.image);
     const auto& desc = m_state.image_table.details(bind_storage_image.image).descriptor;
     glBindImageTexture(
@@ -363,6 +378,7 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
 }
 
 auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
+    m_statistics.count_draw_arrays++;
     const auto& pl_desc = m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
 
@@ -370,6 +386,7 @@ auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void
 }
 
 auto GlCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> void {
+    m_statistics.count_draw_indexed++;
     const auto& pl_desc = m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
     const auto type     = gl::index_format_to_gl(m_tracked_state.active_ibo.index_format);

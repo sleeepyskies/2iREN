@@ -1,10 +1,11 @@
 #pragma once
 
-#include "resource_command.hpp"
 #include "render_command.hpp"
-
+#include "resource_command.hpp"
 
 namespace siren {
+
+struct Statistics;
 
 /**
  * @class CommandExecutor
@@ -26,6 +27,11 @@ public:
      * @param render_command_package The @ref RenderCommandPackage to execute.
      */
     virtual auto execute(RenderCommandBuffer&& render_command_package) -> void = 0;
+
+    /**
+     * @brief Returns the gathered @ref Statistics.
+     */
+    [[nodiscard]] virtual auto statistics() const -> const Statistics& = 0;
 };
 
 } // namespace siren

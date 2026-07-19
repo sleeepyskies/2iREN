@@ -183,10 +183,11 @@ public:
     [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
 
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle override;
-    auto present(SwapchainHandle handle) const -> void override;
+    auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void override;
     auto blit(ImageHandle source, ImageHandle destination) const -> void override;
 
     [[nodiscard]] auto limits() const -> Limits override;
+    [[nodiscard]] auto statistics() const -> Statistics override;
 
 private:
     /**
@@ -226,6 +227,9 @@ private:
 
     /** @brief All objects queued for cleanup. */
     std::vector<DeleteRequest> m_delete_queue;
+
+    /** @brief Copy of the statistics. */
+    mutable Mutex<Statistics> m_statistics{};
 };
 
 } // namespace siren
