@@ -6,7 +6,7 @@
 #include "2iren/base.hpp"
 #include "codes.hpp"
 
-namespace siren::input {
+namespace siren {
 
 /**
  * @brief Maps siren KeyCode's to native GLFW.
@@ -308,4 +308,4 @@ constexpr auto from_glfw_mouse_mode(const u32 mode) -> CursorMode {
     }
 }
 
-} // namespace siren::input
+} // namespace siren

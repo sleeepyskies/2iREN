@@ -48,6 +48,8 @@ add_library(
         src/2iren/asset/assets/material.cpp
         src/2iren/asset/assets/texture.cpp
 
+        src/2iren/input/input.cpp
+
         src/2iren/window.cpp
 
         src/2iren/util/time.cpp

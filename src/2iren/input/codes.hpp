@@ -1,12 +1,7 @@
 #pragma once
 
 namespace siren {
-/// @todo: to_string functionality for debugging/logging purposes
-/// @todo: Some mapping of actions to groups? Like "moveLeft" -> {A_KEY, X_BUTTON}
-
-/**
- * @brief Represents the state of modifier keys during a key press.
- */
+/** @brief Represents the state of modifier keys during a key press. */
 struct Modifiers {
     /** @brief Either the left or right shift key. */
     bool shift : 1;

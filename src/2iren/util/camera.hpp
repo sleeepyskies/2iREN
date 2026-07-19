@@ -6,6 +6,7 @@
 #include "2iren/base.hpp"
 
 namespace siren {
+class Input;
 
 struct PerspectiveCameraDescriptor {
     glm::vec3 position{0.f};
@@ -50,10 +51,10 @@ private:
 
 class PerspectiveCameraController {
 public:
-    explicit PerspectiveCameraController(const f32 speed = 5, const f32 sensitivity = 10) :
+    explicit PerspectiveCameraController(const f32 speed = 5.f, const f32 sensitivity = 0.5f) :
         m_sensitivity(sensitivity), m_speed(speed) {}
 
-    auto update(PerspectiveCamera& camera) -> void;
+    auto update(PerspectiveCamera& camera, const Input& input) -> void;
 
     [[nodiscard]] auto speed() const noexcept -> f32;
     [[nodiscard]] auto sensitivity() const noexcept -> f32;

@@ -8,6 +8,7 @@
 
 #include "2iren/base.hpp"
 #include "2iren/sync/mutex.hpp"
+#include "input/codes.hpp"
 #include "rhi/fwd.hpp"
 
 namespace siren {
@@ -49,6 +50,11 @@ struct WindowDescriptor {
     WindowMode initial_mode = WindowMode::Normal;
 };
 
+using KeyCallback         = std::function<void(int key, int action)>;
+using MouseButtonCallback = std::function<void(int button, int action)>;
+using MouseMoveCallback   = std::function<void(glm::vec2)>;
+using ScrollCallback      = std::function<void(glm::vec2)>;
+
 /**
  * @class Window
  * @brief A thread safe representation of an OS native window.
@@ -88,35 +94,33 @@ public:
     [[nodiscard]] auto is_fullscreen() const noexcept -> bool;
     /** @brief Checks whether the window should close. */
     [[nodiscard]] auto should_close() const noexcept -> bool;
+    /** @brief Returns the current @ref CursorMode of the window. */
+    [[nodiscard]] auto cursor_mode() const noexcept -> CursorMode;
 
-    /**
-     * @brief Sets the title of the window.
-     * @param title The new window title.
-     */
+    /** @brief Sets the title of the window. */
     auto set_title(const std::string& title) const -> void;
     /** @brief Minimizes the window. */
     auto minimize() const -> void;
     /** @brief Maximizes the window. */
     auto maximize() const -> void;
-    /**
-     * @brief Sets the fullscreen status of the window.
-     */
+    /** @brief Sets the fullscreen status of the window. */
     auto set_fullscreen(bool val) const -> void;
-    /**
-     * @brief Sets the size of the window.
-     * @param size The new size of the window.
-     */
+    /** @brief Sets the size of the window. */
     auto set_size(glm::uvec2 size) const -> void;
-    /**
-     * @brief Sets the position of the window.
-     * @param position The new position of the window.
-     */
+    /** @brief Sets the position of the window. */
     auto set_position(glm::ivec2 position) const -> void;
+    /** @brief Sets the @ref CursorMode of the window. */
+    auto set_cursor_mode(CursorMode mode) const noexcept -> void;
     /**
      * @brief Processes the internal request queue and polls for any OS events
      * @warning This must only be called from the main thread!!!
      */
     auto poll_events() const -> void;
+
+    auto set_key_callback(KeyCallback&& callback) -> void;
+    auto set_mouse_button_callback(MouseButtonCallback&& callback) -> void;
+    auto set_mouse_move_callback(MouseMoveCallback&& callback) -> void;
+    auto set_scroll_callback(ScrollCallback&& callback) -> void;
 
 private:
     /** @brief Callback function type used internally to defer execution of certain requests. */
@@ -124,10 +128,21 @@ private:
 
     GLFWwindow* m_handle;
     mutable std::atomic<WindowMode> m_window_mode;
+    mutable std::atomic<CursorMode> m_cursor_mode;
     Mutex<glm::uvec2> m_size;
     Mutex<glm::ivec2> m_position;
     Mutex<std::string> m_title;
     Mutex<std::vector<WindowRequest>> m_requests;
+
+    KeyCallback m_key_callback;
+    MouseButtonCallback m_mouse_button_callback;
+    MouseMoveCallback m_mouse_move_callback;
+    ScrollCallback m_scroll_callback;
+
+    static auto glfw_key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) -> void;
+    static auto glfw_mouse_button_callback(GLFWwindow* window, i32 button, i32 action, i32 mods) -> void;
+    static auto glfw_mouse_move_callback(GLFWwindow* window, f64 xpos, f64 ypos) -> void;
+    static auto glfw_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset) -> void;
 };
 
 } // namespace siren
