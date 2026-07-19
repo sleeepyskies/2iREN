@@ -34,6 +34,8 @@ struct Statistics {
     u32 count_upload_buffer;
     /** @brief The number of @ref UploadImage commands. */
     u32 count_upload_image;
+    /** @brief The number of draw calls performed. */
+    u32 count_draw_calls;
 
     auto operator+=(const Statistics& rhs) noexcept -> Statistics& {
         count_bind_graphics_pipeline += rhs.count_bind_graphics_pipeline;
@@ -47,6 +49,7 @@ struct Statistics {
         count_draw_indexed += rhs.count_draw_indexed;
         count_upload_buffer += rhs.count_upload_buffer;
         count_upload_image += rhs.count_upload_image;
+        count_draw_calls += rhs.count_draw_calls;
         return *this;
     }
 

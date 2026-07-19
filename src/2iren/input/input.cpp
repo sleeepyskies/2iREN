@@ -35,8 +35,8 @@ auto ButtonState<Button>::update() noexcept -> void {
 template <IsSizedEnum Button>
 auto ButtonState<Button>::press(Button button) noexcept -> void {
     const auto idx = to_index(button);
-
     if (!m_pressed.test(idx)) {
+        log::trace("Button just pressed");
         m_pressed.set(idx);
         m_just_pressed.set(idx);
     }
@@ -47,6 +47,7 @@ auto ButtonState<Button>::release(Button button) noexcept -> void {
     const auto idx = to_index(button);
 
     if (m_pressed.test(idx)) {
+        log::trace("Button just released");
         m_pressed.reset(idx);
         m_just_released.set(idx);
     }

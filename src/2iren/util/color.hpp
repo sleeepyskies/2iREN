@@ -40,7 +40,7 @@ struct Rgba {
     Rgba& operator=(Rgba&&)      = default;
 
     /** @brief Formats this RGBA as a string. */
-    [[nodiscard]] auto to_string() -> std::string { return std::format("RGBA({}, {}, {}, {})", r, g, b, a); }
+    [[nodiscard]] auto to_string() const -> std::string { return std::format("Rgba({}, {}, {}, {})", r, g, b, a); }
 
     /** @brief Alias for to_glm() for better integration with vector-heavy code. */
     [[nodiscard]] constexpr auto to_vec4() const noexcept -> glm::vec4 { return glm::vec4{r, g, b, a}; }

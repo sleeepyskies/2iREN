@@ -379,6 +379,7 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
 
 auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
     m_statistics.count_draw_arrays++;
+    m_statistics.count_draw_calls++;
     const auto& pl_desc = m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
 
@@ -387,6 +388,7 @@ auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void
 
 auto GlCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> void {
     m_statistics.count_draw_indexed++;
+    m_statistics.count_draw_calls++;
     const auto& pl_desc = m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
     const auto mode     = gl::topology_to_gl(pl_desc.topology);
     const auto type     = gl::index_format_to_gl(m_tracked_state.active_ibo.index_format);
