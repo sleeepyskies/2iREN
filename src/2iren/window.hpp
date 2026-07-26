@@ -54,6 +54,7 @@ using KeyCallback         = std::function<void(int key, int action)>;
 using MouseButtonCallback = std::function<void(int button, int action)>;
 using MouseMoveCallback   = std::function<void(glm::vec2)>;
 using ScrollCallback      = std::function<void(glm::vec2)>;
+using OnResizeCallback    = std::function<void(glm::ivec2)>;
 
 /**
  * @class Window
@@ -66,7 +67,6 @@ using ScrollCallback      = std::function<void(glm::vec2)>;
  */
 class Window {
 public:
-    explicit Window(const WindowDescriptor& descriptor = {});
     ~Window();
 
     Window(const Window&)                      = delete;
@@ -117,12 +117,17 @@ public:
      */
     auto poll_events() const -> void;
 
+    auto on_resize(OnResizeCallback&& callback) -> void;
+
     auto set_key_callback(KeyCallback&& callback) -> void;
     auto set_mouse_button_callback(MouseButtonCallback&& callback) -> void;
     auto set_mouse_move_callback(MouseMoveCallback&& callback) -> void;
     auto set_scroll_callback(ScrollCallback&& callback) -> void;
 
 private:
+    friend class Context;
+    explicit Window(const WindowDescriptor& descriptor = {});
+
     /** @brief Callback function type used internally to defer execution of certain requests. */
     using WindowRequest = std::function<void()>;
 
@@ -138,11 +143,13 @@ private:
     MouseButtonCallback m_mouse_button_callback;
     MouseMoveCallback m_mouse_move_callback;
     ScrollCallback m_scroll_callback;
+    OnResizeCallback m_resize_callback;
 
     static auto glfw_key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) -> void;
     static auto glfw_mouse_button_callback(GLFWwindow* window, i32 button, i32 action, i32 mods) -> void;
     static auto glfw_mouse_move_callback(GLFWwindow* window, f64 xpos, f64 ypos) -> void;
     static auto glfw_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset) -> void;
+    static auto glfw_window_resize_callback(GLFWwindow* window, i32 w, i32 h) -> void;
 };
 
 } // namespace siren

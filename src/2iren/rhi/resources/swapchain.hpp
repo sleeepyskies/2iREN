@@ -14,6 +14,8 @@ struct SwapchainDescriptor {
     std::optional<std::string> label;
     /** @brief If the swapchain should be created with vsync enabled. */
     bool vsync;
+    /** @brief The size dimensions of the desired @ref Swapchain. */
+    glm::uvec2 extent;
 };
 
 /// @todo: swapchain shouldn't return a framebuffer but an image, but idk how else to make this work for now

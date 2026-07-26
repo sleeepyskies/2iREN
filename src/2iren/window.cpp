@@ -48,6 +48,7 @@ Window::Window(const WindowDescriptor& descriptor) {
     glfwSetMouseButtonCallback(m_handle, glfw_mouse_button_callback);
     glfwSetCursorPosCallback(m_handle, GLFWcursorposfun(glfw_mouse_move_callback));
     glfwSetScrollCallback(m_handle, GLFWscrollfun(glfw_scroll_callback));
+    glfwSetWindowSizeCallback(m_handle, glfw_window_resize_callback);
 
     // don't set vsync here, render thread should do this since its context dependent
 
@@ -187,6 +188,8 @@ auto Window::poll_events() const -> void {
     glfwPollEvents();
 }
 
+auto Window::on_resize(OnResizeCallback&& callback) -> void { m_resize_callback = std::move(callback); }
+
 auto Window::set_key_callback(KeyCallback&& callback) -> void { m_key_callback = std::move(callback); }
 auto Window::set_mouse_button_callback(MouseButtonCallback&& callback) -> void {
     m_mouse_button_callback = std::move(callback);
@@ -221,6 +224,13 @@ auto Window::glfw_scroll_callback(GLFWwindow* window, const f64 xoffset, const f
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_scroll_callback) {
         self->m_scroll_callback(glm::vec2{static_cast<f32>(xoffset), static_cast<f32>(yoffset)});
+    }
+}
+
+auto Window::glfw_window_resize_callback(GLFWwindow* window, const i32 w, const i32 h) -> void {
+    const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (self->m_resize_callback) {
+        self->m_resize_callback(glm::ivec2{static_cast<f32>(w), static_cast<f32>(h)});
     }
 }
 

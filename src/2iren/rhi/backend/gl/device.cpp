@@ -378,38 +378,33 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
 
     const auto swapchain_handle = m_state.swapchain_table.reserve();
 
-    m_render_thread.spawn([this, swapchain_handle = swapchain_handle, descriptor = descriptor]() -> void {
-        // first create the offscreen image
-        i32 width, height;
-        glfwGetFramebufferSize(m_primary_window.handle(), &width, &height);
-        auto image = create_image({
-            .label         = make_label(descriptor.label, "Swapchain Backbuffer").value_or("Swapchain Backbuffer"),
-            .format        = ImageFormat::RGBA8,
-            .extent        = ImageExtent{.width = (u32)width, .height = (u32)height, .depth_or_layers = 1},
-            .dimension     = ImageDimension::D2,
-            .mipmap_levels = 1,
+    auto image = create_image({
+        .label         = make_label(descriptor.label, "Swapchain Backbuffer").value_or("Swapchain Backbuffer"),
+        .format        = ImageFormat::RGBA8,
+        .extent        = ImageExtent{.width = descriptor.extent.x, .height = descriptor.extent.y, .depth_or_layers = 1},
+        .dimension     = ImageDimension::D2,
+        .mipmap_levels = 1,
+    });
+
+    auto attachment = ColorAttachment{
+        .image           = image.handle(),
+        .begin_operation = BeginOperation::Clear,
+        .clear_color     = Rgba::black(),
+    };
+
+    m_state.swapchain_table.link(swapchain_handle,
+        nullptr,
+        GlSwapchainDetails{
+            .descriptor    = descriptor,
+            .native_handle = m_primary_window.handle(),
+            .target =
+                GlSwapchainDetails::Target{
+                    .render_target = RenderTarget{.colors = {attachment}, .depth_stencil = std::nullopt},
+                    .image         = std::move(image),
+                },
         });
 
-        auto attachment = ColorAttachment{
-            .image           = image.handle(),
-            .begin_operation = BeginOperation::Clear,
-            .clear_color     = Rgba::black(),
-        };
-
-        m_state.swapchain_table.link(swapchain_handle,
-            nullptr,
-            GlSwapchainDetails{
-                .descriptor    = descriptor,
-                .native_handle = m_primary_window.handle(),
-                .target =
-                    GlSwapchainDetails::Target{
-                        .render_target = RenderTarget{.colors = {attachment}, .depth_stencil = std::nullopt},
-                        .image         = std::move(image),
-                    },
-            });
-
-        glfwSwapInterval(descriptor.vsync);
-    });
+    glfwSwapInterval(descriptor.vsync);
 
     log::trace("Created Swapchain {}", swapchain_handle);
     return Swapchain{this, swapchain_handle};
@@ -615,8 +610,6 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
 
 auto GlDevice::limits() const -> Limits { return Limits{}; }
 
-auto GlDevice::statistics() const -> Statistics {
-    return m_statistics.consume();
-}
+auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }
 
 } // namespace siren

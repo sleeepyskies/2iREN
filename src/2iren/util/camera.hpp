@@ -38,6 +38,8 @@ public:
     auto set_far(f32 far) noexcept -> void;
     auto set_fov(f32 fov) noexcept -> void;
 
+    auto look_at(const glm::vec3 point) -> void;
+
     /** @brief Returns the view matrix. This transforms world space to camera space. */
     [[nodiscard]] auto view() const noexcept -> glm::mat4;
     /** @brief Returns the projection matrix. This transforms view space to NDC. */

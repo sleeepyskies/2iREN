@@ -7,6 +7,9 @@
 #include "2iren/util/time.hpp"
 #include <stb_image.h>
 
+#include "2iren/sync/thread_pool.hpp"
+#include "2iren/window.hpp"
+
 #ifndef SIREN_ENGINE_ROOT
 #define SIREN_ENGINE_ROOT "."
 #endif
@@ -78,6 +81,15 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     FileSystem::mount("engine", engine_root);
 }
 
+auto Context::create(const ContextDescriptor& descriptor) -> Context {
+    static bool called = false;
+    if (called) {
+        throw std::runtime_error("Context already created.");
+    }
+    called = true;
+    return Context{ descriptor };
+}
+
 Context::~Context() {
     if constexpr (!SINGLE_THREADED) {
         ThreadPool::shutdown();
@@ -91,6 +103,10 @@ auto Context::create_device(const Window& window) const -> std::unique_ptr<Devic
         }
         default: UNREACHABLE("Invalid Backend.");
     }
+}
+
+auto Context::create_window(const WindowDescriptor& descriptor) const -> Window {
+    return Window{ descriptor };
 }
 
 } // namespace siren

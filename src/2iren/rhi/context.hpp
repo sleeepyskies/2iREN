@@ -2,35 +2,58 @@
 
 #include <memory>
 
-#include "2iren/util/log.hpp"
 #include "2iren/base.hpp"
+#include "2iren/util/log.hpp"
 #include "fwd.hpp"
-#include "2iren/asset/asset_server.hpp"
-
 
 namespace siren {
 
-// todo: maybe Context should be a struct holding AssetServer and Device and eventually Renderer?
-// so probable like a free function to create a siren context, with a ContextDescriptor,
-// then this context is a simple struct with all other objects as fields ig, so
-// create_context({ .server_config = std::nullopt, .render_config = { ... }, .debuug = true, })...
-// then ctx.asset_server.load(), ctx.renderer.begin(), ctx.device.create_buffer() etc
-
 /**
- * @brief Parameters used to instantiate the context.
+ * @brief Configuration parameters used to create a @ref Context instance.
  */
 struct ContextDescriptor {
-    /** @brief Whether to enable additional graphics API debug information. */
+    /**
+     * @brief Enables additional debug output from the graphics backend.
+     *
+     * When enabled, graphics API validation and debug messages may be emitted.
+     */
     bool debug;
-    /** @brief The desired log level. */
+
+    /**
+     * @brief Sets the minimum log severity level emitted by the framework.
+     */
     log::Level level;
-    /** @brief Which backend graphics API to select. */
+
+    /**
+     * @brief Selects the graphics backend used by the framework.
+     */
     Backend backend;
 };
 
+/**
+ * @class Context
+ * @brief The entry point and root object of the 2iren framework.
+ *
+ * A Context initializes the framework's global systems and provides factory
+ * functions for creating major objects.
+ *
+ * A Context should typically be created once during application startup and
+ * remain alive for the lifetime of the application.
+ */
 class Context {
 public:
-    explicit Context(const ContextDescriptor& descriptor);
+    /**
+     * @brief Creates a new framework context.
+     *
+     * @note This should only be called once!
+     * @param descriptor Configuration parameters controlling initialization.
+     * @return A fully initialized Context instance.
+     */
+    static auto create(const ContextDescriptor& descriptor) -> Context;
+
+    /**
+     * @brief Destroys the context and releases all owned resources.
+     */
     ~Context();
 
     Context(const Context&)            = delete;
@@ -38,9 +61,18 @@ public:
     Context(Context&&)                 = delete;
     Context& operator=(Context&&)      = delete;
 
+    /**
+     * @brief Creates a graphics device.
+     */
     [[nodiscard]] auto create_device(const Window& window) const -> std::unique_ptr<Device>;
 
+    /**
+     * @brief Creates a new window based on the provided descriptor.
+     */
+    [[nodiscard]] auto create_window(const WindowDescriptor& descriptor) const -> Window;
+
 private:
+    explicit Context(const ContextDescriptor& descriptor);
     ContextDescriptor m_descriptor;
 };
 
