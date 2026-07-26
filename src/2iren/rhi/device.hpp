@@ -6,6 +6,15 @@
 
 namespace siren {
 
+class Window;
+
+/**
+ * @brief Parameters used to instantiate a new @ref Device.
+ */
+struct DeviceDescriptor {
+    Window& window;
+};
+
 /**
  * @struct Statistics
  * @brief Collects statistics regarding the amount and types of operations

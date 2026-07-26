@@ -38,8 +38,6 @@ struct WindowDescriptor {
     u32 width = 1280;
     /** @brief The initial height of the window */
     u32 height = 720;
-    /** @brief If vsync is enabled. */
-    bool vsync = true;
     /** @brief If the window has a title bar. */
     bool decorated = true;
     /** @brief If the window is resizable. */

@@ -4,6 +4,7 @@
 
 #include "2iren/base.hpp"
 #include "2iren/util/log.hpp"
+#include "device.hpp"
 #include "fwd.hpp"
 
 namespace siren {
@@ -64,7 +65,7 @@ public:
     /**
      * @brief Creates a graphics device.
      */
-    [[nodiscard]] auto create_device(const Window& window) const -> std::unique_ptr<Device>;
+    [[nodiscard]] auto create_device(const DeviceDescriptor& descriptor) const -> std::unique_ptr<Device>;
 
     /**
      * @brief Creates a new window based on the provided descriptor.

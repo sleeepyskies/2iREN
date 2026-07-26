@@ -96,10 +96,10 @@ Context::~Context() {
     }
 }
 
-auto Context::create_device(const Window& window) const -> std::unique_ptr<Device> {
+auto Context::create_device(const DeviceDescriptor& descriptor) const -> std::unique_ptr<Device> {
     switch (m_descriptor.backend) {
         case Backend::OpenGL: {
-            return create_gl_device(window);
+            return create_gl_device(descriptor.window);
         }
         default: UNREACHABLE("Invalid Backend.");
     }
