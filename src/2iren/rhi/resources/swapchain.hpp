@@ -5,6 +5,8 @@
 
 namespace siren {
 
+class Window;
+
 /**
  * @struct SwapchainDescriptor
  * @brief Parameters used to create a new @ref Swapchain.
@@ -16,6 +18,8 @@ struct SwapchainDescriptor {
     bool vsync;
     /** @brief The size dimensions of the desired @ref Swapchain. */
     glm::uvec2 extent;
+    /** @brief The @ref Window to associate the @ref Swapchain with. */
+    Window* window;
 };
 
 /// @todo: swapchain shouldn't return a framebuffer but an image, but idk how else to make this work for now

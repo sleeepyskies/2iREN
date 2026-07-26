@@ -92,9 +92,10 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
     return framebuffer;
 }
 
-GlDevice::GlDevice(const Window& window) : m_primary_window(window), m_render_thread(window) {}
-
-GlDevice::~GlDevice() {}
+GlDevice::GlDevice(GLFWwindow* window) : m_render_thread([window] {
+    glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
+}) {}
 
 auto GlDevice::wait_until_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
 
@@ -396,7 +397,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
         nullptr,
         GlSwapchainDetails{
             .descriptor    = descriptor,
-            .native_handle = m_primary_window.handle(),
+            .native_handle = descriptor.window->handle(),
             .target =
                 GlSwapchainDetails::Target{
                     .render_target = RenderTarget{.colors = {attachment}, .depth_stencil = std::nullopt},

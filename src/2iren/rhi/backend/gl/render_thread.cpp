@@ -8,19 +8,14 @@
 
 namespace siren {
 
-static auto load_gl_function_pointers(GLFWwindow* window) -> void {
-    glfwMakeContextCurrent(window);
-    gladLoadGL(glfwGetProcAddress);
-}
-
-RenderThread::RenderThread(const Window& window) {
+RenderThread::RenderThread(SetupFunction&& setup) {
     if constexpr (SINGLE_THREADED) {
-        load_gl_function_pointers(window.handle());
+        setup();
         return;
     }
 
     auto inner    = m_inner.lock();
-    inner->thread = std::thread{ &RenderThread::run, this, window.handle()};
+    inner->thread = std::thread{ &RenderThread::run, this, std::move(setup)};
 }
 
 RenderThread::~RenderThread() {
@@ -60,8 +55,8 @@ auto RenderThread::wait_until_idle() const noexcept -> void {
     }
 }
 
-auto RenderThread::run(GLFWwindow* window) const -> void {
-    load_gl_function_pointers(window);
+auto RenderThread::run(SetupFunction&& setup) const -> void {
+    setup();
 
     while (true) {
         std::queue<RenderTask> local_tasks;

@@ -143,8 +143,8 @@ struct RenderResourceState {
 
 class GlDevice final : public Device {
 public:
-    explicit GlDevice(const Window& window);
-    ~GlDevice() override;
+    explicit GlDevice(GLFWwindow* window);
+    ~GlDevice() override = default;
 
     auto wait_until_idle() const noexcept -> void override;
 
@@ -190,12 +190,6 @@ public:
     [[nodiscard]] auto statistics() const -> Statistics override;
 
 private:
-    /**
-     * @brief Window used to init the device.
-     * @todo Kinda sucks we need this, maybe we can add some hidden default window?
-     */
-    const Window& m_primary_window;
-
     /**
      * @brief Enum listing all OpenGL GPU objects used.
      * @note We do not define a global enum for this, as different backends

@@ -21,8 +21,15 @@ class RenderThread {
 public:
     /** @brief A command to be computed on the RenderThread. */
     using RenderTask = std::move_only_function<void()>;
+    /**
+     * @brief A setup function that is used to initialize the @ref RenderThread.
+     *
+     * The reason we supply a function, is that different backends may have different ways
+     * to set up the render thread. A function allows the backend to choose how this is done.
+     */
+    using SetupFunction = std::function<void()>;
 
-    explicit RenderThread(const Window& window);
+    explicit RenderThread(SetupFunction&& setup);
     ~RenderThread();
 
     RenderThread(const RenderThread&)            = delete;
@@ -41,7 +48,7 @@ public:
 
 private:
     /** @brief Main worker loop. */
-    auto run(GLFWwindow* window) const -> void;
+    auto run(SetupFunction&& setup) const -> void;
 
     /** @brief Holds inner data. */
     struct Inner {

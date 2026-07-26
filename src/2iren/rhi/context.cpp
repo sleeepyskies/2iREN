@@ -26,7 +26,7 @@ static auto select_gl_backend() -> void {
 
 static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
     log::info("Creating an OpenGlDevice.");
-    return std::make_unique<GlDevice>(window);
+    return std::make_unique<GlDevice>(window.handle());
 }
 
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
