@@ -13,7 +13,6 @@
 ///       but maybe would be better to have a context or something that manages lifetime
 
 namespace siren {
-
 Window::Window(const WindowDescriptor& descriptor) {
     GLFWmonitor* monitor = nullptr;
     if (descriptor.initial_mode == WindowMode::Fullscreen) {
@@ -191,12 +190,15 @@ auto Window::poll_events() const -> void {
 auto Window::on_resize(OnResizeCallback&& callback) -> void { m_resize_callback = std::move(callback); }
 
 auto Window::set_key_callback(KeyCallback&& callback) -> void { m_key_callback = std::move(callback); }
+
 auto Window::set_mouse_button_callback(MouseButtonCallback&& callback) -> void {
     m_mouse_button_callback = std::move(callback);
 }
+
 auto Window::set_mouse_move_callback(MouseMoveCallback&& callback) -> void {
     m_mouse_move_callback = std::move(callback);
 }
+
 auto Window::set_scroll_callback(ScrollCallback&& callback) -> void { m_scroll_callback = std::move(callback); }
 
 void Window::glfw_key_callback(GLFWwindow* window, const i32 key, const i32, const i32 action, const i32) {
@@ -229,9 +231,9 @@ auto Window::glfw_scroll_callback(GLFWwindow* window, const f64 xoffset, const f
 
 auto Window::glfw_window_resize_callback(GLFWwindow* window, const i32 w, const i32 h) -> void {
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    self->m_size.set(glm::uvec2{w, h});
     if (self->m_resize_callback) {
         self->m_resize_callback(glm::ivec2{static_cast<f32>(w), static_cast<f32>(h)});
     }
 }
-
 } // namespace siren

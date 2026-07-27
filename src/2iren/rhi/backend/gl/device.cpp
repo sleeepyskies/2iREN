@@ -608,6 +608,7 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
             destination_desc.format,
             source_desc.format
         );
+        return;
     }
 
     if (destination_desc.extent != source_desc.extent) {
@@ -616,6 +617,7 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
             destination_desc.extent,
             source_desc.extent
         );
+        return;
     }
 
     m_render_thread.spawn([source_id, destination_id, source_desc = source_desc]() -> void {
