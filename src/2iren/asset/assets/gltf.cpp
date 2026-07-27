@@ -251,7 +251,7 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
     const auto get_texture = [&textures, &data](
                                  const cgltf_texture* texture) -> std::expected<StrongHandle<Texture>, AssetErrorCode> {
         const usize idx = texture - data->textures;
-        if (idx > textures.size()) {
+        if (idx >= textures.size()) {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
         }
         return textures[idx];
@@ -741,9 +741,9 @@ static auto load_nodes(const cgltf_data* data, const std::vector<StrongHandle<Me
     NameIDGenerator name_gen{.fallback = "Node_"};
 
     const auto get_transform = [](const cgltf_node& node) -> glm::mat4 {
-        f32 out[16];
-        cgltf_node_transform_local(&node, (cgltf_float*)out);
-        return glm::make_mat4(out);
+        glm::mat4 transform;
+        cgltf_node_transform_local(&node, glm::value_ptr(transform));
+        return transform;
     };
 
     const auto get_node_idx = [data](const cgltf_node* node_ptr) -> usize { return node_ptr - data->nodes; };
