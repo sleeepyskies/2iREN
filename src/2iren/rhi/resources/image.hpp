@@ -6,7 +6,6 @@
 #include "fwd.hpp"
 
 namespace siren {
-
 /** @brief Defines the amount of dimensions an @ref Image may have. */
 enum class ImageDimension {
     /** @brief A single dimensional image. */
@@ -27,31 +26,61 @@ struct ImageExtent {
     u32 height;
     /** @brief The desired amount of layers (for Image arrays) of depth (for 3D images) of the Image. */
     u32 depth_or_layers = 1;
+
+    /** @brief Equality comparison operator. */
+    [[nodiscard]] constexpr auto operator==(const ImageExtent& other) const -> bool = default;
+
+    /** @brief Stringifies the @ref ImageExtent. */
+    constexpr auto to_string() const noexcept -> std::string {
+        return std::format("ImageExtent({}x{}x{})", width, height, depth_or_layers);
+    }
 };
 
-/**
- * @brief The format of the image. Manages both the CPU layout and
- * how the texture is stored in VRAM.
- */
-enum class ImageFormat {
-    /** @brief Invalid or uninitialized format */
-    Unknown = 0,
-    /** @brief 1-channel 8-bit R. */
-    R8,
-    /** @brief 3-channel 8-bit linear RGB. */
-    RGB8,
-    /** @brief 3-channel 8-bit sRGB. */
-    sRGB8,
-    /** @brief 4-channel 8-bit linear RGBA. */
-    RGBA8,
-    /** @brief 4-channel 8-bit sRGB. */
-    sRGBA8,
-    /** @brief 3-channel 16-bit float HDR RGB. */
-    RGB16f,
-    /** @brief 2-channel 32-bit float HDR RG. */
-    RG32f,
-    /** @brief Depth-stencil format (24-bit depth, 8-bit stencil) */
-    Depth24Stencil8,
+class ImageFormat {
+public:
+    enum Value {
+        /** @brief Invalid or uninitialized format. */
+        Unknown = 0,
+        /** @brief 1-channel 8-bit R. */
+        R8,
+        /** @brief 3-channel 8-bit linear RGB. */
+        RGB8,
+        /** @brief 3-channel 8-bit sRGB. */
+        sRGB8,
+        /** @brief 4-channel 8-bit linear RGBA. */
+        RGBA8,
+        /** @brief 4-channel 8-bit sRGB. */
+        sRGBA8,
+        /** @brief 3-channel 16-bit float HDR RGB. */
+        RGB16f,
+        /** @brief 2-channel 32-bit float HDR RG. */
+        RG32f,
+        /** @brief Depth-stencil format (24-bit depth, 8-bit stencil). */
+        Depth24Stencil8,
+    } value;
+
+    // ReSharper disable once CppNonExplicitConvertingConstructor
+    constexpr ImageFormat(const Value v) : value(v) {}
+    constexpr ImageFormat() : value(Unknown) {}
+
+    // ReSharper disable once CppNonExplicitConversionOperator
+    constexpr operator Value() const { return value; }
+
+    /** @brief Stringifies the given ImageFormat. */
+    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
+        switch (value) {
+            case Unknown: return "Unknown";
+            case R8: return "R8";
+            case RGB8: return "RGB8";
+            case sRGB8: return "sRGB8";
+            case RGBA8: return "RGBA8";
+            case sRGBA8: return "sRGBA8";
+            case RGB16f: return "RGB16f";
+            case RG32f: return "RG32f";
+            case Depth24Stencil8: return "Depth24Stencil8";
+            default: UNREACHABLE();
+        }
+    }
 };
 
 /**
@@ -85,5 +114,4 @@ public:
     /** @brief Returns the descriptor of this Image. */
     [[nodiscard]] auto descriptor() const noexcept -> const ImageDescriptor&;
 };
-
 } // namespace siren

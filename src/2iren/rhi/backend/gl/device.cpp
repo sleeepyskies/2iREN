@@ -19,8 +19,7 @@
 #include "util.hpp"
 
 namespace siren {
-
-// todo: add logging
+// todo: add error logging
 
 constexpr GLuint GL_DEFAULT_FRAMEBUFFER = 0;
 
@@ -87,7 +86,7 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
     glNamedFramebufferDrawBuffers(framebuffer, draw_buffers.size(), draw_buffers.data());
 
     ASSERT(glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
-        "Framebuffer could not be created.");
+           "Framebuffer could not be created.");
 
     return framebuffer;
 }
@@ -130,9 +129,9 @@ auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
         mapped_buffer.size = descriptor.size;
         if (descriptor.usage == BufferUsage::Stream) {
             mapped_buffer.ptr = glMapNamedBufferRange(buf,
-                0,
-                static_cast<GLsizeiptr>(descriptor.size),
-                GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
+                                                      0,
+                                                      static_cast<GLsizeiptr>(descriptor.size),
+                                                      GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT);
         }
 
         // link proxy handle to opengl handle
@@ -155,7 +154,7 @@ auto GlDevice::destroy_buffer(const BufferHandle handle) -> void {
 
 auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
     ASSERT(descriptor.extent.width > 0 && descriptor.extent.height > 0 && descriptor.extent.depth_or_layers > 0,
-        "Cannot create an empty image.");
+           "Cannot create an empty image.");
     const auto image_handle = m_state.image_table.reserve();
     m_render_thread.spawn([image_handle, descriptor, this] {
         const auto target = gl::img_to_target_gl(descriptor.extent, descriptor.dimension);
@@ -167,9 +166,9 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
         // optionally name it
         if (descriptor.label.has_value()) {
             glObjectLabel(GL_TEXTURE,
-                img,
-                static_cast<GLsizei>(descriptor.label.value().size()),
-                descriptor.label.value().data());
+                          img,
+                          static_cast<GLsizei>(descriptor.label.value().size()),
+                          descriptor.label.value().data());
         }
 
         const auto internal_format = gl::img_format_to_gl_internal(descriptor.format);
@@ -179,28 +178,28 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
         switch (target) {
             case GL_TEXTURE_1D:
                 glTextureStorage1D(img,
-                    static_cast<GLsizei>(descriptor.mipmap_levels),
-                    internal_format,
-                    static_cast<GLsizei>(extent.width));
+                                   static_cast<GLsizei>(descriptor.mipmap_levels),
+                                   internal_format,
+                                   static_cast<GLsizei>(extent.width));
                 break;
             case GL_TEXTURE_1D_ARRAY:
             case GL_TEXTURE_2D:
             case GL_TEXTURE_CUBE_MAP: // Cubemaps use 2D storage
                 glTextureStorage2D(img,
-                    static_cast<GLsizei>(descriptor.mipmap_levels),
-                    internal_format,
-                    static_cast<GLsizei>(extent.width),
-                    static_cast<GLsizei>(extent.height));
+                                   static_cast<GLsizei>(descriptor.mipmap_levels),
+                                   internal_format,
+                                   static_cast<GLsizei>(extent.width),
+                                   static_cast<GLsizei>(extent.height));
                 break;
             case GL_TEXTURE_2D_ARRAY:
             case GL_TEXTURE_3D:
             case GL_TEXTURE_CUBE_MAP_ARRAY:
                 glTextureStorage3D(img,
-                    static_cast<GLsizei>(descriptor.mipmap_levels),
-                    internal_format,
-                    static_cast<GLsizei>(extent.width),
-                    static_cast<GLsizei>(extent.height),
-                    static_cast<GLsizei>(extent.depth_or_layers));
+                                   static_cast<GLsizei>(descriptor.mipmap_levels),
+                                   internal_format,
+                                   static_cast<GLsizei>(extent.width),
+                                   static_cast<GLsizei>(extent.height),
+                                   static_cast<GLsizei>(extent.depth_or_layers));
                 break;
             default: PANIC("Unsupported texture target");
         }
@@ -229,8 +228,9 @@ auto GlDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
         GLuint sampler;
         glCreateSamplers(1, &sampler);
         glSamplerParameteri(sampler,
-            GL_TEXTURE_MIN_FILTER,
-            static_cast<GLint>(gl::min_img_filter_to_gl(descriptor.min_filter, descriptor.mipmap_filter)));
+                            GL_TEXTURE_MIN_FILTER,
+                            static_cast<GLint>(
+                                gl::min_img_filter_to_gl(descriptor.min_filter, descriptor.mipmap_filter)));
         glSamplerParameteri(
             sampler, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(gl::img_filter_to_gl(descriptor.min_filter)));
 
@@ -243,8 +243,9 @@ auto GlDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
 
         if (descriptor.border_color.has_value()) {
             glSamplerParameterfv(sampler,
-                GL_TEXTURE_BORDER_COLOR,
-                reinterpret_cast<const GLfloat*>(glm::value_ptr(descriptor.border_color.value().to_vec4())));
+                                 GL_TEXTURE_BORDER_COLOR,
+                                 reinterpret_cast<const GLfloat*>(glm::value_ptr(
+                                     descriptor.border_color.value().to_vec4())));
         }
 
         glSamplerParameteri(sampler, GL_TEXTURE_COMPARE_MODE, gl::img_compare_mode_to_gl(descriptor.compare_mode));
@@ -299,9 +300,9 @@ auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
             // optionally label the shader
             if (stage_data.label.has_value()) {
                 glObjectLabel(GL_SHADER,
-                    shader,
-                    static_cast<GLsizei>(stage_data.label.value().size()),
-                    stage_data.label.value().c_str());
+                              shader,
+                              static_cast<GLsizei>(stage_data.label.value().size()),
+                              stage_data.label.value().c_str());
             }
 
             shader_ids.push_back(shader);
@@ -351,9 +352,9 @@ auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
         // optionally label the shader program
         if (descriptor.label.has_value()) {
             glObjectLabel(GL_PROGRAM,
-                program,
-                static_cast<GLsizei>(descriptor.label.value().size()),
-                descriptor.label.value().data());
+                          program,
+                          static_cast<GLsizei>(descriptor.label.value().size()),
+                          descriptor.label.value().data());
         }
 
         this->m_state.shader_table.link(
@@ -394,16 +395,18 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
     };
 
     m_state.swapchain_table.link(swapchain_handle,
-        nullptr,
-        GlSwapchainDetails{
-            .descriptor    = descriptor,
-            .native_handle = descriptor.window->handle(),
-            .target =
-                GlSwapchainDetails::Target{
-                    .render_target = RenderTarget{.colors = {attachment}, .depth_stencil = std::nullopt},
-                    .image         = std::move(image),
-                },
-        });
+                                 nullptr,
+                                 GlSwapchainDetails{
+                                     .descriptor    = descriptor,
+                                     .native_handle = descriptor.window->handle(),
+                                     .target        =
+                                     GlSwapchainDetails::Target{
+                                         .render_target = RenderTarget{
+                                             .colors = {attachment}, .depth_stencil = std::nullopt
+                                         },
+                                         .image = std::move(image),
+                                     },
+                                 });
 
     glfwSwapInterval(descriptor.vsync);
 
@@ -430,9 +433,9 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
         // optionally label the vertex array
         if (descriptor.label.has_value()) {
             glObjectLabel(GL_VERTEX_ARRAY,
-                vertex_array,
-                static_cast<GLsizei>(descriptor.label.value().size()),
-                descriptor.label.value().data());
+                          vertex_array,
+                          static_cast<GLsizei>(descriptor.label.value().size()),
+                          descriptor.label.value().data());
         }
 
         for (const auto& [index, attribute] : descriptor.layout.components | views::enumerate) {
@@ -442,11 +445,11 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
             // describe the element
             // todo: stride should be in the somewhere else now :D
             glVertexArrayAttribFormat(vertex_array,
-                static_cast<GLuint>(index),
-                static_cast<GLint>(attribute.size),
-                gl::siren_datatype_to_gl(attribute.type),
-                false, // attribute.normalized,
-                static_cast<GLuint>(attribute.offset));
+                                      static_cast<GLuint>(index),
+                                      static_cast<GLint>(attribute.size),
+                                      gl::siren_datatype_to_gl(attribute.type),
+                                      false, // attribute.normalized,
+                                      static_cast<GLuint>(attribute.offset));
 
             // link all attributes to binding index 0 for this vao.
             // use of multiple binding indices bay be useful when data
@@ -594,9 +597,26 @@ auto GlDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) 
 
 auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) const -> void {
     // opengl doesn't have image blitting, so we get_create() cached fbos for images and then blit between the fbos.
-    const auto source_id      = m_state.image_table.fetch(source);
-    const auto destination_id = m_state.image_table.fetch(destination);
-    const auto& source_desc   = m_state.image_table.details(source).descriptor;
+    const auto source_id         = m_state.image_table.fetch(source);
+    const auto destination_id    = m_state.image_table.fetch(destination);
+    const auto& source_desc      = m_state.image_table.details(source).descriptor;
+    const auto& destination_desc = m_state.image_table.details(destination).descriptor;
+
+    if (destination_desc.format != source_desc.format) {
+        log::warn(
+            "Issue with requested image blit, source and destination image formats do not match ({} != {}). Ignoring call.",
+            destination_desc.format,
+            source_desc.format
+        );
+    }
+
+    if (destination_desc.extent != source_desc.extent) {
+        log::warn(
+            "Issue with requested image blit, source and destination image extents do not match ({} != {}). Ignoring call.",
+            destination_desc.extent,
+            source_desc.extent
+        );
+    }
 
     m_render_thread.spawn([source_id, destination_id, source_desc = source_desc]() -> void {
         // clang-format off
@@ -612,5 +632,4 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
 auto GlDevice::limits() const -> Limits { return Limits{}; }
 
 auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }
-
 } // namespace siren
