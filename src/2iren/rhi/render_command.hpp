@@ -30,6 +30,9 @@ enum class RenderCommandType : u8 {
     BindSampledImage,
     BindStorageImage,
 
+    BeginQuery,
+    EndQuery,
+
     DrawArrays,
     DrawIndexed,
 };
@@ -127,6 +130,22 @@ struct BindStorageImage {
 };
 
 /**
+ * @brief Begins recording into a @ref Query.
+ */
+struct BeginQuery {
+    /** @brief The @ref Query to begin. */
+    QueryHandle query;
+};
+
+/**
+ * @brief Ends recording into a @ref Query.
+ */
+struct EndQuery {
+    /** @brief The @ref Query to end. */
+    QueryHandle query;
+};
+
+/**
  * @brief Performs a non indexed draw call.
  */
 struct DrawArrays {
@@ -159,6 +178,8 @@ struct RenderCommand {
         BindUniformBufferRange bind_uniform_buffer_range;
         BindSampledImage bind_sampled_image;
         BindStorageImage bind_storage_image;
+        BeginQuery begin_query;
+        EndQuery end_query;
         DrawArrays draw_arrays;
         DrawIndexed draw_indexed;
     } command;
@@ -184,6 +205,10 @@ struct RenderCommand {
             return command.bind_sampled_image;
         } else if constexpr (std::is_same_v<Command, BindStorageImage>) {
             return command.bind_storage_image;
+        } else if constexpr (std::is_same_v<Command, BeginQuery>) {
+            return command.begin_query;
+        } else if constexpr (std::is_same_v<Command, EndQuery>) {
+            return command.end_query;
         } else if constexpr (std::is_same_v<Command, DrawArrays>) {
             return command.draw_arrays;
         } else if constexpr (std::is_same_v<Command, DrawIndexed>) {
@@ -298,6 +323,18 @@ public:
      * @param slot The slot to bind to.
      */
     auto bind_storage_image(ImageHandle image, u32 slot) noexcept -> void;
+
+    /**
+     * @brief Begins recording query information.
+     * @param handle The @ref Query to begin recording information into.
+     */
+    auto begin_query(const QueryHandle handle) noexcept -> void;
+
+    /**
+     * @brief Ends recording query information.
+     * @param handle The @ref Query to end recording information into.
+     */
+    auto end_query(const QueryHandle handle) noexcept -> void;
 
     /**
      * @brief Draws from the currently bound vertex buffer(s) non indexed.

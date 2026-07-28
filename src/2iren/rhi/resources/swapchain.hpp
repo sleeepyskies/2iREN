@@ -22,8 +22,6 @@ struct SwapchainDescriptor {
     Window* window;
 };
 
-/// @todo: swapchain shouldn't return a framebuffer but an image, but idk how else to make this work for now
-
 /**
  * @class Swapchain
  * @brief A collection of images tied to a specific @ref Window. Used to present images to the screen.

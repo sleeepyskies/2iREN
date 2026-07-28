@@ -200,6 +200,11 @@ public:
     /** @brief Queues the given @ref Swapchain for deletion. */
     virtual auto destroy_swapchain(SwapchainHandle handle) -> void = 0;
 
+    /** @brief Creates and returns a new @ref Query given. */
+    [[nodiscard]] virtual auto create_query(const QueryDescriptor& descriptor) -> Query = 0;
+    /** @brief Queues the given @ref Query for deletion. */
+    virtual auto destroy_query(QueryHandle handle) -> void = 0;
+
     /** @brief Flushes the delete queue of the device. Must be called once a frame. */
     virtual auto flush_delete_queue() -> void = 0;
 
@@ -243,6 +248,8 @@ public:
         -> const GraphicsPipelineDescriptor& = 0;
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;
+    /** @brief Returns the @ref QueryDescriptor associated with this handle. */
+    [[nodiscard]] virtual auto query_descriptor(const QueryHandle handle) const -> const QueryDescriptor& = 0;
 
     /** @brief Returns the next @ref Image target managed by this framebuffer to render to. */
     [[nodiscard]] virtual auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle = 0;

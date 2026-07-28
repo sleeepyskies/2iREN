@@ -289,6 +289,14 @@ auto GlCommandExecutor::execute_pass(
                 bind_storage_image(cmd.as<BindStorageImage>());
                 break;
             }
+            case RenderCommandType::BeginQuery: {
+                begin_query(cmd.as<BeginQuery>());
+                break;
+            }
+            case RenderCommandType::EndQuery: {
+                end_query(cmd.as<EndQuery>());
+                break;
+            }
             case RenderCommandType::DrawArrays: {
                 draw_arrays(cmd.as<DrawArrays>());
                 break;
@@ -451,6 +459,19 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
     );
 }
 
+auto GlCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void {
+    const auto kind = m_state.query_table.details(begin_query.query).descriptor.kind;
+    const auto apihandle = m_state.query_table.fetch(begin_query.query);
+    const auto apikind = gl::query_kind_to_gl(kind);
+    glBeginQuery(apihandle, apikind);
+}
+
+auto GlCommandExecutor::end_query(const EndQuery& end_query) const -> void {
+    const auto kind = m_state.query_table.details(end_query.query).descriptor.kind;
+    const auto apikind = gl::query_kind_to_gl(kind);
+    glEndQuery(apikind);
+}
+
 auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
     m_statistics.count_draw_arrays++;
     m_statistics.count_draw_calls++;
@@ -475,8 +496,7 @@ auto GlCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> v
         mode,
         static_cast<GLsizei>(draw_indexed.index_count),
         type,
-        reinterpret_cast<const void*>(draw_indexed.first_index * m_tracked_state.active_ibo.index_format.
-            size_bytes())
+        reinterpret_cast<const void*>(draw_indexed.first_index * m_tracked_state.active_ibo.index_format.size_bytes())
     );
 }
 } // namespace siren

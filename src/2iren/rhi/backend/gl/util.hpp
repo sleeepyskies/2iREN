@@ -14,7 +14,6 @@
 #include "2iren/rhi/resources/shader.hpp"
 
 namespace siren::gl {
-
 /**
  * @brief Converts a 2iren @ref ImageFilterMode to a standard OpenGL filter constant.
  * @param mode The filter mode.
@@ -225,6 +224,7 @@ constexpr auto img_compare_fn_to_siren(const GLenum func) -> ImageCompareFn {
         default: UNREACHABLE();
     }
 }
+
 /**
  * @brief Maps Siren image dimensions and extent to OpenGL texture targets.
  * Works as follows:
@@ -402,4 +402,15 @@ constexpr auto siren_datatype_to_gl(const DataType type) -> GLenum {
     UNREACHABLE();
 }
 
+/**
+ * @brief Converts a siren @ref QueryKind to its OpenGL equivalent.
+ */
+constexpr auto query_kind_to_gl(const QueryKind kind) -> GLenum {
+    switch (kind) {
+        case QueryKind::SamplesPassed: return GL_SAMPLES_PASSED;
+        case QueryKind::AnySamplesPassed: return GL_ANY_SAMPLES_PASSED;
+        case QueryKind::TimeElapsed: GL_TIME_ELAPSED;
+        default: UNREACHABLE();
+    }
+}
 } // namespace siren::gl

@@ -69,6 +69,10 @@ private:
     auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void;
     /** @brief Handles @ref BindStorageImage. */
     auto bind_storage_image(const BindStorageImage& bind_storage_image) const -> void;
+    /** @brief Handles @ref BeginQuery. */
+    auto begin_query(const BeginQuery& begin_query) const -> void;
+    /** @brief Handles @ref EndQuery. */
+    auto end_query(const EndQuery& end_query) const -> void;
     /** @brief Handles @ref DrawArrays. */
     auto draw_arrays(const DrawArrays& draw_arrays) const -> void;
     /** @brief Handles @ref DrawIndexed. */

@@ -11,6 +11,7 @@
 #include "2iren/rhi/resources/shader.hpp"
 #include "2iren/rhi/resources/swapchain.hpp"
 #include "render_thread.hpp"
+#include "2iren/rhi/resources/query.hpp"
 
 namespace siren {
 
@@ -81,6 +82,11 @@ struct GlSwapchainDetails {
     std::optional<Target> target; // assume is always set, used over unique ptr
 };
 
+struct GlQueryDetails {
+    /** @brief The descriptor of the @ref Query. */
+    QueryDescriptor descriptor;
+};
+
 /**
  * @class FramebufferCache
  * @brief Used to cache and retrieve FBOs for the OpenGL backend. Since FBOs are vk/gl specific,
@@ -137,6 +143,8 @@ struct RenderResourceState {
      * @note GL doesn't have an exposed concept of a swapchain, so we store a meaningless void* here.
      */
     RenderResourceTable<void*, Swapchain, GlSwapchainDetails> swapchain_table;
+    /** @brief Query handle storage. */
+    RenderResourceTable<GLuint, Query, GlQueryDetails> query_table;
     /** @brief Manages fetching cached OpenGL framebuffers based on images. */
     mutable FramebufferCache framebuffer_cache{image_table};
 };
@@ -167,6 +175,10 @@ public:
         -> GraphicsPipeline override;
     auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void override;
 
+    [[nodiscard]] auto create_query(const QueryDescriptor& descriptor) -> Query override;
+    auto destroy_query(QueryHandle handle) -> void override;
+
+
     auto flush_delete_queue() -> void override;
 
     [[nodiscard]] auto record_resource_commands() const -> ResourceCommandRecorder override;
@@ -181,6 +193,7 @@ public:
     [[nodiscard]] auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
         -> const GraphicsPipelineDescriptor& override;
     [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
+    [[nodiscard]] auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle override;
     auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void override;
@@ -203,6 +216,7 @@ private:
         Framebuffer,
         Shader,
         GraphicsPipeline,
+        Query,
     };
 
     /** @brief The main worker thread for all rendering work. */

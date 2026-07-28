@@ -29,4 +29,8 @@ class Swapchain;
 struct SwapchainDescriptor;
 using SwapchainHandle = ResourceHandle<Swapchain>;
 
+class Query;
+struct QueryDescriptor;
+using QueryHandle = ResourceHandle<Query>;
+
 } // namespace siren {
