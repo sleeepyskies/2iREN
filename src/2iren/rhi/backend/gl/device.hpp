@@ -186,7 +186,7 @@ public:
     auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void override;
     auto blit(ImageHandle source, ImageHandle destination) const -> void override;
 
-    [[nodiscard]] auto limits() const -> Limits override;
+    [[nodiscard]] auto limits() const -> const Limits& override;
     [[nodiscard]] auto statistics() const -> Statistics override;
 
 private:
@@ -224,6 +224,9 @@ private:
 
     /** @brief Copy of the statistics. */
     mutable Mutex<Statistics> m_statistics{};
+
+    /** @brief Cached limits which are fetched once on startup. */
+    Limits m_limits;
 };
 
 } // namespace siren

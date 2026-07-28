@@ -8,7 +8,6 @@
 
 
 namespace siren {
-
 /**
  * @class ByteBuffer
  * @brief Utility class for uploading various data types to a packed binary buffer.
@@ -92,6 +91,21 @@ public:
     }
 
     /**
+     * @brief Appends an object as raw bytes.
+     * @tparam T The type of the item to serialize, must be trivially copyable.
+     * @param item The item to serialize.
+     * @param align_as To what byte size to align the item as. Must be >= sizeof(T).
+     */
+    template <IsCopyable T>
+    auto append(const T& item, const usize align_as) -> void {
+        ASSERT(align_as >= sizeof(T));
+        const auto* bytes = reinterpret_cast<const u8*>(&item);
+        m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
+        const auto padding = align_as - sizeof(T);
+        m_data.resize(m_data.size() + padding, u8{0});
+    }
+
+    /**
      * @brief Appends multiple objects to the buffer.
      * @tparam T The type of the items to serialize, must be trivially copyable.
      * @param items The items to serialize.
@@ -149,7 +163,7 @@ public:
     }
 
 private:
-    std::vector<u8> m_data{ };
+    std::vector<u8> m_data{};
 
     /**
      * @brief Ensures buffer size is a multiple of sizeof(T).
@@ -163,5 +177,4 @@ private:
     template <typename T>
     auto assert_alignment() -> void { ASSERT(reinterpret_cast<uintptr_t>(raw()) % alignof(T) == 0); }
 };
-
 } // namespace siren

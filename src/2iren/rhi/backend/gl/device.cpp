@@ -25,6 +25,76 @@ constexpr GLuint GL_DEFAULT_FRAMEBUFFER = 0;
 
 using namespace siren;
 
+static auto fetch_limits() -> Limits {
+    Limits limits{};
+
+    GLint value = 0;
+
+    glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &value);
+    limits.max_uniform_buffer_bindings = value;
+
+    glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &value);
+    limits.max_shader_storage_buffer_bindings = value;
+
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &value);
+    limits.max_uniform_block_size = value;
+
+    glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &value);
+    limits.max_shader_storage_block_size = value;
+
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &value);
+    limits.uniform_buffer_offset_alignment = value;
+
+    glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &value);
+    limits.shader_storage_buffer_offset_alignment = value;
+
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &value);
+    limits.max_vertex_attributes = value;
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value);
+    limits.max_texture_size = value;
+
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &value);
+    limits.max_array_texture_layers = value;
+
+    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &value);
+    limits.max_texture_units = value;
+
+    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &value);
+    limits.max_color_attachments = value;
+
+    glGetIntegerv(GL_MAX_DRAW_BUFFERS, &value);
+    limits.max_draw_buffers = value;
+
+    glGetIntegerv(GL_MAX_SAMPLES, &value);
+    limits.max_samples = value;
+
+    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &value);
+    limits.max_compute_work_group_invocations = value;
+
+    GLint values[3];
+
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &values[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &values[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &values[2]);
+    limits.max_compute_work_group_count = {
+        static_cast<u32>(values[0]),
+        static_cast<u32>(values[1]),
+        static_cast<u32>(values[2])
+    };
+
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &values[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &values[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &values[2]);
+    limits.max_compute_work_group_size = {
+        static_cast<u32>(values[0]),
+        static_cast<u32>(values[1]),
+        static_cast<u32>(values[2])
+    };
+
+    return limits;
+}
+
 /// helper to create an optional label of form "prefix-suffix"
 static auto make_label(const std::optional<std::string>& prefix, const std::string_view suffix)
     -> std::optional<std::string> {
@@ -94,7 +164,11 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
 GlDevice::GlDevice(GLFWwindow* window) : m_render_thread([window] {
     glfwMakeContextCurrent(window);
     gladLoadGL(glfwGetProcAddress);
-}) {}
+}) {
+    m_render_thread.spawn([this]() {
+        m_limits = fetch_limits();
+    });
+}
 
 auto GlDevice::wait_until_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
 
@@ -631,7 +705,7 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
     });
 }
 
-auto GlDevice::limits() const -> Limits { return Limits{}; }
+auto GlDevice::limits() const -> const Limits& { return m_limits; }
 
 auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }
 } // namespace siren

@@ -5,7 +5,6 @@
 #include "resources/fwd.hpp"
 
 namespace siren {
-
 class Window;
 
 /**
@@ -48,17 +47,17 @@ struct Statistics {
 
     auto operator+=(const Statistics& rhs) noexcept -> Statistics& {
         count_bind_graphics_pipeline += rhs.count_bind_graphics_pipeline;
-        count_set_viewport += rhs.count_set_viewport;
-        count_bind_vertex_buffer += rhs.count_bind_vertex_buffer;
-        count_bind_index_buffer += rhs.count_bind_index_buffer;
-        count_bind_uniform_buffer += rhs.count_bind_uniform_buffer;
-        count_bind_sampled_image += rhs.count_bind_sampled_image;
-        count_bind_storage_image += rhs.count_bind_storage_image;
-        count_draw_arrays += rhs.count_draw_arrays;
-        count_draw_indexed += rhs.count_draw_indexed;
-        count_upload_buffer += rhs.count_upload_buffer;
-        count_upload_image += rhs.count_upload_image;
-        count_draw_calls += rhs.count_draw_calls;
+        count_set_viewport           += rhs.count_set_viewport;
+        count_bind_vertex_buffer     += rhs.count_bind_vertex_buffer;
+        count_bind_index_buffer      += rhs.count_bind_index_buffer;
+        count_bind_uniform_buffer    += rhs.count_bind_uniform_buffer;
+        count_bind_sampled_image     += rhs.count_bind_sampled_image;
+        count_bind_storage_image     += rhs.count_bind_storage_image;
+        count_draw_arrays            += rhs.count_draw_arrays;
+        count_draw_indexed           += rhs.count_draw_indexed;
+        count_upload_buffer          += rhs.count_upload_buffer;
+        count_upload_image           += rhs.count_upload_image;
+        count_draw_calls             += rhs.count_draw_calls;
         return *this;
     }
 
@@ -70,10 +69,87 @@ struct Statistics {
 
 /**
  * @brief Defines the hardware limits of the current backend.
- * @todo impl this
  */
 struct Limits {
-    u32 max_buffer_slots;
+    /**
+     * @brief Maximum number of uniform buffer binding points.
+     */
+    u32 max_uniform_buffer_bindings;
+
+    /**
+     * @brief Maximum number of shader storage buffer binding points.
+     */
+    u32 max_shader_storage_buffer_bindings;
+
+    /**
+     * @brief Maximum size, in bytes, of a single uniform block.
+     */
+    u32 max_uniform_block_size;
+
+    /**
+     * @brief Maximum size, in bytes, of a single shader storage block.
+     */
+    u32 max_shader_storage_block_size;
+
+    /**
+     * @brief Required byte alignment for uniform buffer binding offsets.
+     */
+    u32 uniform_buffer_offset_alignment;
+
+    /**
+     * @brief Required byte alignment for shader storage buffer binding offsets.
+     */
+    u32 shader_storage_buffer_offset_alignment;
+
+    /**
+     * @brief Maximum number of vertex attributes supported by the pipeline.
+     */
+    u32 max_vertex_attributes;
+
+    /**
+     * @brief Maximum width or height of a 2D texture, in texels.
+     */
+    u32 max_texture_size;
+
+    /**
+     * @brief Maximum number of layers in a texture array.
+     */
+    u32 max_array_texture_layers;
+
+    /**
+     * @brief Maximum number of texture units accessible across all shader stages.
+     */
+    u32 max_texture_units;
+
+    /**
+     * @brief Maximum number of color attachments supported by a framebuffer.
+     */
+    u32 max_color_attachments;
+
+    /**
+     * @brief Maximum number of color attachments that can be written to in a single draw call.
+     */
+    u32 max_draw_buffers;
+
+    /**
+     * @brief Maximum supported multisample sample count.
+     */
+    u32 max_samples;
+
+    /**
+     * @brief Maximum number of local invocations in a compute work group.
+     */
+    u32 max_compute_work_group_invocations;
+
+    /**
+     * @brief Maximum work group counts along the X, Y, and Z dimensions.
+     */
+    glm::uvec3 max_compute_work_group_count;
+
+    /**
+     * @brief Maximum local work group sizes along the X, Y, and Z dimensions.
+     */
+    glm::uvec3 max_compute_work_group_size;
 };
 
 using OverlayFunction = std::function<void()>;
@@ -180,10 +256,9 @@ public:
     virtual auto blit(ImageHandle source, ImageHandle destination) const -> void = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
-    [[nodiscard]] virtual auto limits() const -> Limits = 0;
+    [[nodiscard]] virtual auto limits() const -> const Limits& = 0;
 
     /** @brief Returns the accumulated rendering backend statistics since the last time this function was called. */
     [[nodiscard]] virtual auto statistics() const -> Statistics = 0;
 };
-
 } // namespace siren

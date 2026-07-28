@@ -63,6 +63,8 @@ private:
     auto bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const -> void;
     /** @brief Handles @ref BindUniformBuffer. */
     auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void;
+    /** @brief Handles @ref BindUniformBufferRange. */
+    auto bind_uniform_buffer_range(const BindUniformBufferRange& bind_uniform_buffer_range) const -> void;
     /** @brief Handles @ref BindSampledImage. */
     auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void;
     /** @brief Handles @ref BindStorageImage. */

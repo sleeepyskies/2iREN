@@ -25,6 +25,7 @@ enum class RenderCommandType : u8 {
     BindVertexBuffer,
     BindIndexBuffer,
     BindUniformBuffer,
+    BindUniformBufferRange,
 
     BindSampledImage,
     BindStorageImage,
@@ -88,6 +89,20 @@ struct BindUniformBuffer {
 };
 
 /**
+ * @brief Binds a subsection of a uniform buffer.
+ */
+struct BindUniformBufferRange {
+    /** @brief The buffer to bind. */
+    BufferHandle uniform_buffer;
+    /** @brief The slot to bind to. */
+    u32 slot;
+    /** @brief The offset in bytes into the buffer to begin the binding range. */
+    usize offset;
+    /** @brief The size of the sub binding range. */
+    usize size;
+};
+
+/**
  * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap sampling.
  * This also allows only for read access and uses texture coordinates instead of pixel coordinates.
  */
@@ -141,6 +156,7 @@ struct RenderCommand {
         BindVertexBuffer bind_vertex_buffer;
         BindIndexBuffer bind_index_buffer;
         BindUniformBuffer bind_uniform_buffer;
+        BindUniformBufferRange bind_uniform_buffer_range;
         BindSampledImage bind_sampled_image;
         BindStorageImage bind_storage_image;
         DrawArrays draw_arrays;
@@ -162,6 +178,8 @@ struct RenderCommand {
             return command.bind_index_buffer;
         } else if constexpr (std::is_same_v<Command, BindUniformBuffer>) {
             return command.bind_uniform_buffer;
+        } else if constexpr (std::is_same_v<Command, BindUniformBufferRange>) {
+            return command.bind_uniform_buffer_range;
         } else if constexpr (std::is_same_v<Command, BindSampledImage>) {
             return command.bind_sampled_image;
         } else if constexpr (std::is_same_v<Command, BindStorageImage>) {
@@ -256,6 +274,15 @@ public:
      * @param slot The slot to bind to.
      */
     auto bind_uniform_buffer(BufferHandle uniform_buffer, u32 slot) noexcept -> void;
+
+    /**
+     * @brief Binds a sub range of a Uniform Buffer to the given slot.
+     * @param uniform_buffer The @ref Buffer to bind to the slot.
+     * @param slot The slot to bind to.
+     * @param offset The offset into the buffer to start from.
+     * @param size The size of the sub range to bind.
+     */
+    auto bind_uniform_buffer_range(BufferHandle uniform_buffer, u32 slot, usize offset, usize size) noexcept -> void;
 
     /**
      * @brief Binds an @ref Image to the given slot for sampled access.

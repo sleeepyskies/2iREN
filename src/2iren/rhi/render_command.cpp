@@ -1,7 +1,6 @@
 #include "render_command.hpp"
 
 namespace siren {
-
 // ============================================================================
 // == MARK: RenderPassRecorder
 // ============================================================================
@@ -16,21 +15,27 @@ auto RenderPassRecorder::bind_graphics_pipeline(const GraphicsPipelineHandle pip
         return;
     }
 
-    m_commands.emplace_back(RenderCommand{.command = {.bind_graphics_pipeline = {.pipeline_handle = pipeline_handle}},
-        .type                                      = RenderCommandType::BindGraphicsPipeline});
+    m_commands.emplace_back(RenderCommand{
+        .command = {.bind_graphics_pipeline = {.pipeline_handle = pipeline_handle}},
+        .type    = RenderCommandType::BindGraphicsPipeline
+    });
 
     m_active_pipeline = pipeline_handle;
 }
 
 auto RenderPassRecorder::set_viewport(const u32 x, const u32 y, const u32 width, const u32 height) noexcept -> void {
-    m_commands.emplace_back(RenderCommand{.command = {.set_viewport =
-                                                          {
-                                                              .x      = x,
-                                                              .y      = y,
-                                                              .width  = width,
-                                                              .height = height,
-                                                          }},
-        .type                                      = RenderCommandType::SetViewport});
+    m_commands.emplace_back(RenderCommand{
+        .command = {
+            .set_viewport =
+            {
+                .x      = x,
+                .y      = y,
+                .width  = width,
+                .height = height,
+            }
+        },
+        .type = RenderCommandType::SetViewport
+    });
 }
 
 auto RenderPassRecorder::bind_vertex_buffer(const BufferHandle vertex_buffer, const u32 slot, const u32 offset) noexcept
@@ -42,14 +47,14 @@ auto RenderPassRecorder::bind_vertex_buffer(const BufferHandle vertex_buffer, co
 
     m_commands.emplace_back(RenderCommand{
         .command =
+        {
+            .bind_vertex_buffer =
             {
-                .bind_vertex_buffer =
-                    {
-                        .vertex_buffer = vertex_buffer,
-                        .slot          = slot,
-                        .offset        = offset,
-                    },
+                .vertex_buffer = vertex_buffer,
+                .slot          = slot,
+                .offset        = offset,
             },
+        },
         .type = RenderCommandType::BindVertexBuffer,
     });
 
@@ -67,11 +72,13 @@ auto RenderPassRecorder::bind_index_buffer(const BufferHandle index_buffer, cons
 
     const BindIndexBuffer cmd{.index_buffer = index_buffer, .index_format = index_format};
 
-    m_commands.emplace_back(RenderCommand{.command =
-                                              {
-                                                  .bind_index_buffer = cmd,
-                                              },
-        .type = RenderCommandType::BindIndexBuffer});
+    m_commands.emplace_back(RenderCommand{
+        .command =
+        {
+            .bind_index_buffer = cmd,
+        },
+        .type = RenderCommandType::BindIndexBuffer
+    });
 
     m_active_index_buffer = cmd;
 }
@@ -84,14 +91,36 @@ auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, 
 
     m_commands.emplace_back(RenderCommand{
         .command =
+        {
+            .bind_uniform_buffer =
             {
-                .bind_uniform_buffer =
-                    {
-                        .uniform_buffer = uniform_buffer,
-                        .slot           = slot,
-                    },
+                .uniform_buffer = uniform_buffer,
+                .slot           = slot,
             },
+        },
         .type = RenderCommandType::BindUniformBuffer,
+    });
+
+    m_active_uniform_buffers[slot] = uniform_buffer;
+}
+
+auto RenderPassRecorder::bind_uniform_buffer_range(
+    const BufferHandle uniform_buffer,
+    const u32 slot,
+    const usize offset,
+    const usize size
+) noexcept -> void {
+    // todo: check we dont bind same buffer and range twice in a row
+    m_commands.emplace_back(RenderCommand{
+        .command = {
+            .bind_uniform_buffer_range = {
+                .uniform_buffer = uniform_buffer,
+                .slot           = slot,
+                .offset         = offset,
+                .size           = size,
+            },
+        },
+        .type = RenderCommandType::BindUniformBufferRange,
     });
 
     m_active_uniform_buffers[slot] = uniform_buffer;
@@ -106,14 +135,14 @@ auto RenderPassRecorder::bind_sampled_image(
 
     m_commands.emplace_back(RenderCommand{
         .command =
+        {
+            .bind_sampled_image =
             {
-                .bind_sampled_image =
-                    {
-                        .image   = image,
-                        .sampler = sampler,
-                        .slot    = slot,
-                    },
+                .image   = image,
+                .sampler = sampler,
+                .slot    = slot,
             },
+        },
         .type = RenderCommandType::BindSampledImage,
     });
 
@@ -128,13 +157,13 @@ auto RenderPassRecorder::bind_storage_image(ImageHandle image, u32 slot) noexcep
 
     m_commands.emplace_back(RenderCommand{
         .command =
+        {
+            .bind_storage_image =
             {
-                .bind_storage_image =
-                    {
-                        .image = image,
-                        .slot  = slot,
-                    },
+                .image = image,
+                .slot  = slot,
             },
+        },
         .type = RenderCommandType::BindStorageImage,
     });
 
@@ -145,23 +174,26 @@ auto RenderPassRecorder::draw_arrays(const u32 start, const u32 count) noexcept 
     ASSERT(m_active_pipeline.is_valid(), "There is no pipeline bound, cannot call RenderPassRecorder::draw_arrays.");
 
     m_commands.emplace_back(RenderCommand{
-        .command = {.draw_arrays = {.start = start, .count = count}}, .type = RenderCommandType::DrawArrays});
+        .command = {.draw_arrays = {.start = start, .count = count}}, .type = RenderCommandType::DrawArrays
+    });
 }
 
 auto RenderPassRecorder::draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void {
     ASSERT(m_active_pipeline.is_valid(), "There is no pipeline bound, cannot call RenderPassRecorder::draw_indexed.");
     ASSERT(m_active_index_buffer.has_value() && m_active_index_buffer.value().index_buffer.is_valid(),
-        "There is no index buffer bound, cannot call RenderPassRecorder::draw_indexed.");
+           "There is no index buffer bound, cannot call RenderPassRecorder::draw_indexed.");
     ASSERT(m_active_vertex_buffers.size() > 0,
-        "There are no vertex buffers bound, cannot call RenderPassRecorder::draw_indexed.");
+           "There are no vertex buffers bound, cannot call RenderPassRecorder::draw_indexed.");
 
     m_commands.emplace_back(RenderCommand{
-        .command = {.draw_indexed =
-                        {
-                            .first_index = first_index,
-                            .index_count = index_count,
-                        }},
-        .type    = RenderCommandType::DrawIndexed,
+        .command = {
+            .draw_indexed =
+            {
+                .first_index = first_index,
+                .index_count = index_count,
+            }
+        },
+        .type = RenderCommandType::DrawIndexed,
     });
 }
 
@@ -191,5 +223,4 @@ auto RenderCommandRecorder::consume_render_pass(const RenderPassResult& commands
 auto RenderCommandRecorder::finish() noexcept -> RenderCommandBuffer {
     return RenderCommandBuffer{.commands = std::move(m_commands), .render_passes = std::move(m_render_passes)};
 }
-
 } // namespace siren

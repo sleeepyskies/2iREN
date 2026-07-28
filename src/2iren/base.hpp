@@ -68,11 +68,19 @@ using usize = std::size_t;
 constexpr auto range(const usize end) { return views::iota(0u, end); }
 
 /**
- * @brief Creates a range.
+ * @brief Creates an iterable range.
  * @param start The inclusive start point of the range.
  * @param end The exclusive end point of the range.
  * @return A range from [start, end).
  */
 constexpr auto range(const usize start, const usize end) { return views::iota(start, end); }
+
+/**
+ * Aligns the provided size paramter according to the alignment parameter.
+ * Aka, rounds size to the nearest multiple of alignment > than size.
+ */
+constexpr auto align_up(const usize size, const usize alignment) -> usize {
+    return (size + alignment - 1) / alignment * alignment;
+}
 
 } // namespace siren
