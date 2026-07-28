@@ -195,6 +195,7 @@ public:
     [[nodiscard]] auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
     [[nodiscard]] auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
+    auto query(QueryHandle handle) const -> u64 override;
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle override;
     auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void override;
     auto blit(ImageHandle source, ImageHandle destination) const -> void override;

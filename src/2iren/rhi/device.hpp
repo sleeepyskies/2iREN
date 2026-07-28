@@ -1,8 +1,11 @@
 #pragma once
 
+#include <any>
+
 #include "render_command.hpp"
 #include "resource_command.hpp"
 #include "resources/fwd.hpp"
+#include "resources/query.hpp"
 
 namespace siren {
 class Window;
@@ -261,6 +264,12 @@ public:
     /** @brief Copies the content of an @ref Image to another @ref Image. @note Assumes source and destination have the
      * same size. */
     virtual auto blit(ImageHandle source, ImageHandle destination) const -> void = 0;
+
+    /**
+     * @brief Retrieves the information stored inside a query object. May be blocking on some implementations.
+     * The return value must be interpreted by the caller depending on the QueryKind.
+     */
+    virtual auto query(QueryHandle handle) const -> u64 = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> const Limits& = 0;

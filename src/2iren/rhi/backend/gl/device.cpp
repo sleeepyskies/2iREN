@@ -749,6 +749,16 @@ auto GlDevice::query_descriptor(const QueryHandle handle) const -> const QueryDe
     return m_state.query_table.details(handle).descriptor;
 }
 
+auto GlDevice::query(const QueryHandle handle) const -> u64 {
+    const auto apihandle = m_state.query_table.fetch(handle);
+    u64 result = 0;
+    m_render_thread.spawn([&result, apihandle] {
+        glGetQueryObjectui64v(apihandle, GL_QUERY_RESULT, &result);
+    });
+    wait_until_idle();
+    return result;
+}
+
 auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const -> ImageHandle {
     return m_state.swapchain_table.details(handle).target->image.handle();
 }

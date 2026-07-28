@@ -409,7 +409,7 @@ constexpr auto query_kind_to_gl(const QueryKind kind) -> GLenum {
     switch (kind) {
         case QueryKind::SamplesPassed: return GL_SAMPLES_PASSED;
         case QueryKind::AnySamplesPassed: return GL_ANY_SAMPLES_PASSED;
-        case QueryKind::TimeElapsed: GL_TIME_ELAPSED;
+        case QueryKind::TimeElapsed: return GL_TIME_ELAPSED;
         default: UNREACHABLE();
     }
 }

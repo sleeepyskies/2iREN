@@ -463,7 +463,7 @@ auto GlCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void
     const auto kind = m_state.query_table.details(begin_query.query).descriptor.kind;
     const auto apihandle = m_state.query_table.fetch(begin_query.query);
     const auto apikind = gl::query_kind_to_gl(kind);
-    glBeginQuery(apihandle, apikind);
+    glBeginQuery(apikind, apihandle);
 }
 
 auto GlCommandExecutor::end_query(const EndQuery& end_query) const -> void {
