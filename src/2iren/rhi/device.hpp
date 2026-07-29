@@ -47,6 +47,8 @@ struct Statistics {
     u32 count_upload_image;
     /** @brief The number of draw calls performed. */
     u32 count_draw_calls;
+    /** @brief The number of render passes performed. */
+    u32 count_render_passes;
 
     auto operator+=(const Statistics& rhs) noexcept -> Statistics& {
         count_bind_graphics_pipeline += rhs.count_bind_graphics_pipeline;
@@ -61,6 +63,7 @@ struct Statistics {
         count_upload_buffer          += rhs.count_upload_buffer;
         count_upload_image           += rhs.count_upload_image;
         count_draw_calls             += rhs.count_draw_calls;
+        count_render_passes          += rhs.count_render_passes;
         return *this;
     }
 
@@ -193,7 +196,9 @@ public:
     virtual auto destroy_shader(ShaderHandle handle) -> void = 0;
 
     /** @brief Creates and returns a new @ref GraphicsPipeline given a @ref GraphicsPipelineDescriptor. */
-    [[nodiscard]] virtual auto create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+    [[nodiscard]] virtual auto create_graphics_pipeline(
+        const GraphicsPipelineDescriptor& descriptor
+    )
         -> GraphicsPipeline = 0;
     /** @brief Queues the given @ref GraphicsPipeline for deletion. */
     virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void = 0;
@@ -247,7 +252,9 @@ public:
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& = 0;
     /** @brief Returns the @ref GraphicsPipelineDescriptor associated with this handle. */
-    [[nodiscard]] virtual auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
+    [[nodiscard]] virtual auto graphics_pipeline_descriptor(
+        GraphicsPipelineHandle handle
+    ) const
         -> const GraphicsPipelineDescriptor& = 0;
     /** @brief Returns the @ref ShaderDescriptor associated with this handle. */
     [[nodiscard]] virtual auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& = 0;

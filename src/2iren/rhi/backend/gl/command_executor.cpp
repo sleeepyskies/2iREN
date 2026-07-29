@@ -213,6 +213,7 @@ auto GlCommandExecutor::execute_pass(
     const RenderPassDescriptor& descriptor,
     const std::span<const RenderCommand> commands
 ) const -> void {
+    m_statistics.count_render_passes++;
     const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
