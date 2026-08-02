@@ -4,11 +4,9 @@
 #include <cstdint>
 #include <cstddef>
 #include <ranges>
-#include <algorithm>
 
 
 namespace siren {
-
 namespace ranges = std::ranges;
 namespace views = std::ranges::views;
 
@@ -60,6 +58,7 @@ using f128 = _Float128;
 
 /** @brief An unsigned integer capable of holding the largest memory address. */
 using usize = std::size_t;
+
 /**
  * @brief Creates a range.
  * @param end The exclusive end point of the range.
@@ -76,11 +75,10 @@ constexpr auto range(const usize end) { return views::iota(0u, end); }
 constexpr auto range(const usize start, const usize end) { return views::iota(start, end); }
 
 /**
- * Aligns the provided size paramter according to the alignment parameter.
+ * Aligns the provided size parameter according to the alignment parameter.
  * Aka, rounds size to the nearest multiple of alignment > than size.
  */
 constexpr auto align_up(const usize size, const usize alignment) -> usize {
     return (size + alignment - 1) / alignment * alignment;
 }
-
 } // namespace siren

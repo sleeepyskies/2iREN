@@ -224,8 +224,10 @@ struct RenderCommand {
  * @brief Struct used to initialize and begin a new render pass.
  */
 struct RenderPassDescriptor {
-    /** @brief An optional label. */
-    /** @todo Not used anywhere atm */
+    /**
+     *  @brief An optional label.
+     *  @note Not used in the OpenGL backend.
+     */
     std::optional<std::string> label = std::nullopt;
     /** @brief The @ref RenderTarget to draw to. */
     RenderTarget target;

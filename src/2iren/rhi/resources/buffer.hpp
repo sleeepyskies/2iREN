@@ -84,7 +84,10 @@ public:
     [[nodiscard]] auto descriptor() const noexcept -> const BufferDescriptor&;
 
     /** @brief Utility function to upload data to this Buffer. */
-    auto upload(const ByteBuffer& data, u32 offset = 0) const noexcept -> void;
-};
+    auto upload(const ByteBuffer& data, const u32 offset = 0) const noexcept -> void;
 
+    /** @brief Utility function to upload data to this Buffer. */
+    template <typename T>
+    auto upload(const T& data) const noexcept -> void { upload(ByteBuffer{data}, 0); }
+};
 } // namespace siren

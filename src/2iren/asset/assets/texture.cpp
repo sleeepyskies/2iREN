@@ -1,5 +1,6 @@
 #include "texture.hpp"
 
+#include <algorithm>
 #include <stb_image.h>
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/base.hpp"
