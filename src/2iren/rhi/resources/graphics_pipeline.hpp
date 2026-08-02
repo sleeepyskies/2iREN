@@ -8,7 +8,6 @@
 
 
 namespace siren {
-
 /**
  * @brief Represents the drawing mode. Aka how points are interpreted and how lines
  * are drawn between them
@@ -94,6 +93,18 @@ enum class BlendFactor {
     OneMinusDestinationAlpha,
 };
 
+/**
+ * @brief Collection of parameters describing how to blend together values.
+ */
+struct BlendDescription {
+    /** @brief Describes what function to use to blend 2 values together. */
+    BlendFunction function = BlendFunction::Add;
+    /** @brief The @ref BlendFactor to affect the source. */
+    BlendFactor source_factor = BlendFactor::SourceAlpha;
+    /** @brief The @ref BlendFactor to affect the destination. */
+    BlendFactor dest_factor = BlendFactor::OneMinusSourceAlpha;
+};
+
 struct GraphicsPipelineDescriptor {
     /** @brief An optional label for the @ref GraphicsPipeline. Mainly used for debugging. */
     std::optional<std::string> label = std::nullopt;
@@ -105,14 +116,12 @@ struct GraphicsPipelineDescriptor {
     PrimitiveTopology topology = PrimitiveTopology::Triangles;
     /** @brief Surface transparency type. */
     AlphaMode alpha_mode = AlphaMode::Opaque;
-    /** @brief Only used if alpha_mode == Blend. Defines the function used to combine alpha values. */
-    BlendFunction blend_function = BlendFunction::Add;
     /** @brief Depth function. */
     DepthFunction depth_function = DepthFunction::Less;
-    /** @brief The @ref BlendFactor to affect the source. */
-    BlendFactor source_blend_factor = BlendFactor::SourceAlpha;
-    /** @brief The @ref BlendFactor to affect the destination. */
-    BlendFactor dest_blend_factor = BlendFactor::OneMinusSourceAlpha;
+    /** @brief Describes how to blend color values. Only used if alpha_mode == AlphaMode::Blend.  */
+    BlendDescription color_blend = {};
+    /** @brief Describes how to blend alpha values. Only used if alpha_mode == AlphaMode::Blend.  */
+    BlendDescription alpha_blend = {};
     /** @brief Whether back face is culled. */
     bool back_face_culling = true;
     /** @brief Whether to perform the depth test. */

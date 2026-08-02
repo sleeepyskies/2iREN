@@ -352,10 +352,19 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     }
 
     if (desc.alpha_mode == AlphaMode::Blend) {
-        glBlendEquation(gl::blend_function_to_gl(desc.blend_function));
+        // todo: does this state blend across binds?
+        glBlendFuncSeparate(
+            gl::blend_factor_to_gl(desc.color_blend.source_factor),
+            gl::blend_factor_to_gl(desc.color_blend.dest_factor),
+            gl::blend_factor_to_gl(desc.alpha_blend.dest_factor),
+            gl::blend_factor_to_gl(desc.alpha_blend.dest_factor)
+        );
+        glBlendEquationSeparate(
+            gl::blend_function_to_gl(desc.color_blend.function),
+            gl::blend_function_to_gl(desc.alpha_blend.function)
+        );
     }
 
-    glBlendFunc(gl::blend_factor_to_gl(desc.source_blend_factor), gl::blend_factor_to_gl(desc.dest_blend_factor));
     glDepthFunc(gl::depth_func_to_gl(desc.depth_function));
 
     if (desc.back_face_culling) {
@@ -461,14 +470,14 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
 }
 
 auto GlCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void {
-    const auto kind = m_state.query_table.details(begin_query.query).descriptor.kind;
+    const auto kind      = m_state.query_table.details(begin_query.query).descriptor.kind;
     const auto apihandle = m_state.query_table.fetch(begin_query.query);
-    const auto apikind = gl::query_kind_to_gl(kind);
+    const auto apikind   = gl::query_kind_to_gl(kind);
     glBeginQuery(apikind, apihandle);
 }
 
 auto GlCommandExecutor::end_query(const EndQuery& end_query) const -> void {
-    const auto kind = m_state.query_table.details(end_query.query).descriptor.kind;
+    const auto kind    = m_state.query_table.details(end_query.query).descriptor.kind;
     const auto apikind = gl::query_kind_to_gl(kind);
     glEndQuery(apikind);
 }
