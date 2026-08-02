@@ -8,7 +8,6 @@
     [[nodiscard]] static constexpr auto name() noexcept -> Rgba { return {r, g, b, a}; }
 
 namespace siren {
-
 /**
  * @struct Rgba
  * @brief A four channel color.
@@ -52,42 +51,51 @@ struct Rgba {
     [[nodiscard]] constexpr auto operator+(const Rgba& o) const noexcept -> Rgba {
         return {r + o.r, g + o.g, b + o.b, a + o.a};
     }
+
     /** @brief Component wise subtraction. */
     [[nodiscard]] constexpr auto operator-(const Rgba& o) const noexcept -> Rgba {
         return {r - o.r, g - o.g, b - o.b, a - o.a};
     }
+
     /** @brief Component wise multiplication. */
     [[nodiscard]] constexpr auto operator*(const Rgba& o) const noexcept -> Rgba {
         return {r * o.r, g * o.g, b * o.b, a * o.a};
     }
+
     /** @brief Scalar multiplication. */
     [[nodiscard]] constexpr auto operator*(const float s) const noexcept -> Rgba {
         return {r * s, g * s, b * s, a * s};
     }
+
     /** @brief Scalar division. */
     [[nodiscard]] constexpr auto operator/(const float s) const noexcept -> Rgba {
         return {r / s, g / s, b / s, a / s};
     }
+
     /** @brief Adds two RGBA values. */
     [[nodiscard]] constexpr auto operator+=(const Rgba& o) noexcept -> Rgba& {
         *this = *this + o;
         return *this;
     }
+
     /** @brief Subtracts two RGBA values. */
     constexpr auto operator-=(const Rgba& o) noexcept -> Rgba& {
         *this = *this - o;
         return *this;
     }
+
     /** @brief Multiplies two RGBA values. */
     constexpr auto operator*=(const Rgba& o) noexcept -> Rgba& {
         *this = *this * o;
         return *this;
     }
+
     /** @brief Multiplies an RGBA with a scalar. */
     constexpr auto operator*=(const float s) noexcept -> Rgba& {
         *this = *this * s;
         return *this;
     }
+
     /** @brief Divides an RGBA with a scalar. */
     constexpr auto operator/=(const float s) noexcept -> Rgba& {
         *this = *this / s;
@@ -113,5 +121,4 @@ struct Rgba {
 };
 
 #undef DEFINE_RGBA
-
 } // namespace siren

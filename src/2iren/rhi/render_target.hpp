@@ -7,7 +7,6 @@
 #include "resources/fwd.hpp"
 
 namespace siren {
-
 /**
  * @brief Indicates the operation to perform on a new pass.
  */
@@ -54,9 +53,8 @@ struct DepthStencilAttachment {
  */
 struct RenderTarget {
     /** @brief All color attachments of this target. May have size 0. */
-    std::vector<ColorAttachment> colors;
+    std::vector<ColorAttachment> colors = {};
     /** @brief Optional depth + stencil attachment. */
     std::optional<DepthStencilAttachment> depth_stencil = std::nullopt;
 };
-
 } // namespace siren

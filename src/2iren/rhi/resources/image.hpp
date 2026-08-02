@@ -57,6 +57,8 @@ public:
         RG32f,
         /** @brief Depth-stencil format (24-bit depth, 8-bit stencil). */
         Depth24Stencil8,
+        /** @brief Depth buffer format (32-bit depth). */
+        Depth32f,
     } value;
 
     // ReSharper disable once CppNonExplicitConvertingConstructor

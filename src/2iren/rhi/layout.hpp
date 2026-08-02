@@ -6,7 +6,6 @@
 #include "2iren/base.hpp"
 
 namespace siren {
-
 /**
  * @enum Attribute
  * @brief Identifies the semantic purpose of a shader attribute.
@@ -44,9 +43,9 @@ struct DataType {
     constexpr operator Value() const { return value; }
 
     /** @brief Returns the size of this DataType instance in bytes. */
-    constexpr auto size() const -> usize;
+    [[nodiscard]] constexpr auto size() const -> usize;
     /** @brief Returns the string representation of this value. */
-    constexpr auto to_string() const -> std::string_view;
+    [[nodiscard]] constexpr auto to_string() const -> std::string_view;
 };
 
 /**
@@ -86,10 +85,10 @@ public:
      * @brief Entry function for creating a @ref VertexLayout.
      * @return A newly created @ref VertexLayoutBuilder.
      */
-    static auto start() noexcept -> LayoutBuilder;
+    [[nodiscard]] static auto start() noexcept -> LayoutBuilder;
 
     /** @brief Finishes the construction and returns a @ref VertexLayout instance. */
-    auto finish() -> Layout;
+    [[nodiscard]] auto finish() -> Layout;
 
     /**
      * @param attribute The @ref Attribute to add.
@@ -102,7 +101,7 @@ public:
      * This creates a new element within the layout of a vec3f representing position.
      * @return A reference to the builder.
      */
-    auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
+    [[nodiscard]] auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
 
 private:
     LayoutBuilder() = default;
@@ -116,11 +115,10 @@ private:
  * shaders.
  */
 const Layout DEFAULT_VERTEX_LAYOUT = LayoutBuilder::start()
-                                         .add(Attribute::Position, 4, DataType::Float32)
-                                         .add(Attribute::Normal, 4, DataType::Float32)
-                                         .add(Attribute::Color, 4, DataType::Float32)
-                                         .add(Attribute::Texture, 2, DataType::Float32)
-                                         .add(Attribute::Tangent, 4, DataType::Float32)
-                                         .finish();
-
+                                     .add(Attribute::Position, 4, DataType::Float32)
+                                     .add(Attribute::Normal, 4, DataType::Float32)
+                                     .add(Attribute::Color, 4, DataType::Float32)
+                                     .add(Attribute::Texture, 2, DataType::Float32)
+                                     .add(Attribute::Tangent, 4, DataType::Float32)
+                                     .finish();
 } // namespace siren
