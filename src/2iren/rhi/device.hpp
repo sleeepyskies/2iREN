@@ -240,7 +240,7 @@ public:
      * @brief Retrieves the information stored inside a query object. May be blocking on some implementations.
      * The return value must be interpreted by the caller depending on the QueryKind.
      */
-    virtual auto query(QueryHandle handle) const -> u64 = 0;
+    [[nodiscard]] virtual auto query(QueryHandle handle) const -> u64 = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> const Limits& = 0;

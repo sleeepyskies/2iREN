@@ -133,7 +133,7 @@ public:
     [[nodiscard]] auto path() const -> AssetPath { return m_weak.path(); }
     /** @brief Returns the string representation of this handle. */
     [[nodiscard]] auto to_string() const -> std::string {
-        return std::format("Strong<{}>({})", typename_of<A>(), m_weak.id().packed());
+        return std::format("Strong<{}>({})", typename_of<A>(), m_weak.id());
     }
 
     /** @brief Equality comparison operator. */

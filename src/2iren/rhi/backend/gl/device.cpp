@@ -148,7 +148,14 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
 
     if (target.depth_stencil.has_value()) {
         const auto image_id = m_image_table.fetch(target.depth_stencil->image);
-        glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
+        const auto type     = m_image_table.details(target.depth_stencil->image).descriptor.format;
+        switch (type) {
+            case ImageFormat::Depth32f:
+                glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, image_id, 0); break;
+            case ImageFormat::Depth24Stencil8:
+                glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0); break;
+            default: PANIC("Depth/Stencil buffer must have either Depth32f or Depth24Stencil8 format");
+        }
     }
 
     // makes the buffers drawable
@@ -774,24 +781,23 @@ auto GlDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) 
     // basically, we just blit swapchain image fbo to default fbo
     m_render_thread.spawn(
         [this, window, target, w, h, overlay = std::move(overlay)] -> void {
-        // clang-format off
-        const auto offscreen_fb  = m_state.framebuffer_cache.get_create_for(target);
+            const auto offscreen_fb = m_state.framebuffer_cache.get_create_for(target);
 
-        // iff there is an overlay, we have to bind its fbo so it can perform the custom render logic
-        if (overlay) {
-            glBindFramebuffer(GL_FRAMEBUFFER, offscreen_fb);
-            glViewport(0, 0, w, h);
-            overlay();
-        }
+            // iff there is an overlay, we have to bind its fbo so it can perform the custom render logic
+            if (overlay) {
+                glBindFramebuffer(GL_FRAMEBUFFER, offscreen_fb);
+                glViewport(0, 0, w, h);
+                overlay();
+            }
 
-        glBlitNamedFramebuffer(
-            /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
-            0, 0, w, h,
-            0, 0, w, h,
-            GL_COLOR_BUFFER_BIT, GL_NEAREST
-        );
+            // clang-format off
+            glBlitNamedFramebuffer(
+                /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
+                0, 0, w, h,
+                0, 0, w, h,
+                GL_COLOR_BUFFER_BIT, GL_NEAREST
+            );
             // clang-format on
-
             glfwSwapBuffers(window);
         }
     );
