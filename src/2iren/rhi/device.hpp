@@ -199,7 +199,7 @@ public:
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderPassRecorder&>)
     auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
-        auto cmds = render_submit(
+        render_submit(
             [&](RenderCommandRecorder& recorder) {
                 recorder.render_pass(descriptor, func);
             }

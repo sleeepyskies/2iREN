@@ -20,7 +20,7 @@ enum class BeginOperation : u8 {
 };
 
 /**
- * @brief A single color attachement in a @ref RenderPass. Descibes what should be
+ * @brief A single color attachment in a @ref RenderPass. Describes what should be
  * drawn to, and how this should be initialized.
  */
 struct ColorAttachment {
