@@ -196,6 +196,7 @@ public:
         submit(cmds.finish());
     }
 
+    /** @brief QOL function. Use when only recording a single render pass is required. */
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderPassRecorder&>)
     auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {

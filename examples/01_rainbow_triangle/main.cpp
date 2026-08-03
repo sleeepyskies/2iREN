@@ -46,62 +46,85 @@ const siren::ByteBuffer vertices{
 
 auto main() -> siren::i32 {
     // init siren
-    siren::Context ctx{{.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}};
-    siren::Window window;
+    auto ctx = siren::Context::create(
+        {
+            .debug   = true,
+            .level   = siren::log::Level::Trace,
+            .backend = siren::Backend::Auto,
+        }
+    );
+    auto window = ctx.create_window({});
 
-    auto device    = ctx.create_device(window);
-    auto swapchain = device->create_swapchain({
-        .label = std::nullopt,
-        .vsync = true,
-    });
+    auto device    = ctx.create_device({.window = window});
+    auto swapchain = device->create_swapchain(
+        {
+            .label  = std::nullopt,
+            .vsync  = true,
+            .extent = glm::uvec2{window.width(), window.height()},
+            .window = &window,
+        }
+    );
 
-    const auto buffer = device->create_buffer({
-        .label = "sample_buffer",
-        .data  = vertices.data(),
-        .size  = vertices.size_bytes(),
-        .usage = siren::BufferUsage::Static,
-    });
+    const auto buffer = device->create_buffer(
+        {
+            .label = "sample_buffer",
+            .data  = vertices.data(),
+            .size  = vertices.size_bytes(),
+            .usage = siren::BufferUsage::Static,
+        }
+    );
     const auto layout = siren::LayoutBuilder::start()
-                            .add(siren::Attribute::Position, 3, siren::DataType::Float32)
-                            .add(siren::Attribute::Color, 4, siren::DataType::Float32)
-                            .finish();
+                        .add(siren::Attribute::Position, 3, siren::DataType::Float32)
+                        .add(siren::Attribute::Color, 4, siren::DataType::Float32)
+                        .finish();
 
-    const auto shader   = device->create_shader({
-          .label  = std::nullopt,
-          .source = shaders,
-    });
-    const auto pipeline = device->create_graphics_pipeline({
-        .label             = std::nullopt,
-        .layout            = layout,
-        .shader            = shader.handle(),
-        .topology          = siren::PrimitiveTopology::Triangles,
-        .alpha_mode        = siren::AlphaMode::Opaque,
-        .depth_function    = siren::DepthFunction::Less,
-        .back_face_culling = false,
-        .depth_test        = false,
-        .depth_write       = true,
-    });
+    const auto shader   = device->create_shader({.label = std::nullopt, .source = shaders});
+    const auto pipeline = device->create_graphics_pipeline(
+        {
+            .label             = std::nullopt,
+            .layout            = layout,
+            .shader            = shader.handle(),
+            .topology          = siren::PrimitiveTopology::Triangles,
+            .alpha_mode        = siren::AlphaMode::Opaque,
+            .depth_function    = siren::DepthFunction::Less,
+            .back_face_culling = false,
+            .depth_test        = false,
+            .depth_write       = true,
+        }
+    );
 
-    const auto color = device->create_image({
-        .format        = siren::ImageFormat::RGBA8,
-        .extent        = siren::ImageExtent{.width = window.width(), .height = window.height()},
-        .dimension     = siren::ImageDimension::D2,
-        .mipmap_levels = 1,
-    });
-    const siren::RenderTarget target{.colors = {color.handle()}, .depth_stencil = std::nullopt};
+    const auto color = device->create_image(
+        {
+            .format        = siren::ImageFormat::RGBA8,
+            .extent        = siren::ImageExtent{.width = window.width(), .height = window.height()},
+            .dimension     = siren::ImageDimension::D2,
+            .mipmap_levels = 1,
+        }
+    );
+    const siren::RenderTarget target{
+        .colors = {
+            {
+                .image           = color.handle(),
+                .begin_operation = siren::BeginOperation::Clear,
+                .clear_color     = siren::Rgba::black()
+            },
+        },
+        .depth_stencil = std::nullopt
+    };
 
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.target = target}, [&](siren::RenderPassRecorder& pass) -> void {
+        device->render_pass(
+            {.target = target},
+            [&](siren::RenderPassRecorder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(buffer.handle(), 0, 0);
                 pass.draw_arrays(0, 3);
-            });
-        });
+            }
+        );
 
-        device->blit(target.colors[0], swapchain.next_image());
+        device->blit(target.colors[0].image, swapchain.next_image());
         swapchain.present();
         device->flush_delete_queue();
     }
