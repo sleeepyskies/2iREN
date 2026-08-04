@@ -21,6 +21,9 @@ namespace siren {
 ///     to create individual GPU objects via device, but having server call
 ///     device directly is not great imo... but then for this there should
 ///     exist a Renderer that simplifies Asset -> GPU object creation
+///
+/// todo:
+///     - reload assets
 
 class Device;
 
@@ -228,7 +231,6 @@ public:
     [[nodiscard]] auto add(std::unique_ptr<A>&& asset, const AssetPath& path = AssetPath::invalid())
         -> StrongHandle<A> {
         ensure_asset_registered<A>();
-        log::trace("Attempting to add new asset of type {}", typename_of<A>());
 
         return m_data.storage.run_exclusive([asset = std::move(asset), &path](auto& storage) mutable {
             const auto it = storage.find(AssetId::type_id<A>());
@@ -341,7 +343,8 @@ private:
 
         log::debug("Registering a new asset type: {}", typename_of<A>());
         m_data.storage.run_exclusive(
-            [tid](auto& storage) { (void)storage.emplace(tid, std::make_unique<AssetPool<A>>()).first; });
+            [tid](auto& storage) { (void)storage.emplace(tid, std::make_unique<AssetPool<A>>()).first; }
+        );
     }
 
     /**
