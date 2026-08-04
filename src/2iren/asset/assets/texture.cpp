@@ -165,7 +165,7 @@ auto TextureLoader::load_cubemap(
     ConfigType&& config,
     const Path path
 ) const -> AssetLoadError {
-    const auto tname = config.name.value_or(ctx.path().filename());
+    const auto tname    = config.name.value_or(ctx.path().filename());
     const auto map_name = std::format("{}_CubeMap", tname);
 
     i32 width                                              = 0, height = 0, channels = 0, size = 0;
@@ -215,8 +215,7 @@ auto TextureLoader::load_cubemap(
         return file_not_found(path.string());
     }
 
-
-    const auto image = ctx.device().create_image(
+    auto image = ctx.device().create_image(
         {
             .label         = map_name,
             .format        = ImageFormat::RGBA8,
@@ -228,11 +227,14 @@ auto TextureLoader::load_cubemap(
 
     ctx.device().resource_submit(
         [&](ResourceCommandRecorder& resource) {
-            for (auto& bytes : faces | std::views::values) {
-                resource.upload_to_image(image.handle(), std::span(bytes.data(), bytes.size()));
+            for (auto&& [index, pair] : std::views::enumerate(faces)) {
+                auto& bytes = pair.second;
+                resource.upload_to_image(image.handle(), std::span(bytes.data(), bytes.size()), index);
             }
         }
     );
+
+    ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config.sampler)));
 
     return {};
 }

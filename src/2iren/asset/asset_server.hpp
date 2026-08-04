@@ -280,16 +280,23 @@ public:
      */
     template <IsAsset A>
     auto is_loaded_with_dependencies(const StrongHandle<A>& handle) -> bool {
-        // todo: this fails for subassets, aka any asset with no path, as it then has no entry in asset_infos
-        return m_data.asset_infos.run(
+        if (!handle.is_valid()) {
+            return false;
+        }
+
+        const auto info = m_data.asset_infos.run(
             [&handle](const std::unordered_map<HashedString, AssetInfo>& infos) {
-                const auto it = infos.find(handle.path().hashed_string());
-                if (it == infos.end()) {
-                    return false;
-                }
-                return it->second.load_state.is_ready();
+                auto it = infos.find(handle.path().hashed_string());
+                return it != infos.end() ? &it->second : nullptr;
             }
         );
+
+        // assume it is a runtime asset
+        if (!info) {
+            return true;
+        }
+
+        return info->load_state.is_ready();
     }
 
     /**

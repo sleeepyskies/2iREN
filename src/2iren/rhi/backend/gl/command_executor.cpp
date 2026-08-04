@@ -458,12 +458,27 @@ auto GlCommandExecutor::bind_uniform_buffer_range(
 
 auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void {
     m_statistics.count_bind_sampled_image++;
-    const auto img = m_state.image_table.fetch(bind_sampled_image.image);
+    const auto img   = m_state.image_table.fetch(bind_sampled_image.image);
+    const auto& desc = m_state.image_table.details(bind_sampled_image.image).descriptor;
 
-    glActiveTexture(GL_TEXTURE0 + bind_sampled_image.slot);
-    glBindTexture(GL_TEXTURE_2D, img);
-
-    glBindSampler(bind_sampled_image.slot, m_state.sampler_table.fetch(bind_sampled_image.sampler));
+    switch (desc.dimension) {
+        case ImageDimension::D1: PANIC("bind_sampled_image doesnt support D1 yet");
+        case ImageDimension::D2: {
+            glActiveTexture(GL_TEXTURE0 + bind_sampled_image.slot);
+            glBindTexture(GL_TEXTURE_2D, img);
+            glBindSampler(bind_sampled_image.slot, m_state.sampler_table.fetch(bind_sampled_image.sampler));
+            break;
+        }
+        case ImageDimension::D3: PANIC("bind_sampled_image doesnt support D2 yet");
+        case ImageDimension::Cube: {
+            glActiveTexture(GL_TEXTURE0 + bind_sampled_image.slot);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, img);
+            glBindSampler(
+                bind_sampled_image.slot,
+                m_state.sampler_table.fetch(bind_sampled_image.sampler)
+            );
+        }
+    }
 }
 
 auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_image) const -> void {
