@@ -14,7 +14,6 @@
 #include "asset_utils.hpp"
 
 namespace siren {
-
 /// todo:
 ///     maybe the asset server shouldn't even have access to the device?
 ///     we could just load CPU version of the asset. This data could be used
@@ -45,6 +44,7 @@ enum class LoadStatus {
 class LoadState {
 public:
     [[nodiscard]] constexpr auto get_main() const noexcept -> LoadStatus { return m_main; }
+
     constexpr auto set_main(const LoadStatus status) noexcept -> void {
         if (m_main == LoadStatus::Fail || m_dependencies == LoadStatus::Fail) {
             return;
@@ -165,7 +165,8 @@ public:
                 }
                 auto* pool = static_cast<AssetPool<A>*>(it->second.get());
                 return pool->fetch(handle.id());
-            });
+            }
+        );
     }
 
     /**
@@ -204,9 +205,11 @@ public:
      * @return A handle to the loaded asset.
      */
     template <IsAsset A>
-    [[nodiscard]] auto load(const std::string& path,
-        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt) -> StrongHandle<A> {
-        return load<A>(AssetPath::parse(path), config);
+    [[nodiscard]] auto load(
+        const std::string& path,
+        std::optional<typename AssetLoader<A>::ConfigType>&& config = std::nullopt
+    ) -> StrongHandle<A> {
+        return load<A>(AssetPath::parse(path), std::move(config));
     }
 
     /**
@@ -217,8 +220,10 @@ public:
      * @return A handle to the loaded asset.
      */
     template <IsAsset A>
-    [[nodiscard]] auto load(const AssetPath& path,
-        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt) -> StrongHandle<A>;
+    [[nodiscard]] auto load(
+        const AssetPath& path,
+        std::optional<typename AssetLoader<A>::ConfigType>&& config = std::nullopt
+    ) -> StrongHandle<A>;
 
     /**
      * @brief Directly adds the provided asset into storage, if a pool exists for its type.
@@ -228,21 +233,26 @@ public:
      * @return A @ref StrongHandle referencing the newly added asset.
      */
     template <IsAsset A>
-    [[nodiscard]] auto add(std::unique_ptr<A>&& asset, const AssetPath& path = AssetPath::invalid())
+    [[nodiscard]] auto add(
+        std::unique_ptr<A>&& asset,
+        const AssetPath& path = AssetPath::invalid()
+    )
         -> StrongHandle<A> {
         ensure_asset_registered<A>();
 
-        return m_data.storage.run_exclusive([asset = std::move(asset), &path](auto& storage) mutable {
-            const auto it = storage.find(AssetId::type_id<A>());
-            if (it == storage.end()) {
-                log::error("Could not find an appropriate asset pool for type {}", typename_of<A>());
-                return StrongHandle<A>::invalid();
+        return m_data.storage.run_exclusive(
+            [asset = std::move(asset), &path](auto& storage) mutable {
+                const auto it = storage.find(AssetId::type_id<A>());
+                if (it == storage.end()) {
+                    log::error("Could not find an appropriate asset pool for type {}", typename_of<A>());
+                    return StrongHandle<A>::invalid();
+                }
+                auto& pool       = pool_cast<A>(it->second.get());
+                const AssetId id = pool.add(std::forward<std::unique_ptr<A>>(asset));
+                // todo: can we handle non disk assets better, for example a UUID
+                return StrongHandle<A>{id, pool, path};
             }
-            auto& pool       = pool_cast<A>(it->second.get());
-            const AssetId id = pool.add(std::forward<std::unique_ptr<A>>(asset));
-            // todo: can we handle non disk assets better, for example a UUID
-            return StrongHandle<A>{id, pool, path};
-        });
+        );
     }
 
     /**
@@ -252,13 +262,15 @@ public:
      */
     template <IsAsset A>
     auto is_loaded(const StrongHandle<A>& handle) -> bool {
-        return m_data.asset_infos.run([&handle](const std::unordered_map<HashedString, AssetInfo>& infos) {
-            const auto it = infos.find(handle.relative_path().hashed_string());
-            if (it == infos.end()) {
-                return false;
+        return m_data.asset_infos.run(
+            [&handle](const std::unordered_map<HashedString, AssetInfo>& infos) {
+                const auto it = infos.find(handle.relative_path().hashed_string());
+                if (it == infos.end()) {
+                    return false;
+                }
+                return it->second.load_state.get_main() == LoadStatus::Loaded;
             }
-            return it->second.load_state.get_main() == LoadStatus::Loaded;
-        });
+        );
     }
 
     /**
@@ -269,13 +281,15 @@ public:
     template <IsAsset A>
     auto is_loaded_with_dependencies(const StrongHandle<A>& handle) -> bool {
         // todo: this fails for subassets, aka any asset with no path, as it then has no entry in asset_infos
-        return m_data.asset_infos.run([&handle](const std::unordered_map<HashedString, AssetInfo>& infos) {
-            const auto it = infos.find(handle.path().hashed_string());
-            if (it == infos.end()) {
-                return false;
+        return m_data.asset_infos.run(
+            [&handle](const std::unordered_map<HashedString, AssetInfo>& infos) {
+                const auto it = infos.find(handle.path().hashed_string());
+                if (it == infos.end()) {
+                    return false;
+                }
+                return it->second.load_state.is_ready();
             }
-            return it->second.load_state.is_ready();
-        });
+        );
     }
 
     /**
@@ -299,14 +313,16 @@ public:
      */
     template <IsAsset A>
     auto fetch_default() const -> StrongHandle<A> {
-        return m_data.default_handles.run([](const std::unordered_map<TypeID, std::any>& default_handles) {
-            const auto it = default_handles.find(AssetId::type_id<A>());
-            if (it == default_handles.end()) {
-                log::error("There exists no default for asset type {}, but it was requested.", typename_of<A>());
-                return StrongHandle<A>::invalid();
+        return m_data.default_handles.run(
+            [](const std::unordered_map<TypeID, std::any>& default_handles) {
+                const auto it = default_handles.find(AssetId::type_id<A>());
+                if (it == default_handles.end()) {
+                    log::error("There exists no default for asset type {}, but it was requested.", typename_of<A>());
+                    return StrongHandle<A>::invalid();
+                }
+                return std::any_cast<StrongHandle<A>>(it->second);
             }
-            return std::any_cast<StrongHandle<A>>(it->second);
-        });
+        );
     }
 
     /**
@@ -318,9 +334,11 @@ public:
     auto register_default(std::unique_ptr<A>&& asset) -> void {
         StrongHandle<A> handle = add(std::move(asset));
         log::info("Registering a new default for type {}. Default handle: {}", typename_of<A>(), handle);
-        m_data.default_handles.run_exclusive([handle](std::unordered_map<TypeID, std::any>& default_handles) {
-            default_handles[AssetId::type_id<A>()] = std::any{handle};
-        });
+        m_data.default_handles.run_exclusive(
+            [handle](std::unordered_map<TypeID, std::any>& default_handles) {
+                default_handles[AssetId::type_id<A>()] = std::any{handle};
+            }
+        );
     }
 
 private:
@@ -355,28 +373,30 @@ private:
      */
     template <IsAsset A>
     auto search_cache(const AssetPath& path) -> std::optional<StrongHandle<A>> {
-        return m_data.asset_infos.run([path](const auto& asset_infos) -> std::optional<StrongHandle<A>> {
-            // search cache
-            auto ait = asset_infos.find(path.hashed_string());
+        return m_data.asset_infos.run(
+            [path](const auto& asset_infos) -> std::optional<StrongHandle<A>> {
+                // search cache
+                auto ait = asset_infos.find(path.hashed_string());
 
-            // nothing inside of cache
-            if (ait == asset_infos.end()) {
+                // nothing inside of cache
+                if (ait == asset_infos.end()) {
+                    return std::nullopt;
+                }
+
+                // there is no label, this is the main asset.
+                if (!path.label()) {
+                    return make_strong<A>(ait->second.weak_handle);
+                }
+
+                // this is a labeled sub asset
+                const auto lit = ait->second.labeled_deps.find(path.label().value());
+                if (lit != ait->second.labeled_deps.end()) {
+                    return make_strong<A>(lit->second);
+                }
+
                 return std::nullopt;
             }
-
-            // there is no label, this is the main asset.
-            if (!path.label()) {
-                return make_strong<A>(ait->second.weak_handle);
-            }
-
-            // this is a labeled sub asset
-            const auto lit = ait->second.labeled_deps.find(path.label().value());
-            if (lit != ait->second.labeled_deps.end()) {
-                return make_strong<A>(lit->second);
-            }
-
-            return std::nullopt;
-        });
+        );
     }
 
     /**
@@ -407,7 +427,10 @@ private:
 class LoadContext {
 public:
     LoadContext(AssetServer& server, const AssetPath& path, const WeakHandle& handle, Device& device) :
-        m_server(server), m_handle(handle), m_path(path), m_device(device) {}
+        m_server(server),
+        m_handle(handle),
+        m_path(path),
+        m_device(device) {}
 
     template <IsAsset A>
     [[nodiscard]] auto add_labeled_asset(const std::string& label, std::unique_ptr<A>&& asset) -> StrongHandle<A> {
@@ -430,14 +453,18 @@ public:
 
     template <IsAsset A>
     [[nodiscard]]
-    auto load_external_asset(const std::string& asset_path,
-        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt) -> StrongHandle<A> {
+    auto load_external_asset(
+        const std::string& asset_path,
+        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
+    ) -> StrongHandle<A> {
         return load_external_asset<A>(AssetPath::parse(asset_path), std::move(config));
     }
 
     template <IsAsset A>
-    [[nodiscard]] auto load_external_asset(const AssetPath& asset_path,
-        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt) -> StrongHandle<A> {
+    [[nodiscard]] auto load_external_asset(
+        const AssetPath& asset_path,
+        std::optional<typename AssetLoader<A>::ConfigType> config = std::nullopt
+    ) -> StrongHandle<A> {
         const StrongHandle<A> handle = m_server.load<A>(asset_path, std::move(config));
 
         // the asset_info should exist already, if it doesn't please crash, something went wrong :D
@@ -488,7 +515,9 @@ public:
 
 private:
     auto notify_dependents(
-        const WeakHandle& handle, std::unordered_map<HashedString, AssetServer::AssetInfo>& asset_infos) const -> void {
+        const WeakHandle& handle,
+        std::unordered_map<HashedString, AssetServer::AssetInfo>& asset_infos
+    ) const -> void {
         auto& asset_info = asset_infos.at(handle.path().hashed_string());
 
         // still waiting, do not notify parents yet
@@ -508,7 +537,9 @@ private:
     }
 
     auto poison_dependents(
-        const WeakHandle& handle, std::unordered_map<HashedString, AssetServer::AssetInfo>& asset_infos) const -> void {
+        const WeakHandle& handle,
+        std::unordered_map<HashedString, AssetServer::AssetInfo>& asset_infos
+    ) const -> void {
         auto& asset_info = asset_infos.at(handle.path().hashed_string());
 
         asset_info.load_state.set_main(LoadStatus::Fail);
@@ -534,7 +565,10 @@ private:
 // 3. if no loader exists, return invalid handle
 // 4. spawn new load task
 template <IsAsset A>
-[[nodiscard]] auto AssetServer::load(const AssetPath& path, std::optional<typename AssetLoader<A>::ConfigType> config)
+[[nodiscard]] auto AssetServer::load(
+    const AssetPath& path,
+    std::optional<typename AssetLoader<A>::ConfigType>&& config
+)
     -> StrongHandle<A> {
     ensure_asset_registered<A>();
     log::debug("Loading new asset from path {}", path);
@@ -552,35 +586,42 @@ template <IsAsset A>
     }
 
     // generate a new handle
-    const auto weak_handle = m_data.storage.run_exclusive([path](auto& storage) -> WeakHandle {
-        const auto it = storage.find(AssetId::type_id<A>());
-        auto pool     = static_cast<AssetPool<A>*>(it->second.get());
-        return WeakHandle{pool->reserve(), pool, path};
-    });
+    const auto weak_handle = m_data.storage.run_exclusive(
+        [path](auto& storage) -> WeakHandle {
+            const auto it = storage.find(AssetId::type_id<A>());
+            auto pool     = static_cast<AssetPool<A>*>(it->second.get());
+            return WeakHandle{pool->reserve(), pool, path};
+        }
+    );
 
     // todo: i think we should clean up this AssetInfo entry in the case where loading fails.
     log::trace("Asset {} does not exist in cache, attempting to load from disk.", weak_handle);
-    m_data.asset_infos.run_exclusive([weak_handle, path](auto& asset_infos) {
-        asset_infos.emplace(path.hashed_string(),
-            AssetInfo{
-                // .path = {},
-                .weak_handle  = weak_handle,
-                .load_state   = {},
-                .labeled_deps = {},
-                .dependencies = {},
-                .dependents   = {},
-            });
-    });
+    m_data.asset_infos.run_exclusive(
+        [weak_handle, path](auto& asset_infos) {
+            asset_infos.emplace(
+                path.hashed_string(),
+                AssetInfo{
+                    // .path = {},
+                    .weak_handle  = weak_handle,
+                    .load_state   = {},
+                    .labeled_deps = {},
+                    .dependencies = {},
+                    .dependents   = {},
+                }
+            );
+        }
+    );
 
     // spawn new loading task
-    ThreadPool::get().spawn_detached([this, path, loader, weak_handle, config = std::move(config)] mutable {
-        const auto result = loader->load(LoadContext{*this, path, weak_handle, m_device}, std::move(config));
-        if (!result) {
-            log::error("Asset loading failed.", result.error());
+    ThreadPool::get().spawn_detached(
+        [this, path, loader, weak_handle, config = std::move(config)] mutable {
+            const auto result = loader->load(LoadContext{*this, path, weak_handle, m_device}, std::move(config));
+            if (!result) {
+                log::error("Asset loading failed.", result.error());
+            }
         }
-    });
+    );
 
     return make_strong<A>(weak_handle);
 }
-
 } // namespace siren

@@ -140,7 +140,19 @@ auto GlCommandExecutor::execute_image_upload(
         }
 
         case ImageDimension::Cube: {
-            PANIC("Not implemented yet.");
+            glTextureSubImage3D(
+                gl_handle,
+                0,
+                0,
+                0,
+                cmd.layer,
+                static_cast<GLsizei>(desc.extent.width),
+                static_cast<GLsizei>(desc.extent.height),
+                1,
+                gl::img_format_to_gl_layout(desc.format),
+                GL_UNSIGNED_BYTE,
+                data_slice.data()
+            );
         }
     }
 

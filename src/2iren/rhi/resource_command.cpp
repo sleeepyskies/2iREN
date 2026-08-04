@@ -4,7 +4,6 @@
 
 
 namespace siren {
-
 auto ResourceCommandRecorder::upload_to_buffer(
     const BufferHandle buffer_handle,
     const ByteBuffer& data,
@@ -12,9 +11,9 @@ auto ResourceCommandRecorder::upload_to_buffer(
 ) -> void {
     const UploadBuffer upload{
         .buffer_handle = buffer_handle,
-        .blob_offset = m_blob.size(),
-        .dest_offset = dest_offset,
-        .data_size = data.size_bytes(),
+        .blob_offset   = m_blob.size(),
+        .dest_offset   = dest_offset,
+        .data_size     = data.size_bytes(),
     };
 
     const auto raw = data.raw();
@@ -30,11 +29,16 @@ auto ResourceCommandRecorder::upload_to_buffer(
     );
 }
 
-auto ResourceCommandRecorder::upload_to_image(const ImageHandle image_handle, std::span<const u8> data) -> void {
+auto ResourceCommandRecorder::upload_to_image(
+    const ImageHandle image_handle,
+    std::span<const u8> data,
+    const u32 layer
+) -> void {
     const UploadImage upload{
         .image_handle = image_handle,
-        .data_offset = m_blob.size(),
-        .data_size = data.size(),
+        .data_offset  = m_blob.size(),
+        .data_size    = data.size(),
+        .layer = layer,
     };
 
     m_blob.insert(m_blob.end(), data.begin(), data.end());
@@ -50,7 +54,6 @@ auto ResourceCommandRecorder::upload_to_image(const ImageHandle image_handle, st
 }
 
 auto ResourceCommandRecorder::finish() noexcept -> ResourceCommandBuffer {
-    return ResourceCommandBuffer{ .commands = std::move(m_commands), .blob = std::move(m_blob) };
+    return ResourceCommandBuffer{.commands = std::move(m_commands), .blob = std::move(m_blob)};
 }
-
 } // namespace siren

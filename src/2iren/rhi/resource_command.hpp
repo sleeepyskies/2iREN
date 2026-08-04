@@ -8,7 +8,6 @@
 
 
 namespace siren {
-
 /**
  * @brief Identifies the type of operation recorded into the buffer.
  * Acts as a tag for a union.
@@ -42,6 +41,8 @@ struct UploadImage {
     usize data_offset;
     /** @brief The size of the data to copy in the @ref ResourceCommandBuffer blob. */
     usize data_size;
+    /** @brief The layer of the image upload. Only used for cube maps. */
+    u32 layer;
 };
 
 /**
@@ -98,8 +99,13 @@ public:
      */
     auto upload_to_buffer(BufferHandle buffer_handle, const ByteBuffer& data, u32 dest_offset) -> void;
 
-    /** @brief Uploads the given data to an @ref Image. */
-    auto upload_to_image(ImageHandle image_handle, std::span<const u8> data) -> void;
+    /**
+     * @brief Uploads the given data to the provided Image.
+     * @param image_handle The image to upload to.
+     * @param data The data to upload
+     * @param layer The layer of the upload in accordance to the main image. Only used for cube maps.
+     */
+    auto upload_to_image(ImageHandle image_handle, std::span<const u8> data, u32 layer = 0) -> void;
 
     /** @brief Consumes the internal data of the ResourceCommandBuffer ready for execution. */
     [[nodiscard]] auto finish() noexcept -> ResourceCommandBuffer;
@@ -110,5 +116,4 @@ private:
     std::vector<ResourceCommand> m_commands;
     std::vector<u8> m_blob;
 };
-
 } // namespace siren

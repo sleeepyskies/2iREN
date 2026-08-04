@@ -8,13 +8,12 @@
 
 
 namespace siren {
-
 // basically just string constants to avoid typos etc
 namespace keys {
-constexpr std::string_view NAME   = "name";
-constexpr std::string_view STAGES = "stages";
-constexpr std::string_view PATH   = "path";
-constexpr std::string_view SOURCE = "source";
+    constexpr std::string_view NAME   = "name";
+    constexpr std::string_view STAGES = "stages";
+    constexpr std::string_view PATH   = "path";
+    constexpr std::string_view SOURCE = "source";
 } // namespace keys
 
 static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
@@ -71,8 +70,8 @@ auto ShaderLoader::load(
         }
 
         const auto shader_name = fetch_optional(yaml, keys::NAME);
-        const auto base_dir    = Path{ ctx.path().full_path() }.parent_path();
-        std::unordered_map<ShaderStage, ShaderData> map{ };
+        const auto base_dir    = Path{ctx.path().full_path()}.parent_path();
+        std::unordered_map<ShaderStage, ShaderData> map{};
 
         for (const auto& stage : yaml[keys::STAGES]) {
             const auto stage_str    = stage.first.as<std::string>();
@@ -96,7 +95,7 @@ auto ShaderLoader::load(
             }
 
             map[*shader_stage] = {
-                .label = shader_name,
+                .label  = shader_name,
                 .source = *source,
             };
         }
@@ -107,18 +106,17 @@ auto ShaderLoader::load(
 
         auto shader = ctx.device().create_shader(
             {
-                .label = shader_name,
+                .label  = shader_name,
                 .source = map
             }
         );
 
         ctx.finish(std::make_unique<ShaderAsset>(std::move(shader), std::move(map)));
-        return { };
+        return {};
     } catch (const YAML::ParserException& e) {
         return invalid_format(path->string(), e.msg);
     } catch (const YAML::BadFile& e) {
         return file_not_found(path->string());
     }
 }
-
 } // namespace siren

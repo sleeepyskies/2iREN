@@ -5,10 +5,10 @@
 #include "../asset_loader.hpp"
 #include "2iren/rhi/resources/image.hpp"
 #include "2iren/rhi/resources/sampler.hpp"
+#include "2iren/util/filesystem.hpp"
 
 
 namespace siren {
-
 /**
  * @brief Determines how to interpret texture data as a 2D TextureArray. Siren requires the
  * images are stacked on top of each other and all have the same dimensions.
@@ -27,7 +27,7 @@ struct Texture : Asset {
         const std::string& name,
         Image&& image,
         Sampler&& sampler
-    ) : name(name), image(std::move(image)), sampler(std::move(sampler)) { }
+    ) : name(name), image(std::move(image)), sampler(std::move(sampler)) {}
 
     /** @brief The name of the Texture. */
     std::string name;
@@ -64,7 +64,16 @@ public:
         LoadContext&& ctx,
         std::optional<ConfigType> config
     ) const -> AssetLoadError override;
-    [[nodiscard]] auto extensions() const -> std::vector<std::string_view> override { return { "png", "jpg", "jpeg", "exr", "hdr" }; }
-};
 
+    [[nodiscard]] auto extensions() const -> std::vector<std::string_view> override {
+        return {"png", "jpg", "jpeg", "exr", "hdr", "cubemap"};
+    }
+
+private:
+    auto load_cubemap(
+        LoadContext&& ctx,
+        ConfigType&& config,
+        const Path path
+    ) const -> AssetLoadError;
+};
 } // namespace siren

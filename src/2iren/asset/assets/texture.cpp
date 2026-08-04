@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <stb_image.h>
+#include <yaml-cpp/yaml.h>
+
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/base.hpp"
 #include "2iren/rhi/device.hpp"
@@ -10,11 +12,32 @@
 
 namespace siren {
 namespace filetypes {
-static const std::vector<std::string> SRGB = {"png", "jpg", "jpeg"};
-static const std::vector<std::string> HDR  = {"exr", "hdr"};
+    static const std::vector<std::string> SRGB = {"png", "jpg", "jpeg"};
+    static const std::vector<std::string> HDR  = {"exr", "hdr"};
 } // namespace filetypes
 
+// basically just string constants to avoid typos etc
+namespace keys {
+    constexpr std::string_view NAME = "name";
+
+    constexpr std::string NX = "nx";
+    constexpr std::string NY = "ny";
+    constexpr std::string NZ = "nz";
+    constexpr std::string PX = "px";
+    constexpr std::string PY = "py";
+    constexpr std::string PZ = "pz";
+} // namespace keys
+
 // todo: this only loads 2d images
+
+static auto fetch_optional(const YAML::Node& node, const std::string_view key) -> std::optional<std::string> {
+    return node[key] ? std::make_optional(node[key].as<std::string>()) : std::nullopt;
+}
+
+static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
+    log::warn("Invalid Schema found: {}", msg);
+    return std::unexpected(AssetErrorCode::InvalidSchema);
+}
 
 [[nodiscard]] static auto calc_mipmap_levels(const u32, const u32) -> u32 {
     // todo: mipmap levels are never generated atm
@@ -31,7 +54,23 @@ static const std::vector<std::string> HDR  = {"exr", "hdr"};
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
-[[nodiscard]] static auto determine_format(const TextureLoader::ConfigType& cfg, const std::string& ext)
+[[nodiscard]] static auto file_not_found(const std::string_view path) -> AssetLoadError {
+    log::warn("File not found at path: {}", path);
+    return std::unexpected(AssetErrorCode::FileNotFound);
+}
+
+[[nodiscard]] static auto invalid_format(
+    const std::string_view path,
+    const std::string_view msg = ""
+) -> AssetLoadError {
+    log::warn("Invalid YAML syntax in cubmap file: {}. Message: {}", path, msg);
+    return std::unexpected(AssetErrorCode::InvalidFormat);
+}
+
+[[nodiscard]] static auto determine_format(
+    const TextureLoader::ConfigType& cfg,
+    const std::string& ext
+)
     -> ImageFormat {
     if (cfg.format) {
         return *cfg.format;
@@ -77,13 +116,19 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     if (!path) {
         return file_not_found(ctx.path());
     }
+
+    if (ctx.path().extension() == "cubemap") {
+        // special branch for cubemaps
+        return load_cubemap(std::move(ctx), std::move(*config), *path);
+    }
+
     const auto tname = config->name.value_or(ctx.path().filename());
     const auto iname = std::format("{}_Image", tname);
 
     const auto format = determine_format(*config, ctx.path().extension());
     // const auto is_srgb = determine_srgb(format);
 
-    i32 width = 0, height = 0, channels = 0;
+    i32 width                = 0, height = 0, channels = 0;
     u8* data                 = stbi_load(path->c_str(), &width, &height, &channels, 0);
     const ImageExtent extent = {
         .width           = static_cast<u32>(width),
@@ -96,19 +141,98 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     }
     const usize data_size = width * height * channels;
 
-    auto image    = ctx.device().create_image({
-           .label         = iname,
-           .format        = format,
-           .extent        = extent,
-           .dimension     = ImageDimension::D2,
-           .mipmap_levels = mipmap_levels,
-    });
+    auto image = ctx.device().create_image(
+        {
+            .label         = iname,
+            .format        = format,
+            .extent        = extent,
+            .dimension     = ImageDimension::D2,
+            .mipmap_levels = mipmap_levels,
+        }
+    );
     auto resource = ctx.device().record_resource_commands();
     resource.upload_to_image(image.handle(), std::span(data, data_size));
     ctx.device().submit(resource.finish());
 
     stbi_image_free(data);
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config->sampler)));
+
+    return {};
+}
+
+auto TextureLoader::load_cubemap(
+    LoadContext&& ctx,
+    ConfigType&& config,
+    const Path path
+) const -> AssetLoadError {
+    const auto tname = config.name.value_or(ctx.path().filename());
+    const auto map_name = std::format("{}_CubeMap", tname);
+
+    i32 width                                              = 0, height = 0, channels = 0, size = 0;
+    std::unordered_map<std::string, std::vector<u8>> faces = {
+        {std::string(keys::NX), {}},
+        {std::string(keys::NY), {}},
+        {std::string(keys::NZ), {}},
+        {std::string(keys::PX), {}},
+        {std::string(keys::PY), {}},
+        {std::string(keys::PZ), {}},
+    };
+
+    const auto base_dir = Path{ctx.path().full_path()}.parent_path();
+
+    try {
+        const auto yaml = YAML::LoadFile(path.string());
+
+        const auto name = fetch_optional(yaml, keys::NAME);
+
+        for (const auto& [key, value] : faces) {
+            const auto& node = yaml[key];
+
+            if (!node.IsScalar()) {
+                return invalid_schema("Cube map face must be a scalar.");
+            }
+
+            const auto face_path = *FileSystem::to_physical(base_dir / node.as<std::string>());
+            log::trace("Attempting to load cube map face from {}", face_path.string());
+
+            u8* data = stbi_load(face_path.c_str(), &width, &height, &channels, 0);
+
+            if (size == 0) {
+                size = width;
+            }
+
+            if (!data || width != size || height != size) {
+                log::warn("Could not load image data, reason: {}", stbi_failure_reason());
+            }
+
+            faces[key] = std::vector(data, data + size * size * channels);
+
+            stbi_image_free(data);
+        }
+    } catch (const YAML::ParserException& e) {
+        return invalid_format(path.string(), e.msg);
+    } catch (const YAML::BadFile& e) {
+        return file_not_found(path.string());
+    }
+
+
+    const auto image = ctx.device().create_image(
+        {
+            .label         = map_name,
+            .format        = ImageFormat::RGBA8,
+            .extent        = {.width = u32(size), .height = u32(size), .depth_or_layers = 6},
+            .dimension     = ImageDimension::Cube,
+            .mipmap_levels = 1,
+        }
+    );
+
+    ctx.device().resource_submit(
+        [&](ResourceCommandRecorder& resource) {
+            for (auto& bytes : faces | std::views::values) {
+                resource.upload_to_image(image.handle(), std::span(bytes.data(), bytes.size()));
+            }
+        }
+    );
 
     return {};
 }

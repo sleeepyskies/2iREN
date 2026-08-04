@@ -34,9 +34,9 @@ AssetServer::AssetServer(Device& device) : m_device(device) {
 
     // register stock loaders
 
-    // register_loader(std::make_unique<TextureLoader>());
     register_loader(std::make_unique<GltfLoader>());
     register_loader(std::make_unique<ShaderLoader>());
+    register_loader(std::make_unique<TextureLoader>());
 
     // register default assets
     /*
