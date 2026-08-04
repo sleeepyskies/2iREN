@@ -170,12 +170,13 @@ auto TextureLoader::load_cubemap(
 
     i32 width                                              = 0, height = 0, channels = 0, size = 0;
     std::unordered_map<std::string, std::vector<u8>> faces = {
-        {std::string(keys::NX), {}},
-        {std::string(keys::NY), {}},
-        {std::string(keys::NZ), {}},
+        // opengl expects this order
         {std::string(keys::PX), {}},
+        {std::string(keys::NX), {}},
         {std::string(keys::PY), {}},
+        {std::string(keys::NY), {}},
         {std::string(keys::PZ), {}},
+        {std::string(keys::NZ), {}},
     };
 
     const auto base_dir = Path{ctx.path().full_path()}.parent_path();
