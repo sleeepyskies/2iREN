@@ -108,6 +108,7 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 }
 
 auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) const -> AssetLoadError {
+    stbi_set_flip_vertically_on_load(true);
     if (!config) {
         return no_config();
     }
@@ -165,12 +166,12 @@ auto TextureLoader::load_cubemap(
     ConfigType&& config,
     const Path path
 ) const -> AssetLoadError {
+    stbi_set_flip_vertically_on_load(false);
     const auto tname    = config.name.value_or(ctx.path().filename());
     const auto map_name = std::format("{}_CubeMap", tname);
 
-    i32 width                                              = 0, height = 0, channels = 0, size = 0;
-    std::unordered_map<std::string, std::vector<u8>> faces = {
-        // opengl expects this order
+    i32 width                                                  = 0, height = 0, channels = 0, size = 0;
+    std::vector<std::pair<std::string, std::vector<u8>>> faces = {
         {std::string(keys::PX), {}},
         {std::string(keys::NX), {}},
         {std::string(keys::PY), {}},
@@ -186,7 +187,7 @@ auto TextureLoader::load_cubemap(
 
         const auto name = fetch_optional(yaml, keys::NAME);
 
-        for (const auto& [key, value] : faces) {
+        for (auto& [key, data_buffer] : faces) {
             const auto& node = yaml[key];
 
             if (!node.IsScalar()) {
@@ -196,17 +197,20 @@ auto TextureLoader::load_cubemap(
             const auto face_path = *FileSystem::to_physical(base_dir / node.as<std::string>());
             log::trace("Attempting to load cube map face from {}", face_path.string());
 
-            u8* data = stbi_load(face_path.c_str(), &width, &height, &channels, 0);
+            u8* data = stbi_load(face_path.c_str(), &width, &height, &channels, 4);
 
             if (size == 0) {
                 size = width;
             }
 
             if (!data || width != size || height != size) {
+                if (data) {
+                    stbi_image_free(data);
+                }
                 log::warn("Could not load image data, reason: {}", stbi_failure_reason());
             }
 
-            faces[key] = std::vector(data, data + size * size * channels);
+            data_buffer = std::vector<u8>(data, data + (size * size * 4));
 
             stbi_image_free(data);
         }
@@ -229,8 +233,12 @@ auto TextureLoader::load_cubemap(
     ctx.device().resource_submit(
         [&](ResourceCommandRecorder& resource) {
             for (auto&& [index, pair] : std::views::enumerate(faces)) {
-                auto& bytes = pair.second;
-                resource.upload_to_image(image.handle(), std::span(bytes.data(), bytes.size()), index);
+                auto& [key, data_buffer] = pair;
+                resource.upload_to_image(
+                    image.handle(),
+                    std::span(data_buffer),
+                    static_cast<u32>(index)
+                );
             }
         }
     );
