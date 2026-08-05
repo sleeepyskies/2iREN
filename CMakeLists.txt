@@ -67,5 +67,9 @@ target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_definitions(2iren PRIVATE SIREN_ENGINE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(dependencies.cmake)
-include(examples.cmake) # todo: optionally include examples
+
+option(2IREN_BUILD_EXAMPLES "Build the 2iREN library examples" OFF)
+if(2IREN_BUILD_EXAMPLES)
+    include(examples.cmake)
+endif()
 
