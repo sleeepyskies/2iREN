@@ -5,7 +5,7 @@
 #include "backend/gl/device.hpp"
 #include "2iren/util/platform.hpp"
 #include "2iren/util/time.hpp"
-#include <stb_image.h>
+#include "2iren/util/stb_image.h"
 
 #include "2iren/sync/thread_pool.hpp"
 #include "2iren/window.hpp"

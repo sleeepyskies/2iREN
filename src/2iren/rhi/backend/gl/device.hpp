@@ -241,7 +241,7 @@ private:
     mutable Mutex<Statistics> m_statistics{};
 
     /** @brief Cached limits which are fetched once on startup. */
-    Limits m_limits;
+    Limits m_limits{};
 };
 
 } // namespace siren

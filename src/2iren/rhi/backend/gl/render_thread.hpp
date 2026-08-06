@@ -21,6 +21,7 @@ class RenderThread {
 public:
     /** @brief A command to be computed on the RenderThread. */
     using RenderTask = std::move_only_function<void()>;
+
     /**
      * @brief A setup function that is used to initialize the @ref RenderThread.
      *

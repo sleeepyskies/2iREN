@@ -1,7 +1,5 @@
 #pragma once
 
-#include <any>
-
 #include "render_command.hpp"
 #include "resource_command.hpp"
 #include "resources/fwd.hpp"

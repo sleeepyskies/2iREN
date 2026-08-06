@@ -32,6 +32,7 @@ add_library(
         src/2iren/rhi/resources/sampler.cpp
         src/2iren/rhi/resources/shader.cpp
         src/2iren/rhi/resources/swapchain.cpp
+        src/2iren/rhi/resources/query.cpp
 
         src/2iren/rhi/context.cpp
         src/2iren/rhi/layout.cpp
@@ -57,8 +58,6 @@ add_library(
         src/2iren/util/stb_image.cpp
         src/2iren/util/cgltf.cpp
         src/2iren/util/camera.cpp
-        src/2iren/rhi/resources/query.cpp
-        src/2iren/rhi/resources/query.hpp
 )
 
 target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -68,8 +67,8 @@ target_compile_definitions(2iren PRIVATE SIREN_ENGINE_ROOT="${CMAKE_CURRENT_SOUR
 
 include(dependencies.cmake)
 
-option(2IREN_BUILD_EXAMPLES "Build the 2iREN library examples" OFF)
-if(2IREN_BUILD_EXAMPLES)
+option(2IREN_BUILD_EXAMPLES "Build 2iREN examples" ON)
+if (2IREN_BUILD_EXAMPLES)
     include(examples.cmake)
-endif()
+endif ()
 

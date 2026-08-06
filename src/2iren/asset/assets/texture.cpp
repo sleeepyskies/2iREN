@@ -1,7 +1,7 @@
 #include "texture.hpp"
 
 #include <algorithm>
-#include <stb_image.h>
+#include "2iren/util/stb_image.h"
 #include <yaml-cpp/yaml.h>
 
 #include "2iren/asset/asset_server.hpp"

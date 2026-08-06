@@ -15,6 +15,20 @@
 namespace siren {
 Window::Window(const WindowDescriptor& descriptor) {
     GLFWmonitor* monitor = nullptr;
+
+    {
+        const auto platform = glfwGetPlatform();
+        if (platform == GLFW_PLATFORM_X11) {
+            log::info("Using windowing platform X11");
+        } else if (platform == GLFW_PLATFORM_WAYLAND) {
+            log::info("Using windowing platform Wayland");
+        } else if (platform == GLFW_PLATFORM_COCOA) {
+            log::info("Using windowing platform Cocoa");
+        } else if (platform == GLFW_PLATFORM_WIN32) {
+            log::info("Using windowing platform Win32");
+        }
+    }
+
     if (descriptor.initial_mode == WindowMode::Fullscreen) {
         monitor = glfwGetPrimaryMonitor();
     }
@@ -92,27 +106,33 @@ auto Window::should_close() const noexcept -> bool { return m_handle == nullptr 
 auto Window::cursor_mode() const noexcept -> CursorMode { return m_cursor_mode; }
 
 auto Window::set_title(const std::string& title) const -> void {
-    m_requests.lock()->emplace_back([this, title] {
-        this->m_title.set(title);
-        glfwSetWindowTitle(m_handle, title.c_str());
-        log::trace("Window title set to {}", title);
-    });
+    m_requests.lock()->emplace_back(
+        [this, title] {
+            this->m_title.set(title);
+            glfwSetWindowTitle(m_handle, title.c_str());
+            log::trace("Window title set to {}", title);
+        }
+    );
 }
 
 auto Window::minimize() const -> void {
-    m_requests.lock()->emplace_back([this] {
-        this->m_window_mode = WindowMode::Minimized;
-        glfwIconifyWindow(m_handle);
-        log::trace("Window minimized");
-    });
+    m_requests.lock()->emplace_back(
+        [this] {
+            this->m_window_mode = WindowMode::Minimized;
+            glfwIconifyWindow(m_handle);
+            log::trace("Window minimized");
+        }
+    );
 }
 
 auto Window::maximize() const -> void {
-    m_requests.lock()->emplace_back([this] {
-        this->m_window_mode = WindowMode::Maximized;
-        glfwMaximizeWindow(m_handle);
-        log::trace("Window maximized");
-    });
+    m_requests.lock()->emplace_back(
+        [this] {
+            this->m_window_mode = WindowMode::Maximized;
+            glfwMaximizeWindow(m_handle);
+            log::trace("Window maximized");
+        }
+    );
 }
 
 auto Window::set_fullscreen(const bool val) const -> void {
@@ -131,43 +151,51 @@ auto Window::set_fullscreen(const bool val) const -> void {
         cached_h = size().y;
     }
 
-    m_requests.lock()->emplace_back([this, val] {
-        if (val) {
-            const auto monitor = glfwGetPrimaryMonitor();
-            const auto mode    = glfwGetVideoMode(monitor);
-            glfwSetWindowMonitor(m_handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            this->m_window_mode = WindowMode::Fullscreen;
-            log::trace("Window set to fullscreen");
-        } else {
-            glfwSetWindowMonitor(m_handle, nullptr, cached_x, cached_y, (i32)cached_w, (i32)cached_h, 0);
-            this->m_window_mode = WindowMode::Normal;
-            log::trace("Window set to normal");
+    m_requests.lock()->emplace_back(
+        [this, val] {
+            if (val) {
+                const auto monitor = glfwGetPrimaryMonitor();
+                const auto mode    = glfwGetVideoMode(monitor);
+                glfwSetWindowMonitor(m_handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                this->m_window_mode = WindowMode::Fullscreen;
+                log::trace("Window set to fullscreen");
+            } else {
+                glfwSetWindowMonitor(m_handle, nullptr, cached_x, cached_y, (i32)cached_w, (i32)cached_h, 0);
+                this->m_window_mode = WindowMode::Normal;
+                log::trace("Window set to normal");
+            }
         }
-    });
+    );
 }
 
 auto Window::set_size(glm::uvec2 size) const -> void {
-    m_requests.lock()->emplace_back([this, size] {
-        glfwSetWindowSize(m_handle, static_cast<i32>(size.x), static_cast<i32>(size.y));
-        this->m_size.set(size);
-        log::trace("Window size set to ({}, {})", size.x, size.y);
-    });
+    m_requests.lock()->emplace_back(
+        [this, size] {
+            glfwSetWindowSize(m_handle, static_cast<i32>(size.x), static_cast<i32>(size.y));
+            this->m_size.set(size);
+            log::trace("Window size set to ({}, {})", size.x, size.y);
+        }
+    );
 }
 
 auto Window::set_position(glm::ivec2 position) const -> void {
-    m_requests.lock()->emplace_back([this, position] {
-        glfwSetWindowPos(m_handle, position.x, position.y);
-        this->m_position.set(position);
-        log::trace("Window position set to ({}, {})", position.x, position.y);
-    });
+    m_requests.lock()->emplace_back(
+        [this, position] {
+            glfwSetWindowPos(m_handle, position.x, position.y);
+            this->m_position.set(position);
+            log::trace("Window position set to ({}, {})", position.x, position.y);
+        }
+    );
 }
 
 auto Window::set_cursor_mode(CursorMode mode) const noexcept -> void {
-    m_requests.lock()->emplace_back([this, mode] {
-        glfwSetInputMode(m_handle, GLFW_CURSOR, to_glfw(mode));
-        this->m_cursor_mode = mode;
-        log::trace("Cursor mode set to {}", (i32)mode);
-    });
+    m_requests.lock()->emplace_back(
+        [this, mode] {
+            glfwSetInputMode(m_handle, GLFW_CURSOR, to_glfw(mode));
+            this->m_cursor_mode = mode;
+            log::trace("Cursor mode set to {}", (i32)mode);
+        }
+    );
 }
 
 auto Window::poll_events() const -> void {

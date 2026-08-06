@@ -4,7 +4,7 @@
 #include <glm/gtc/integer.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <stb_image.h>
+#include "2iren/util/stb_image.h"
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/asset/asset_utils.hpp"
 #include "2iren/rhi/device.hpp"

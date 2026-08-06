@@ -6,9 +6,9 @@ find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(cgltf REQUIRED)
-find_package(stb REQUIRED) # brings in all of stb libraries. this isn't needed, as we only use stb_image actually
 
 target_link_libraries(2iren
+        PUBLIC
         glad::glad
         opengl::opengl
         libassert::assert
@@ -16,5 +16,4 @@ target_link_libraries(2iren
         glfw
         yaml-cpp::yaml-cpp
         cgltf::cgltf
-        stb::stb
 )
