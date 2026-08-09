@@ -57,6 +57,8 @@ public:
         m_sensitivity(sensitivity), m_speed(speed) {}
 
     auto update(PerspectiveCamera& camera, const Input& input) -> void;
+    auto update_position(PerspectiveCamera& camera, const Input& input) -> void;
+    auto update_look(PerspectiveCamera& camera, const Input& input) -> void;
 
     [[nodiscard]] auto speed() const noexcept -> f32;
     [[nodiscard]] auto sensitivity() const noexcept -> f32;

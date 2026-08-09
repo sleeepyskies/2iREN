@@ -44,8 +44,8 @@ auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge
         switch (cmd.type) {
             case ResourceCommandType::UploadImage: {
                 const auto& params = cmd.as<UploadImage>();
-                execute_image_upload(
-                    std::move(cmd.command.upload_image_command),
+                upload_image(
+                    std::move(cmd.command.upload_image),
                     get_buffer_slice(
                         resource_command_pacakge.blob,
                         params.data_offset,
@@ -56,14 +56,19 @@ auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge
             }
             case ResourceCommandType::UploadBuffer: {
                 const auto& params = cmd.as<UploadBuffer>();
-                execute_buffer_upload(
-                    std::move(cmd.command.upload_buffer_command),
+                upload_buffer(
+                    std::move(cmd.command.upload_buffer),
                     get_buffer_slice(
                         resource_command_pacakge.blob,
                         params.blob_offset,
                         params.data_size
                     )
                 );
+                break;
+            }
+            case ResourceCommandType::ClearImage: {
+                const auto& params = cmd.as<ClearImage>();
+                clear_image(params);
                 break;
             }
             default: PANIC("Invalid ResourceCommandType encountered");
@@ -83,7 +88,7 @@ auto GlCommandExecutor::statistics() const -> const Statistics& { return m_stati
 // == MARK: Resource Commands
 // ============================================================================
 
-auto GlCommandExecutor::execute_image_upload(
+auto GlCommandExecutor::upload_image(
     const UploadImage& cmd,
     const std::span<const u8> data_slice
 ) const
@@ -162,7 +167,7 @@ auto GlCommandExecutor::execute_image_upload(
     }
 }
 
-auto GlCommandExecutor::execute_buffer_upload(
+auto GlCommandExecutor::upload_buffer(
     const UploadBuffer& cmd,
     const std::span<const u8> data_slice
 ) const
@@ -214,6 +219,12 @@ auto GlCommandExecutor::execute_buffer_upload(
                 "Invalid BufferUsage encountered. Cannot perform execute_buffer_upload on the OpenGL Backend"
             );
     }
+}
+
+auto GlCommandExecutor::clear_image(const ClearImage& cmd) const -> void {
+    const auto img    = m_state.image_table.fetch(cmd.image_handle);
+    const auto format = m_state.image_table.details(cmd.image_handle).descriptor.format;
+    glClearTexImage(img, 0, gl::img_format_to_gl_layout(format), GL_FLOAT, &cmd.color.r);
 }
 
 // ============================================================================

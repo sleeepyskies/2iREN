@@ -5,6 +5,7 @@
 #include "resources/buffer.hpp"
 #include "resources/image.hpp"
 #include "../util/byte_buffer.hpp"
+#include "2iren/util/color.hpp"
 
 
 namespace siren {
@@ -15,6 +16,7 @@ namespace siren {
 enum class ResourceCommandType : u8 {
     UploadBuffer,
     UploadImage,
+    ClearImage,
 };
 
 /**
@@ -46,12 +48,23 @@ struct UploadImage {
 };
 
 /**
+ * @brief Parameters for clearing an @ref Image.
+ */
+struct ClearImage {
+    /** @brief The handle of the target @ref Image. */
+    ImageHandle image_handle;
+    /** @brief The value to clear the image with. */
+    Rgba color;
+};
+
+/**
  * @brief Encapsulates a single resource command. Is essentially a tagged union.
  */
 struct ResourceCommand {
     union {
-        UploadBuffer upload_buffer_command;
-        UploadImage upload_image_command;
+        UploadBuffer upload_buffer;
+        UploadImage upload_image;
+        ClearImage clear_image;
     } command;
 
     ResourceCommandType type;
@@ -60,9 +73,11 @@ struct ResourceCommand {
     template <typename Command>
     auto as() const -> Command {
         if constexpr (std::is_same_v<Command, UploadBuffer>) {
-            return command.upload_buffer_command;
+            return command.upload_buffer;
         } else if constexpr (std::is_same_v<Command, UploadImage>) {
-            return command.upload_image_command;
+            return command.upload_image;
+        } else if constexpr (std::is_same_v<Command, ClearImage>) {
+            return command.clear_image;
         } else {
             static_assert(false, "Invalid Resource Command type");
             PANIC("Invalid Resource Command. Cannot cast correctly");
@@ -106,6 +121,13 @@ public:
      * @param layer The layer of the upload in accordance to the main image. Only used for cube maps.
      */
     auto upload_to_image(ImageHandle image_handle, std::span<const u8> data, u32 layer = 0) -> void;
+
+    /**
+     * @brief Clears the given @ref Image with the provided color.
+     * @param image_handle The image to upload to.
+     * @param color The color to clear.
+     */
+    auto clear_image(ImageHandle image_handle, const Rgba color) -> void;
 
     /** @brief Consumes the internal data of the ResourceCommandBuffer ready for execution. */
     [[nodiscard]] auto finish() noexcept -> ResourceCommandBuffer;

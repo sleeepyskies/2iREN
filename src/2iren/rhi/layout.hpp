@@ -85,7 +85,7 @@ public:
      * @brief Entry function for creating a @ref VertexLayout.
      * @return A newly created @ref VertexLayoutBuilder.
      */
-    [[nodiscard]] static auto start() noexcept -> LayoutBuilder;
+    [[nodiscard]] static auto create() noexcept -> LayoutBuilder;
 
     /** @brief Finishes the construction and returns a @ref VertexLayout instance. */
     [[nodiscard]] auto finish() -> Layout;
@@ -114,11 +114,18 @@ private:
  * @brief The default vertex layout of 2iren. This is a temp solution, but provides some consistency when writing
  * shaders.
  */
-const Layout DEFAULT_VERTEX_LAYOUT = LayoutBuilder::start()
+const Layout DEFAULT_VERTEX_LAYOUT = LayoutBuilder::create()
                                      .add(Attribute::Position, 4, DataType::Float32)
                                      .add(Attribute::Normal, 4, DataType::Float32)
                                      .add(Attribute::Color, 4, DataType::Float32)
                                      .add(Attribute::Texture, 2, DataType::Float32)
                                      .add(Attribute::Tangent, 4, DataType::Float32)
                                      .finish();
+
+/**
+ * @brief A simple reusable layout for fullscreen shaders.
+ */
+const Layout FULLSCREEN_VERTEX_LAYOUT = LayoutBuilder::create()
+                                        .add(Attribute::Texture, 2, DataType::Float32)
+                                        .finish();
 } // namespace siren

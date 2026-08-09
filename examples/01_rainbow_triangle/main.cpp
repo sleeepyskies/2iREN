@@ -73,7 +73,7 @@ auto main() -> siren::i32 {
             .usage = siren::BufferUsage::Static,
         }
     );
-    const auto layout = siren::LayoutBuilder::start()
+    const auto layout = siren::LayoutBuilder::create()
                         .add(siren::Attribute::Position, 3, siren::DataType::Float32)
                         .add(siren::Attribute::Color, 4, siren::DataType::Float32)
                         .finish();

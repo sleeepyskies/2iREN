@@ -46,9 +46,11 @@ private:
     mutable Statistics m_statistics{};
 
     /** @brief Handles @ref UploadImage. */
-    auto execute_image_upload(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;
+    auto upload_image(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;
     /** @brief Handles @ref UploadBuffer. */
-    auto execute_buffer_upload(const UploadBuffer& cmd, std::span<const u8> data_slice) const -> void;
+    auto upload_buffer(const UploadBuffer& cmd, std::span<const u8> data_slice) const -> void;
+    /** @brief Handles @ref ClearImage. */
+    auto clear_image(const ClearImage& cmd) const -> void;
 
     /** @brief Executes a single @ref RenderPass. */
     auto execute_pass(const RenderPassDescriptor& descriptor, std::span<const RenderCommand> commands) const -> void;

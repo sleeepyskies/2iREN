@@ -110,7 +110,7 @@ int main() {
         }
     );
     const auto layout =
-        siren::LayoutBuilder::start().add(siren::Attribute::Position, 3, siren::DataType::Float32).finish();
+        siren::LayoutBuilder::create().add(siren::Attribute::Position, 3, siren::DataType::Float32).finish();
 
     const auto shader = device->create_shader(
         {

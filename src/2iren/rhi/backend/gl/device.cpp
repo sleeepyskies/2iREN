@@ -422,7 +422,7 @@ auto GlDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
                 glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
                 if (!success) {
                     glGetShaderInfoLog(shader, 512, nullptr, err_info);
-                    log::warn("{} Shader compilation failed with error message: {}", stage, err_info);
+                    log::warn("{} Shader compilation from failed with error message: {}", stage, err_info);
                 }
 
                 // optionally label the shader

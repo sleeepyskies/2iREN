@@ -22,7 +22,7 @@ auto ResourceCommandRecorder::upload_to_buffer(
     m_commands.emplace_back(
         ResourceCommand{
             .command = {
-                .upload_buffer_command = upload
+                .upload_buffer = upload
             },
             .type = ResourceCommandType::UploadBuffer,
         }
@@ -38,7 +38,7 @@ auto ResourceCommandRecorder::upload_to_image(
         .image_handle = image_handle,
         .data_offset  = m_blob.size(),
         .data_size    = data.size(),
-        .layer = layer,
+        .layer        = layer,
     };
 
     m_blob.insert(m_blob.end(), data.begin(), data.end());
@@ -46,9 +46,23 @@ auto ResourceCommandRecorder::upload_to_image(
     m_commands.emplace_back(
         ResourceCommand{
             .command = {
-                .upload_image_command = upload
+                .upload_image = upload
             },
             .type = ResourceCommandType::UploadImage,
+        }
+    );
+}
+
+auto ResourceCommandRecorder::clear_image(ImageHandle image_handle, const Rgba color) -> void {
+    m_commands.emplace_back(
+        ResourceCommand{
+            .command = {
+                .clear_image = {
+                    .image_handle = image_handle,
+                    .color        = color,
+                }
+            },
+            .type = ResourceCommandType::ClearImage,
         }
     );
 }

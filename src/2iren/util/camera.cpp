@@ -43,6 +43,11 @@ auto PerspectiveCamera::projection() const noexcept -> glm::mat4 {
 }
 
 auto PerspectiveCameraController::update(PerspectiveCamera& camera, const Input& input) -> void {
+    update_look(camera, input);
+    update_position(camera, input);
+}
+
+auto PerspectiveCameraController::update_position(PerspectiveCamera& camera, const Input& input) -> void {
     const f32 dt  = time::delta_s();
     auto position = camera.position();
 
@@ -50,8 +55,8 @@ auto PerspectiveCameraController::update(PerspectiveCamera& camera, const Input&
     const f32 pitch = glm::radians(camera.pitch());
     const glm::vec3 forward{cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch)};
     const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
-
     glm::vec3 movement{0.0f};
+
     if (input.keyboard().pressed(Key::Space)) {
         movement += glm::vec3{0, 1, 0};
     }
@@ -76,7 +81,9 @@ auto PerspectiveCameraController::update(PerspectiveCamera& camera, const Input&
 
     position += movement * static_cast<float>(m_speed * dt);
     camera.set_position(position);
+}
 
+auto PerspectiveCameraController::update_look(PerspectiveCamera& camera, const Input& input) -> void {
     if (input.mouse().just_pressed(Mouse::Left)) {
         input.set_cursor_mode(CursorMode::Locked);
     }

@@ -10,6 +10,9 @@ namespace siren {
 namespace ranges = std::ranges;
 namespace views = std::ranges::views;
 
+/** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
+#define UNIMPLEMENTED() PANIC("Not implemented")
+
 /**
  * @brief The backend to initialize 2iren with.
  */

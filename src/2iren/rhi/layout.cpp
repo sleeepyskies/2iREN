@@ -42,7 +42,7 @@ constexpr auto DataType::to_string() const -> std::string_view {
     }
 }
 
-auto LayoutBuilder::start() noexcept -> LayoutBuilder { return LayoutBuilder{}; }
+auto LayoutBuilder::create() noexcept -> LayoutBuilder { return LayoutBuilder{}; }
 
 auto LayoutBuilder::finish() -> Layout {
     return Layout{

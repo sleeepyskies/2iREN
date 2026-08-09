@@ -4,6 +4,7 @@
 #include <string>
 
 #include "fwd.hpp"
+#include "2iren/util/color.hpp"
 
 namespace siren {
 /** @brief Defines the amount of dimensions an @ref Image may have. */
@@ -112,6 +113,9 @@ public:
     ~Image();
     Image(Image&& other) noexcept;
     Image& operator=(Image&& other) noexcept;
+
+    /** @brief Clears the image with the provided color. */
+    auto clear(const Rgba color) const -> void;
 
     /** @brief Returns the descriptor of this Image. */
     [[nodiscard]] auto descriptor() const noexcept -> const ImageDescriptor&;
