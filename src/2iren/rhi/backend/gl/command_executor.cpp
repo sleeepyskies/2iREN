@@ -379,7 +379,7 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
         glBlendFuncSeparate(
             gl::blend_factor_to_gl(desc.color_blend.source_factor),
             gl::blend_factor_to_gl(desc.color_blend.dest_factor),
-            gl::blend_factor_to_gl(desc.alpha_blend.dest_factor),
+            gl::blend_factor_to_gl(desc.alpha_blend.source_factor),
             gl::blend_factor_to_gl(desc.alpha_blend.dest_factor)
         );
         glBlendEquationSeparate(
