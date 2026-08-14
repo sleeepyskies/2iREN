@@ -54,6 +54,8 @@ public:
         sRGBA8,
         /** @brief 3-channel 16-bit float HDR RGB. */
         RGB16f,
+        /** @brief 4-channel 16-bit float HDR RGB. */
+        RGBA16f,
         /** @brief 2-channel 32-bit float HDR RG. */
         RG32f,
         /** @brief Depth-stencil format (24-bit depth, 8-bit stencil). */
@@ -79,6 +81,7 @@ public:
             case RGBA8: return "RGBA8";
             case sRGBA8: return "sRGBA8";
             case RGB16f: return "RGB16f";
+            case RGBA16f: return "RGBA16f";
             case RG32f: return "RG32f";
             case Depth24Stencil8: return "Depth24Stencil8";
             default: UNREACHABLE();

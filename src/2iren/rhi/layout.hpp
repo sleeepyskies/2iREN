@@ -114,18 +114,27 @@ private:
  * @brief The default vertex layout of 2iren. This is a temp solution, but provides some consistency when writing
  * shaders.
  */
-const Layout DEFAULT_VERTEX_LAYOUT = LayoutBuilder::create()
-                                     .add(Attribute::Position, 4, DataType::Float32)
-                                     .add(Attribute::Normal, 4, DataType::Float32)
-                                     .add(Attribute::Color, 4, DataType::Float32)
-                                     .add(Attribute::Texture, 2, DataType::Float32)
-                                     .add(Attribute::Tangent, 4, DataType::Float32)
-                                     .finish();
+const auto DEFAULT_VERTEX_LAYOUT = LayoutBuilder::create()
+                                   .add(Attribute::Position, 4, DataType::Float32)
+                                   .add(Attribute::Normal, 4, DataType::Float32)
+                                   .add(Attribute::Color, 4, DataType::Float32)
+                                   .add(Attribute::Texture, 2, DataType::Float32)
+                                   .add(Attribute::Tangent, 4, DataType::Float32)
+                                   .finish();
+
+/**
+ * @brief A minimal default vertex layout for 2iren.
+ */
+const auto MINIMAL_VERTEX_LAYOUT = LayoutBuilder::create()
+                                   .add(Attribute::Position, 4, DataType::Float32)
+                                   .add(Attribute::Normal, 4, DataType::Float32)
+                                   .add(Attribute::Texture, 2, DataType::Float32)
+                                   .finish();
 
 /**
  * @brief A simple reusable layout for fullscreen shaders.
  */
-const Layout FULLSCREEN_VERTEX_LAYOUT = LayoutBuilder::create()
-                                        .add(Attribute::Texture, 2, DataType::Float32)
-                                        .finish();
+const auto FULLSCREEN_VERTEX_LAYOUT = LayoutBuilder::create()
+                                      .add(Attribute::Texture, 2, DataType::Float32)
+                                      .finish();
 } // namespace siren

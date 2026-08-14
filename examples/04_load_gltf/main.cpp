@@ -10,7 +10,10 @@ struct UBO {
 };
 
 auto render_node(
-    siren::AssetServer& server, const siren::StrongHandle<siren::GltfNode>& nodeh, siren::RenderPassRecorder& pass)
+    siren::AssetServer& server,
+    const siren::StrongHandle<siren::GltfNode>& nodeh,
+    siren::RenderPassRecorder& pass
+)
     -> void {
     const auto& node = server.get_unsafe(nodeh);
 
@@ -43,28 +46,32 @@ auto main() -> siren::i32 {
         /* wait for load to finish */
     }
 
-    const auto pipeline = device->create_graphics_pipeline({
-        .label             = std::nullopt,
-        .layout            = siren::DEFAULT_VERTEX_LAYOUT,
-        .shader            = server.get<siren::ShaderAsset>(shaderh)->shader.handle(),
-        .topology          = siren::PrimitiveTopology::Triangles,
-        .alpha_mode        = siren::AlphaMode::Opaque,
-        .depth_function    = siren::DepthFunction::Less,
-        .back_face_culling = true,
-        .depth_test        = true,
-        .depth_write       = true,
-    });
+    const auto pipeline = device->create_graphics_pipeline(
+        {
+            .label             = std::nullopt,
+            .layout            = siren::DEFAULT_VERTEX_LAYOUT,
+            .shader            = server.get<siren::ShaderAsset>(shaderh)->shader.handle(),
+            .topology          = siren::PrimitiveTopology::Triangles,
+            .alpha_mode        = siren::AlphaMode::Opaque,
+            .depth_function    = siren::DepthFunction::Less,
+            .back_face_culling = true,
+            .depth_test        = true,
+            .depth_write       = true,
+        }
+    );
 
     const auto& gltf  = server.get_unsafe(gltfh);
     const auto& scene = server.get_unsafe(*gltf.default_scene);
 
     siren::PerspectiveCamera camera;
-    const auto ubo = device->create_buffer({
-        .label = "Camera UBO",
-        .data  = std::nullopt,
-        .size  = sizeof(UBO),
-        .usage = siren::BufferUsage::Static,
-    });
+    const auto ubo = device->create_buffer(
+        {
+            .label = "Camera UBO",
+            .data  = std::nullopt,
+            .size  = sizeof(UBO),
+            .usage = siren::BufferUsage::Static,
+        }
+    );
 
     // main render loop
     siren::log::info("Starting render loop.");
@@ -74,19 +81,24 @@ auto main() -> siren::i32 {
         const UBO data{.view_proj = camera.projection_view()};
         ubo.upload(siren::ByteBuffer{data});
 
-        device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass(
-                {.clear_color = siren::Rgba::red(),
-                    .target   = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt}},
-                [&](siren::RenderPassRecorder& pass) -> void {
-                    pass.bind_graphics_pipeline(pipeline.handle());
-                    pass.bind_uniform_buffer(ubo.handle(), 0);
+        device->render_submit(
+            [&](siren::RenderCommandRecorder& cmds) -> void {
+                cmds.render_pass(
+                    {
+                        .clear_color = siren::Rgba::red(),
+                        .target = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt}
+                    },
+                    [&](siren::RenderPassRecorder& pass) -> void {
+                        pass.bind_graphics_pipeline(pipeline.handle());
+                        pass.bind_uniform_buffer(ubo.handle(), 0);
 
-                    for (const auto& node : scene.root_nodes) {
-                        render_node(server, node, pass);
+                        for (const auto& node : scene.root_nodes) {
+                            render_node(server, node, pass);
+                        }
                     }
-                });
-        });
+                );
+            }
+        );
 
         swapchain.present();
         device->flush_delete_queue();

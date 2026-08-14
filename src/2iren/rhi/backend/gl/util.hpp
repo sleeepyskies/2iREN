@@ -113,6 +113,7 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case ImageFormat::RGBA8: return GL_RGBA8;
         case ImageFormat::sRGBA8: return GL_SRGB8_ALPHA8;
         case ImageFormat::RGB16f: return GL_RGB16F;
+        case ImageFormat::RGBA16f: return GL_RGBA16F;
         case ImageFormat::RG32f: return GL_RG32F;
         case ImageFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
         case ImageFormat::Depth32f: return GL_DEPTH_COMPONENT32F;
@@ -132,6 +133,7 @@ constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> Imag
         case GL_RGBA8: return ImageFormat::RGBA8;
         case GL_SRGB8_ALPHA8: return ImageFormat::sRGBA8;
         case GL_RGB16F: return ImageFormat::RGB16f;
+        case GL_RGBA16F: return ImageFormat::RGBA16f;
         case GL_RG32F: return ImageFormat::RG32f;
         case GL_DEPTH24_STENCIL8: return ImageFormat::Depth24Stencil8;
         case GL_DEPTH_COMPONENT32F: return ImageFormat::Depth32f;

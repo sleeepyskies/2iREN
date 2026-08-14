@@ -27,8 +27,14 @@ auto PerspectiveCamera::set_fov(const f32 fov) noexcept -> void { m_descriptor.f
 
 auto PerspectiveCamera::look_at(const glm::vec3 point) -> void {
     const auto dir = glm::normalize(point - m_descriptor.position);
-    m_descriptor.yaw = std::atan2(dir.x, dir.z);
-    m_descriptor.pitch = std::asin(dir.y);
+
+    m_descriptor.yaw = glm::degrees(
+        std::atan2(dir.x, dir.z)
+    );
+
+    m_descriptor.pitch = glm::degrees(
+        std::asin(glm::clamp(dir.y, -1.0f, 1.0f))
+    );
 }
 
 auto PerspectiveCamera::view() const noexcept -> glm::mat4 {

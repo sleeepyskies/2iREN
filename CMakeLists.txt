@@ -12,6 +12,7 @@ add_compile_options(
         -Wextra             # similar to Wall, just more
         -Wpedantic          # warnings about non standard compiler extensions
         -Wnull-dereference  # identifies some null dereference cases
+        -Wno-error=comment  # prevent this warning from being an error
 )
 
 set(CMAKE_CXX_STANDARD 23)

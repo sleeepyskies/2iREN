@@ -13,7 +13,7 @@ Currently only OpenGL 4.6 is supported, but other APIs may be supported in the f
 
 Conan is used for package management.
 
-* **stb**: Collection of utility header only files.
+* **stb_image**: Single header file used for image loading.
 * **cgltf**: Loading gltf files.
 * **yaml-cpp**: Used for certain 2iren specific file types (sshg etc.).
 * **GLFW**: Windowing
@@ -25,6 +25,8 @@ Conan is used for package management.
 # Examples
 
 2iren includes a set of examples to show how to use the library. These can be found under `/examples`.
+
+For a more detailed look into how 2iREN can be used as a framework, checkout oiter.
 
 1. Rainbow Triangle
 
