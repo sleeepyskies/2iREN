@@ -300,6 +300,19 @@ public:
     }
 
     /**
+     * @brief Waits until an asset is loaded. Note that if there was an
+     * error during loading, this will never return.
+     * @param handle The asset handle to wait for.
+     * @todo Handle case where a load error occurred.
+     */
+    template <IsAsset A>
+    auto wait_until_loaded(const StrongHandle<A> handle) -> void {
+        while (!is_loaded_with_dependencies(handle)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    /**
      * @brief Registers a loader with the asset server. No assets can be
      * loaded from disk until an appropriate loader has been registered.
      * @param loader

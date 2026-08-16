@@ -130,9 +130,9 @@ struct GraphicsPipelineDescriptor {
     };
     */
     /** @brief Describes how to blend color values. Only used if alpha_mode == AlphaMode::Blend. */
-    BlendDescription color_blend;
+    BlendDescription color_blend = {};
     /** @brief Describes how to blend alpha values. Only used if alpha_mode == AlphaMode::Blend. */
-    BlendDescription alpha_blend;
+    BlendDescription alpha_blend = {};
     /** @brief Whether back face is culled. */
     bool back_face_culling = true;
     /** @brief Whether to perform the depth test. */
