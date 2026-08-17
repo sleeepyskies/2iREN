@@ -116,3 +116,8 @@ struct NullIdentifier_t {
 inline NullIdentifier_t NullID{};
 
 } // namespace siren
+
+template <typename T>
+struct std::hash<siren::Identifier<T>> {
+    auto operator()(const siren::Identifier<T>& id) const noexcept -> siren::usize { return id.hash(); }
+};

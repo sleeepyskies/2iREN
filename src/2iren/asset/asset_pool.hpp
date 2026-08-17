@@ -8,7 +8,6 @@
 
 
 namespace siren {
-
 // todo: i think we need to use mutex on ref counts here since handle be dropping these from any threads
 
 template <IsAsset A>
@@ -36,20 +35,26 @@ public:
     using TypeID         = AssetId::TypeID;
     using RefCount       = u32;
 
+    using OnCleanupFunction = std::function<void(AssetId)>;
+
+    explicit AssetPool(OnCleanupFunction&& m_on_cleanup) : m_on_cleanup{m_on_cleanup} {};
     ~AssetPool() override = default;
 
 private:
     friend class AssetServer;
     friend class LoadContext;
 
+    /** @brief Function to be called once an asset is unloaded. */
+    OnCleanupFunction m_on_cleanup = nullptr;
+
     /** @brief A storage element in the AssetPool. */
     struct PoolEntry {
         /** @brief The stored asset. */
-        std::unique_ptr<A> asset  = nullptr;
+        std::unique_ptr<A> asset = nullptr;
         /** @brief The generation of this storage slot. Useful for reusing slots. */
         GenerationType generation = 0;
         /** @brief The number of handles referencing this asset. */
-        RefCount ref_count        = 0;
+        RefCount ref_count = 0;
 
         // @formatter:off
         void kill() { asset.reset(nullptr); generation++; ref_count = 0; }
@@ -65,7 +70,7 @@ private:
     };
 
 public:
-    [[nodiscard]] auto type_id() const noexcept -> AssetId::TypeID  override { return AssetId::type_id<A>(); }
+    [[nodiscard]] auto type_id() const noexcept -> AssetId::TypeID override { return AssetId::type_id<A>(); }
 
     /** @brief Creates a new AssetID for this pool, as well as allocates it a storage slot. */
     [[nodiscard]] auto reserve() -> AssetId {
@@ -83,7 +88,7 @@ public:
         pool_entry.asset     = nullptr;
         pool_entry.ref_count = 0;
 
-        return AssetId{ idx, pool_entry.generation, AssetId::type_id<A>() };
+        return AssetId{idx, pool_entry.generation, AssetId::type_id<A>()};
     }
 
     /** @brief Adds an asset and takes ownership. */
@@ -126,7 +131,7 @@ private:
     auto inc_ref(const AssetId id) -> void {
         if (!is_valid_id(id)) { return; }
         PoolEntry& entry = m_data.storage[id.index()];
-        entry.ref_count += 1;
+        entry.ref_count  += 1;
     }
 
     auto dec_ref(const AssetId id) -> void {
@@ -139,6 +144,7 @@ private:
         if (entry.ref_count == 0) {
             m_data.free_list.emplace_back(id.index());
             entry.kill();
+            m_on_cleanup(id);
         }
     }
 

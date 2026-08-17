@@ -7,7 +7,6 @@
 #include "fwd.hpp"
 
 namespace siren {
-
 /**
  * @brief Identifier for assets. Contains additional data such as a unique id, an index,
  * as well as type information.
@@ -52,5 +51,11 @@ struct AssetId final : Identifier<AssetId> {
 private:
     AssetId() = default;
 };
-
 } // namespace siren
+
+template <>
+struct std::hash<siren::AssetId> {
+    auto operator()(const siren::AssetId& id) const noexcept -> siren::usize {
+        return id.hash();
+    }
+};

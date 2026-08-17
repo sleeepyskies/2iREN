@@ -115,6 +115,8 @@ class AssetServer {
     };
 
     struct AssetServerData {
+        /** @brief Mapping of AssetId to its AssetInfo entry. Used for cleaning up cache on refcount == 0. */
+        RwLock<std::unordered_map<AssetId, HashedString>> id_to_path;
         /** @brief General data on assets (dep tree, load status). */
         RwLock<std::unordered_map<HashedString, AssetInfo>> asset_infos;
         /** @brief Main storage for asset data. */
@@ -364,6 +366,30 @@ public:
 private:
     friend class LoadContext; // Need access to create the dependency tree.
 
+    auto on_asset_unload(const AssetId id) -> void {
+        auto hashed_string = m_data.id_to_path.run_exclusive([&](auto& map) -> std::optional<HashedString> {
+            const auto it = map.find(id);
+            if (it == map.end()) {
+                return std::nullopt;
+            }
+            const auto hs = it->second;
+            map.erase(it);
+            return hs;
+        });
+
+        if (!hashed_string) {
+            return;
+        }
+
+        m_data.asset_infos.run_exclusive([&](auto& map) {
+            const auto it = map.find(*hashed_string);
+            if (it == map.end()) {
+                return;
+            }
+            map.erase(it);
+        });
+    }
+
     /**
      * @brief Ensures that the asset type has a registered storage block.
      * @tparam A The asset type to register.
@@ -381,7 +407,12 @@ private:
 
         log::debug("Registering a new asset type: {}", typename_of<A>());
         m_data.storage.run_exclusive(
-            [tid](auto& storage) { (void)storage.emplace(tid, std::make_unique<AssetPool<A>>()).first; }
+            [tid, this](auto& storage) {
+                (void)storage.emplace(
+                    tid,
+                    std::make_unique<AssetPool<A>>([this](const AssetId id) { on_asset_unload(id); })
+                ).first;
+            }
         );
     }
 
@@ -629,6 +660,12 @@ template <IsAsset A>
                     .dependents   = {},
                 }
             );
+        }
+    );
+
+    m_data.id_to_path.run_exclusive(
+        [&](auto& map) {
+            map[weak_handle.id()] = path.hashed_string();
         }
     );
 
