@@ -15,7 +15,6 @@
 #endif
 
 namespace siren {
-
 static auto select_gl_backend() -> void {
     log::info("OpenGL backend chosen.");
     stbi_set_flip_vertically_on_load(true); // true only for
@@ -32,14 +31,14 @@ static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
     libassert::set_failure_handler(
-        [] (const libassert::assertion_info& info){
+        [](const libassert::assertion_info& info) {
             log::error("{}", info);
             std::abort();
         }
     );
     glfwSetErrorCallback(
-        [] (i32 err, const char* desc){
-            log::error("GLFW Error encountered. Code: {}, description: {}", err, desc);
+        [](i32 err, const char* desc) {
+            PANIC(std::format("GLFW Error encountered. Code: {}, description: {}", err, desc));
         }
     );
 
@@ -77,7 +76,7 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     // init asset server
 
     // init virtual filesystem
-    const auto engine_root = Path{ SIREN_ENGINE_ROOT };
+    const auto engine_root = Path{SIREN_ENGINE_ROOT};
     FileSystem::mount("engine", engine_root);
 }
 
@@ -87,7 +86,7 @@ auto Context::create(const ContextDescriptor& descriptor) -> Context {
         throw std::runtime_error("Context already created.");
     }
     called = true;
-    return Context{ descriptor };
+    return Context{descriptor};
 }
 
 Context::~Context() {
@@ -106,7 +105,6 @@ auto Context::create_device(const DeviceDescriptor& descriptor) const -> std::un
 }
 
 auto Context::create_window(const WindowDescriptor& descriptor) const -> Window {
-    return Window{ descriptor };
+    return Window{descriptor};
 }
-
 } // namespace siren
