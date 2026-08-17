@@ -202,6 +202,7 @@ public:
 
     [[nodiscard]] auto limits() const -> const Limits& override;
     [[nodiscard]] auto statistics() const -> Statistics override;
+    [[nodiscard]] auto render_thread() const -> const RenderThread& override;
 
 private:
     /**

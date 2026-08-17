@@ -561,7 +561,11 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
         }
     );
 
-    glfwSwapInterval(descriptor.vsync);
+    m_render_thread.spawn(
+        [vsync = descriptor.vsync] {
+            glfwSwapInterval(vsync);
+        }
+    );
 
     log::trace("Created {}", swapchain_handle);
     return Swapchain{this, swapchain_handle};
@@ -850,4 +854,5 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
 auto GlDevice::limits() const -> const Limits& { return m_limits; }
 
 auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }
+auto GlDevice::render_thread() const -> const RenderThread& { return m_render_thread; }
 } // namespace siren

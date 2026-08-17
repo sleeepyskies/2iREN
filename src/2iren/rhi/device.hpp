@@ -2,6 +2,7 @@
 
 #include "render_command.hpp"
 #include "resource_command.hpp"
+#include "backend/gl/render_thread.hpp"
 #include "resources/fwd.hpp"
 #include "resources/query.hpp"
 
@@ -245,5 +246,8 @@ public:
 
     /** @brief Returns the accumulated rendering backend statistics since the last time this function was called. */
     [[nodiscard]] virtual auto statistics() const -> Statistics = 0;
+
+    /** @brief Returns the @brief RenderThread of the device. Not the preferred API. */
+    [[nodiscard]] virtual auto render_thread() const -> const RenderThread& = 0;
 };
 } // namespace siren
