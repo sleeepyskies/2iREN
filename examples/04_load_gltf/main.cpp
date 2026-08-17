@@ -42,9 +42,8 @@ auto main() -> siren::i32 {
 
     const auto shaderh = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/load_gltf.sshg");
     const auto gltfh   = server.load<siren::Gltf>("engine://examples/assets/meshes/ABeautifulGame.glb");
-    while (!server.is_loaded_with_dependencies(shaderh) || !server.is_loaded_with_dependencies(gltfh)) {
-        /* wait for load to finish */
-    }
+    server.wait_until_loaded(shaderh);
+    server.wait_until_loaded(gltfh);
 
     const auto pipeline = device->create_graphics_pipeline(
         {

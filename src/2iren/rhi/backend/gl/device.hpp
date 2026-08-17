@@ -152,7 +152,7 @@ struct RenderResourceState {
 class GlDevice final : public Device {
 public:
     explicit GlDevice(GLFWwindow* window);
-    ~GlDevice() override = default;
+    ~GlDevice() override;
 
     auto wait_until_idle() const noexcept -> void override;
 

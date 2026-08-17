@@ -32,10 +32,9 @@ int main() {
                             .add(siren::Attribute::Color, 4, siren::DataType::Float32)
                             .finish();
 
-    const auto shader_handle = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
-    while (!server.is_loaded_with_dependencies(shader_handle)) { /* wait for load to finish */
-    }
-    auto* shader_asset = server.get<siren::ShaderAsset>(shader_handle);
+    const auto shaderh = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
+    server.wait_until_loaded(shaderh);
+    auto* shader_asset = server.get<siren::ShaderAsset>(shaderh);
 
     const auto pipeline = device->create_graphics_pipeline({
         .label             = std::nullopt,

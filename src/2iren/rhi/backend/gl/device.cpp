@@ -151,9 +151,11 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
         const auto type     = m_image_table.details(target.depth_stencil->image).descriptor.format;
         switch (type) {
             case ImageFormat::Depth32f:
-                glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, image_id, 0); break;
+                glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, image_id, 0);
+                break;
             case ImageFormat::Depth24Stencil8:
-                glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0); break;
+                glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
+                break;
             default: PANIC("Depth/Stencil buffer must have either Depth32f or Depth24Stencil8 format");
         }
     }
@@ -185,6 +187,10 @@ GlDevice::GlDevice(GLFWwindow* window) : m_render_thread(
             m_limits = fetch_limits();
         }
     );
+}
+
+GlDevice::~GlDevice() {
+    wait_until_idle();
 }
 
 auto GlDevice::wait_until_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
