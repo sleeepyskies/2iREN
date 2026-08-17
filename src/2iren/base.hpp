@@ -23,8 +23,8 @@ enum class Backend {
     OpenGL,
 };
 
-/** @brief Toggles single threaded mode in siren. */
-inline constexpr bool SINGLE_THREADED = true;
+/** @brief Toggles single threaded mode in siren. @todo Maybe this should be a cmake option instead. */
+inline constexpr bool SINGLE_THREADED = false;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
