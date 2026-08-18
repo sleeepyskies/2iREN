@@ -155,6 +155,7 @@ constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
         case ImageFormat::RGB8:
         case ImageFormat::sRGB8: return GL_RGB;
 
+        case ImageFormat::RGBA16f:
         case ImageFormat::RGBA8:
         case ImageFormat::sRGBA8: return GL_RGBA;
 

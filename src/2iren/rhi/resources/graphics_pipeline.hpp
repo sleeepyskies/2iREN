@@ -69,9 +69,9 @@ enum class BlendFunction {
     Subtract,
     /** @brief Subtracts the first alpha value from the second. */
     ReverseSubtract,
-    /** @brief Takes the minimum of both alpha values. */
+    /** @brief Takes the minimum of both alpha values. Note this ignores @ref BlendFactor */
     Min,
-    /** @brief Takes the maximum of both alpha values. */
+    /** @brief Takes the maximum of both alpha values. Note this ignores @ref BlendFactor */
     Max,
 };
 

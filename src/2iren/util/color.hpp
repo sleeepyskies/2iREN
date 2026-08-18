@@ -27,11 +27,11 @@ struct Rgba {
     /** @brief Defaults constructs a pure black color. */
     constexpr Rgba() noexcept : r(0), g(0), b(0), a(1) {}
     /** @brief Constructs a new RGBA with the provided value for each channel, but alpha as 1.0f. */
-    constexpr explicit Rgba(const float val) noexcept : r(val), g(val), b(val), a(1) {}
+    constexpr explicit Rgba(const f32 val) noexcept : r(val), g(val), b(val), a(1) {}
     /** @brief Constructs a new RGBA with the provided value for each color channel and using the given alpha. */
-    constexpr Rgba(const float color, const float alpha) noexcept : r(color), g(color), b(color), a(alpha) {}
+    constexpr Rgba(const f32 color, const f32 alpha) noexcept : r(color), g(color), b(color), a(alpha) {}
     /** @brief Constructs a new RGBA color provided the given values. */
-    constexpr Rgba(const float r, const float g, const float b, const float a) noexcept : r(r), g(g), b(b), a(a) {}
+    constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept : r(r), g(g), b(b), a(a) {}
 
     Rgba(const Rgba&)            = default;
     Rgba(Rgba&&)                 = default;
@@ -63,12 +63,12 @@ struct Rgba {
     }
 
     /** @brief Scalar multiplication. */
-    [[nodiscard]] constexpr auto operator*(const float s) const noexcept -> Rgba {
+    [[nodiscard]] constexpr auto operator*(const f32 s) const noexcept -> Rgba {
         return {r * s, g * s, b * s, a * s};
     }
 
     /** @brief Scalar division. */
-    [[nodiscard]] constexpr auto operator/(const float s) const noexcept -> Rgba {
+    [[nodiscard]] constexpr auto operator/(const f32 s) const noexcept -> Rgba {
         return {r / s, g / s, b / s, a / s};
     }
 
@@ -91,13 +91,13 @@ struct Rgba {
     }
 
     /** @brief Multiplies an RGBA with a scalar. */
-    constexpr auto operator*=(const float s) noexcept -> Rgba& {
+    constexpr auto operator*=(const f32 s) noexcept -> Rgba& {
         *this = *this * s;
         return *this;
     }
 
     /** @brief Divides an RGBA with a scalar. */
-    constexpr auto operator/=(const float s) noexcept -> Rgba& {
+    constexpr auto operator/=(const f32 s) noexcept -> Rgba& {
         *this = *this / s;
         return *this;
     }
