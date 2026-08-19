@@ -77,11 +77,13 @@ int main() {
     );
     auto window = ctx.create_window({});
 
-    auto device    = ctx.create_device({.window = window});
-    auto swapchain = device->create_swapchain(
+    const auto device    = ctx.create_device({.window = window});
+    const auto swapchain = device->create_swapchain(
         {
-            .label = std::nullopt,
-            .vsync = true,
+            .label  = std::nullopt,
+            .vsync  = true,
+            .extent = glm::uvec2{window.width(), window.height()},
+            .window = &window,
         }
     );
 

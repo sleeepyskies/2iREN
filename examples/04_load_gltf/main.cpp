@@ -34,10 +34,14 @@ auto render_node(
 }
 
 auto main() -> siren::i32 {
-    siren::Context ctx{{.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}};
-    siren::Window window;
-    auto device    = ctx.create_device(window);
-    auto swapchain = device->create_swapchain({.label = std::nullopt, .vsync = true});
+    const auto ctx = siren::Context::create(
+        {.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}
+    );
+    auto window          = ctx.create_window({});
+    const auto device    = ctx.create_device({.window = window});
+    const auto swapchain = device->create_swapchain(
+        {.label = std::nullopt, .vsync = true, .extent = window.size(), .window = &window}
+    );
     siren::AssetServer server{*device};
 
     const auto shaderh = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/load_gltf.sshg");
@@ -72,8 +76,18 @@ auto main() -> siren::i32 {
         }
     );
 
+    const siren::RenderTarget target{
+        .colors = {
+            {
+                .image           = swapchain.next_image(),
+                .begin_operation = siren::BeginOperation::Clear,
+                .clear_color     = siren::Rgba::black()
+            },
+        },
+        .depth_stencil = std::nullopt
+    };
+
     // main render loop
-    siren::log::info("Starting render loop.");
     while (!window.should_close()) {
         window.poll_events();
 
@@ -83,10 +97,7 @@ auto main() -> siren::i32 {
         device->render_submit(
             [&](siren::RenderCommandRecorder& cmds) -> void {
                 cmds.render_pass(
-                    {
-                        .clear_color = siren::Rgba::red(),
-                        .target = siren::RenderTarget{.colors = {swapchain.next_image()}, .depth_stencil = std::nullopt}
-                    },
+                    {.target = target},
                     [&](siren::RenderPassRecorder& pass) -> void {
                         pass.bind_graphics_pipeline(pipeline.handle());
                         pass.bind_uniform_buffer(ubo.handle(), 0);

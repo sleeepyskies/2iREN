@@ -38,6 +38,7 @@ const std::unordered_map<siren::ShaderStage, siren::ShaderData> shaders = {
     {siren::ShaderStage::Vertex, vertex_shader},
     {siren::ShaderStage::Fragment, fragment_shader},
 };
+
 const siren::ByteBuffer vertices{
     Vertex{.x = 0.0f, .y = 0.5f, .z = 0.0f, .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f},
     Vertex{.x = -0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f},
@@ -55,8 +56,8 @@ auto main() -> siren::i32 {
     );
     auto window = ctx.create_window({});
 
-    auto device    = ctx.create_device({.window = window});
-    auto swapchain = device->create_swapchain(
+    const auto device    = ctx.create_device({.window = window});
+    const auto swapchain = device->create_swapchain(
         {
             .label  = std::nullopt,
             .vsync  = true,
@@ -67,7 +68,7 @@ auto main() -> siren::i32 {
 
     const auto buffer = device->create_buffer(
         {
-            .label = "sample_buffer",
+            .label = std::nullopt,
             .data  = vertices.data(),
             .size  = vertices.size_bytes(),
             .usage = siren::BufferUsage::Static,
