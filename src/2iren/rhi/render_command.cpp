@@ -145,6 +145,32 @@ auto RenderPassRecorder::bind_uniform_buffer_range(
     m_active_uniform_buffers[slot] = uniform_buffer;
 }
 
+auto RenderPassRecorder::bind_shader_storage_buffer(
+    const BufferHandle shader_storage_buffer,
+    const u32 slot
+) noexcept -> void {
+    const auto& it = m_active_shader_storage_buffers.find(slot);
+    if (it != m_active_shader_storage_buffers.end() && it->second == shader_storage_buffer) {
+        return;
+    }
+
+    m_commands.emplace_back(
+        RenderCommand{
+            .command =
+            {
+                .bind_shader_storage_buffer =
+                {
+                    .shader_storage_buffer = shader_storage_buffer,
+                    .slot                  = slot,
+                },
+            },
+            .type = RenderCommandType::BindShaderStorageBuffer,
+        }
+    );
+
+    m_active_shader_storage_buffers[slot] = shader_storage_buffer;
+}
+
 auto RenderPassRecorder::bind_sampled_image(
     const ImageHandle image,
     const SamplerHandle sampler,

@@ -44,6 +44,8 @@ public:
         Unknown = 0,
         /** @brief 1-channel 8-bit R. */
         R8,
+        /** @brief 1-channel 32-bit R. */
+        R32UI,
         /** @brief 3-channel 8-bit linear RGB. */
         RGB8,
         /** @brief 3-channel 8-bit sRGB. */

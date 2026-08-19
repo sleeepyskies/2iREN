@@ -20,9 +20,6 @@ namespace siren {
 ///     to create individual GPU objects via device, but having server call
 ///     device directly is not great imo... but then for this there should
 ///     exist a Renderer that simplifies Asset -> GPU object creation
-///
-/// todo:
-///     - reload assets
 
 class Device;
 
@@ -367,6 +364,8 @@ private:
     friend class LoadContext; // Need access to create the dependency tree.
 
     auto on_asset_unload(const AssetId id) -> void {
+        log::debug("Unloading asset {}", id);
+
         auto hashed_string = m_data.id_to_path.run_exclusive([&](auto& map) -> std::optional<HashedString> {
             const auto it = map.find(id);
             if (it == map.end()) {
@@ -380,6 +379,8 @@ private:
         if (!hashed_string) {
             return;
         }
+
+        log::debug("Asset from cache with path {} and id {} unloaded", hashed_string.value().data(), id);
 
         m_data.asset_infos.run_exclusive([&](auto& map) {
             const auto it = map.find(*hashed_string);

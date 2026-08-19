@@ -108,6 +108,7 @@ constexpr auto img_dim_to_siren(const GLenum dim) -> ImageDimension {
 constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
     switch (format) {
         case ImageFormat::R8: return GL_R8;
+        case ImageFormat::R32UI: return GL_R32UI;
         case ImageFormat::RGB8: return GL_RGB8;
         case ImageFormat::sRGB8: return GL_SRGB8;
         case ImageFormat::RGBA8: return GL_RGBA8;
@@ -128,6 +129,7 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
 constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> ImageFormat {
     switch (internal_format) {
         case GL_R8: return ImageFormat::R8;
+        case GL_R32UI: return ImageFormat::R32UI;
         case GL_RGB8: return ImageFormat::RGB8;
         case GL_SRGB8: return ImageFormat::sRGB8;
         case GL_RGBA8: return ImageFormat::RGBA8;
@@ -147,6 +149,7 @@ constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> Imag
  */
 constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
     switch (format) {
+        case ImageFormat::R32UI:
         case ImageFormat::R8: return GL_RED;
 
         case ImageFormat::RG32f: return GL_RG;

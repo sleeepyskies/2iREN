@@ -32,6 +32,8 @@ struct Statistics {
     u32 count_bind_index_buffer;
     /** @brief The number of @ref BindUniformBuffer commands. */
     u32 count_bind_uniform_buffer;
+    /** @brief The number of @ref BindShaderStorageBuffer commands. */
+    u32 count_bind_shader_storage_buffer;
     /** @brief The number of @ref BindSampledImage commands. */
     u32 count_bind_sampled_image;
     /** @brief The number of @ref BindStorageImage commands. */

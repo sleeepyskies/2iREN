@@ -10,7 +10,6 @@
 #include "resources/fwd.hpp"
 
 namespace siren {
-
 // todo: optimization here to use a packed blob vector. we serialize the commands basically,
 // and make use of a CommandHeader indicating the size and type to interpret the next bytes as
 
@@ -26,6 +25,7 @@ enum class RenderCommandType : u8 {
     BindIndexBuffer,
     BindUniformBuffer,
     BindUniformBufferRange,
+    BindShaderStorageBuffer,
 
     BindSampledImage,
     BindStorageImage,
@@ -106,6 +106,16 @@ struct BindUniformBufferRange {
 };
 
 /**
+ * @brief Binds a Shader Storage Buffer Object.
+ */
+struct BindShaderStorageBuffer {
+    /** @brief The buffer to bind. */
+    BufferHandle shader_storage_buffer;
+    /** @brief The slot to bind to. */
+    u32 slot;
+};
+
+/**
  * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap sampling.
  * This also allows only for read access and uses texture coordinates instead of pixel coordinates.
  */
@@ -176,6 +186,7 @@ struct RenderCommand {
         BindIndexBuffer bind_index_buffer;
         BindUniformBuffer bind_uniform_buffer;
         BindUniformBufferRange bind_uniform_buffer_range;
+        BindShaderStorageBuffer bind_shader_storage_buffer;
         BindSampledImage bind_sampled_image;
         BindStorageImage bind_storage_image;
         BeginQuery begin_query;
@@ -201,6 +212,8 @@ struct RenderCommand {
             return command.bind_uniform_buffer;
         } else if constexpr (std::is_same_v<Command, BindUniformBufferRange>) {
             return command.bind_uniform_buffer_range;
+        } else if constexpr (std::is_same_v<Command, BindShaderStorageBuffer>) {
+            return command.bind_shader_storage_buffer;
         } else if constexpr (std::is_same_v<Command, BindSampledImage>) {
             return command.bind_sampled_image;
         } else if constexpr (std::is_same_v<Command, BindStorageImage>) {
@@ -312,6 +325,13 @@ public:
     auto bind_uniform_buffer_range(BufferHandle uniform_buffer, u32 slot, usize offset, usize size) noexcept -> void;
 
     /**
+     * @brief Binds a Shader Storage Buffer to the given slot.
+     * @param shader_storage_buffer The @ref Buffer to bind to the slot.
+     * @param slot The slot to bind to.
+     */
+    auto bind_shader_storage_buffer(BufferHandle shader_storage_buffer, u32 slot) noexcept -> void;
+
+    /**
      * @brief Binds an @ref Image to the given slot for sampled access.
      * @param image The @ref Image to bind to the slot.
      * @param sampler The @ref Sampler to access the @ref Image through.
@@ -369,6 +389,9 @@ private:
     /** @brief The tracked uniform buffers. */
     /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_uniform_buffers;
+    /** @brief The tracked shader storage buffers. */
+    /** @todo replace with an array? */
+    std::unordered_map<u32, BufferHandle> m_active_shader_storage_buffers;
     /** @brief The tracked sampled images. */
     std::unordered_map<u32, ImageHandle> m_sampled_images;
     /** @brief The tracked storage images. */
@@ -409,5 +432,4 @@ private:
     std::vector<RenderCommand> m_commands;
     std::vector<RenderPass> m_render_passes;
 };
-
 } // namespace siren

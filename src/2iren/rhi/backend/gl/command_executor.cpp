@@ -305,6 +305,10 @@ auto GlCommandExecutor::execute_pass(
                 bind_uniform_buffer_range(cmd.as<BindUniformBufferRange>());
                 break;
             }
+            case RenderCommandType::BindShaderStorageBuffer: {
+                bind_shader_storage_buffer(cmd.as<BindShaderStorageBuffer>());
+                break;
+            }
             case RenderCommandType::BindSampledImage: {
                 bind_sampled_image(cmd.as<BindSampledImage>());
                 break;
@@ -465,6 +469,14 @@ auto GlCommandExecutor::bind_uniform_buffer_range(
         bind_uniform_buffer_range.offset,
         bind_uniform_buffer_range.size
     );
+}
+
+auto GlCommandExecutor::bind_shader_storage_buffer(
+    const BindShaderStorageBuffer& bind_shader_storage_buffer
+) const -> void {
+    m_statistics.count_bind_shader_storage_buffer++;
+    const auto ubo = m_state.buffer_table.fetch(bind_shader_storage_buffer.shader_storage_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bind_shader_storage_buffer.slot, ubo);
 }
 
 auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void {

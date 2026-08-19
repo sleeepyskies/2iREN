@@ -59,6 +59,7 @@ private:
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;
     /** @brief Handles @ref SetViewport. */
     auto set_viewport(const SetViewport& set_viewport, const RenderTarget& target) const -> void;
+
     /** @brief Handles @ref BindVertexBuffer. */
     auto bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const -> void;
     /** @brief Handles @ref BindIndexBuffer. */
@@ -67,6 +68,9 @@ private:
     auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void;
     /** @brief Handles @ref BindUniformBufferRange. */
     auto bind_uniform_buffer_range(const BindUniformBufferRange& bind_uniform_buffer_range) const -> void;
+    /** @brief Handles @ref BindShaderStorageBuffer. */
+    auto bind_shader_storage_buffer(const BindShaderStorageBuffer& bind_shader_storage_buffer) const -> void;
+
     /** @brief Handles @ref BindSampledImage. */
     auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void;
     /** @brief Handles @ref BindStorageImage. */
