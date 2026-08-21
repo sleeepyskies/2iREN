@@ -122,6 +122,9 @@ public:
     /** @brief Clears the image with the provided color. */
     auto clear(const Rgba color) const -> void;
 
+    /** @brief Clears the image with the provided value. */
+    auto clear(const u32 value) const -> void;
+
     /** @brief Returns the descriptor of this Image. */
     [[nodiscard]] auto descriptor() const noexcept -> const ImageDescriptor&;
 };

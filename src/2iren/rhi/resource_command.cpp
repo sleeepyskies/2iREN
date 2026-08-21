@@ -59,7 +59,21 @@ auto ResourceCommandRecorder::clear_image(ImageHandle image_handle, const Rgba c
             .command = {
                 .clear_image = {
                     .image_handle = image_handle,
-                    .color        = color,
+                    .value        = color,
+                }
+            },
+            .type = ResourceCommandType::ClearImage,
+        }
+    );
+}
+
+auto ResourceCommandRecorder::clear_image(const ImageHandle image_handle, const u32 value) -> void {
+    m_commands.emplace_back(
+        ResourceCommand{
+            .command = {
+                .clear_image = {
+                    .image_handle = image_handle,
+                    .value        = value,
                 }
             },
             .type = ResourceCommandType::ClearImage,

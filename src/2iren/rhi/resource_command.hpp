@@ -47,6 +47,8 @@ struct UploadImage {
     u32 layer;
 };
 
+using ClearImageValue = std::variant<Rgba, u32>;
+
 /**
  * @brief Parameters for clearing an @ref Image.
  */
@@ -54,7 +56,7 @@ struct ClearImage {
     /** @brief The handle of the target @ref Image. */
     ImageHandle image_handle;
     /** @brief The value to clear the image with. */
-    Rgba color;
+    ClearImageValue value;
 };
 
 /**
@@ -128,6 +130,13 @@ public:
      * @param color The color to clear.
      */
     auto clear_image(ImageHandle image_handle, const Rgba color) -> void;
+
+    /**
+     * @brief Clears the given @ref Image with the provided color.
+     * @param image_handle The image to upload to.
+     * @param value The value to clear.
+     */
+    auto clear_image(ImageHandle image_handle, const u32 value) -> void;
 
     /** @brief Consumes the internal data of the ResourceCommandBuffer ready for execution. */
     [[nodiscard]] auto finish() noexcept -> ResourceCommandBuffer;

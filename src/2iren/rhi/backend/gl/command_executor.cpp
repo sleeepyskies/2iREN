@@ -224,7 +224,13 @@ auto GlCommandExecutor::upload_buffer(
 auto GlCommandExecutor::clear_image(const ClearImage& cmd) const -> void {
     const auto img    = m_state.image_table.fetch(cmd.image_handle);
     const auto format = m_state.image_table.details(cmd.image_handle).descriptor.format;
-    glClearTexImage(img, 0, gl::img_format_to_gl_layout(format), GL_FLOAT, &cmd.color.r);
+    if (std::holds_alternative<Rgba>(cmd.value)) {
+        glClearTexImage(img, 0, gl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(cmd.value).r);
+    } else if (std::holds_alternative<u32>(cmd.value)) {
+        glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(cmd.value));
+    } else {
+        PANIC("Unknown data type passed to ClearImage");
+    }
 }
 
 // ============================================================================
@@ -237,42 +243,46 @@ auto GlCommandExecutor::execute_pass(
     const std::span<const RenderCommand> commands
 ) const -> void {
     m_statistics.count_render_passes++;
-    const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    // we can perform a render pass with no attachments
+    if (descriptor.target.colors.size() > 0 || descriptor.target.depth_stencil != std::nullopt) {
+        const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
 
-    // reset some pipeline state to prevent state bleeds (tySM OpenGL :D)
-    glDepthMask(GL_TRUE);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glStencilMask(0xFF);
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
-        if (attachment.begin_operation == BeginOperation::Clear) {
-            glClearNamedFramebufferfv(
-                framebuffer,
-                GL_COLOR,
-                static_cast<GLint>(index),
-                (float*)&attachment.clear_color.r
-            );
-        } else if (attachment.begin_operation == BeginOperation::Preserve) {
-            continue;
-        } else if (attachment.begin_operation == BeginOperation::Fuckit) {
-            // invalidate previous data
-            const auto attachment_enum = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index);
-            glInvalidateNamedFramebufferData(framebuffer, 1, &attachment_enum);
+        // reset some pipeline state to prevent state bleeds (tySM OpenGL :D)
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glStencilMask(0xFF);
+
+        for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
+            if (attachment.begin_operation == BeginOperation::Clear) {
+                glClearNamedFramebufferfv(
+                    framebuffer,
+                    GL_COLOR,
+                    static_cast<GLint>(index),
+                    (float*)&attachment.clear_color.r
+                );
+            } else if (attachment.begin_operation == BeginOperation::Preserve) {
+                continue;
+            } else if (attachment.begin_operation == BeginOperation::Fuckit) {
+                // invalidate previous data
+                const auto attachment_enum = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index);
+                glInvalidateNamedFramebufferData(framebuffer, 1, &attachment_enum);
+            }
         }
-    }
 
-    if (descriptor.target.depth_stencil.has_value()) {
-        if (descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
-            const auto& attachment = *descriptor.target.depth_stencil;
-            glClearNamedFramebufferfi(
-                framebuffer,
-                GL_DEPTH_STENCIL,
-                0,
-                attachment.clear_depth,
-                attachment.clear_stencil
-            );
+        if (descriptor.target.depth_stencil.has_value()) {
+            if (descriptor.target.depth_stencil->begin_operation == BeginOperation::Clear) {
+                const auto& attachment = *descriptor.target.depth_stencil;
+                glClearNamedFramebufferfi(
+                    framebuffer,
+                    GL_DEPTH_STENCIL,
+                    0,
+                    attachment.clear_depth,
+                    attachment.clear_stencil
+                );
+            }
         }
     }
 

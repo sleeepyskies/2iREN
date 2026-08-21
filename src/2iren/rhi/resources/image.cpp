@@ -38,5 +38,13 @@ auto Image::clear(const Rgba color) const -> void {
     );
 }
 
+auto Image::clear(const u32 value) const -> void {
+    m_device->resource_submit(
+        [&](ResourceCommandRecorder& resource) {
+            resource.clear_image(m_handle, value);
+        }
+    );
+}
+
 auto Image::descriptor() const noexcept -> const ImageDescriptor& { return m_device->image_descriptor(m_handle); }
 } // namespace siren
