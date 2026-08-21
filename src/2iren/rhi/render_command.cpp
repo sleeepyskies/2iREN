@@ -250,6 +250,10 @@ auto RenderPassRecorder::draw_arrays(const u32 start, const u32 count) noexcept 
     );
 }
 
+auto RenderPassRecorder::draw_fullscreen() noexcept -> void {
+    draw_arrays(0, 3);
+}
+
 auto RenderPassRecorder::draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void {
     ASSERT(m_active_pipeline.is_valid(), "There is no pipeline bound, cannot call RenderPassRecorder::draw_indexed.");
     ASSERT(

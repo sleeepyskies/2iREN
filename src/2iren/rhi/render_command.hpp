@@ -366,6 +366,11 @@ public:
     auto draw_arrays(u32 start, u32 count) noexcept -> void;
 
     /**
+     * @brief Shorthand function for drawing a fullscreen. Simple uses draw_arrays() under the hood.
+     */
+    auto draw_fullscreen() noexcept -> void;
+
+    /**
      * @brief Draws from the currently bound vertex buffer(s) using the currently
      * bound index buffer.
      * @param index_count The amount of indices to draw.

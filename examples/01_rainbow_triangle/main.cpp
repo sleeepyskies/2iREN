@@ -121,7 +121,7 @@ auto main() -> siren::i32 {
             [&](siren::RenderPassRecorder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_arrays(0, 3);
+                pass.draw_fullscreen();
             }
         );
 
