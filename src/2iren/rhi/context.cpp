@@ -69,9 +69,7 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
     }
 
     // init async stuffs
-    if constexpr (!SINGLE_THREADED) {
-        ThreadPool::init();
-    }
+    ThreadPool::init();
 
     // init asset server
 
@@ -86,7 +84,7 @@ auto Context::create(const ContextDescriptor& descriptor) -> Context {
         throw std::runtime_error("Context already created.");
     }
     called = true;
-    return Context{descriptor};
+    return Context{std::move(descriptor)};
 }
 
 Context::~Context() {

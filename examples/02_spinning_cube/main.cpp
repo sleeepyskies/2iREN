@@ -181,7 +181,7 @@ int main() {
             }
         );
 
-        device->blit(target.colors[0].image, swapchain.next_image());
+        device->blit_image(target.colors[0].image, swapchain.next_image());
 
         device->present(swapchain.handle());
         device->flush_delete_queue();

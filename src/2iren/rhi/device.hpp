@@ -200,10 +200,12 @@ public:
     /** @brief QOL function. Use when only recording a single render pass is required. */
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderPassRecorder&>)
-    auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
+    auto render_pass(RenderPassDescriptor&& descriptor, Function&& func) noexcept -> void {
         render_submit(
-            [&](RenderCommandRecorder& recorder) {
-                recorder.render_pass(descriptor, func);
+            [descriptor = std::move(descriptor), func = std::forward<Function>(func)](
+            RenderCommandRecorder& recorder
+        ) mutable {
+                recorder.render_pass(std::move(descriptor), std::move(func));
             }
         );
     }
@@ -235,7 +237,9 @@ public:
 
     /** @brief Copies the content of an @ref Image to another @ref Image. @note Assumes source and destination have the
      * same size. */
-    virtual auto blit(ImageHandle source, ImageHandle destination) const -> void = 0;
+    virtual auto blit_image(ImageHandle source, ImageHandle destination) const -> void = 0;
+    /** @brief Reads the image data into a buffer and returns it. @warning May stall the thread until task is complete. */
+    virtual auto read_image(const ImageHandle image) const -> std::vector<u8> = 0;
 
     /**
      * @brief Retrieves the information stored inside a query object. May be blocking on some implementations.

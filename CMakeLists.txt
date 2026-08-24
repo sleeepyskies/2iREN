@@ -57,6 +57,7 @@ add_library(
         src/2iren/util/time.cpp
         src/2iren/util/filesystem.cpp
         src/2iren/util/stb_image.cpp
+        src/2iren/util/stb_image_write.cpp
         src/2iren/util/cgltf.cpp
         src/2iren/util/camera.cpp
 )

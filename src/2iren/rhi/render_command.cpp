@@ -5,9 +5,12 @@ namespace siren {
 // == MARK: RenderPassRecorder
 // ============================================================================
 
-RenderPassRecorder::RenderPassRecorder(const RenderPassDescriptor& descriptor) : m_descriptor(descriptor) {
-    // todo: no clue how much is good to reserve here
-    m_commands.reserve(1024);
+RenderPassRecorder::RenderPassRecorder(
+    RenderPassDescriptor&& descriptor,
+    const usize size_hint
+)
+    : m_descriptor(std::move(descriptor)) {
+    m_commands.reserve(size_hint);
 }
 
 auto RenderPassRecorder::bind_graphics_pipeline(const GraphicsPipelineHandle pipeline_handle) noexcept -> void {
@@ -43,13 +46,13 @@ auto RenderPassRecorder::set_viewport(const u32 x, const u32 y, const u32 width,
 }
 
 auto RenderPassRecorder::bind_vertex_buffer(
-    const BufferHandle vertex_buffer,
+    const BufferHandle buffer,
     const u32 slot,
     const u32 offset
 ) noexcept
     -> void {
     const auto& it = m_active_vertex_buffers.find(slot);
-    if (it != m_active_vertex_buffers.end() && it->second == vertex_buffer) {
+    if (it != m_active_vertex_buffers.end() && it->second == buffer) {
         return;
     }
 
@@ -59,7 +62,7 @@ auto RenderPassRecorder::bind_vertex_buffer(
             {
                 .bind_vertex_buffer =
                 {
-                    .vertex_buffer = vertex_buffer,
+                    .vertex_buffer = buffer,
                     .slot          = slot,
                     .offset        = offset,
                 },
@@ -68,22 +71,22 @@ auto RenderPassRecorder::bind_vertex_buffer(
         }
     );
 
-    m_active_vertex_buffers[slot] = vertex_buffer;
+    m_active_vertex_buffers[slot] = buffer;
 }
 
 auto RenderPassRecorder::bind_index_buffer(
-    const BufferHandle index_buffer,
+    const BufferHandle buffer,
     const IndexFormat index_format
 ) noexcept
     -> void {
     if (m_active_index_buffer.has_value()) {
         const auto& active = m_active_index_buffer.value();
-        if (active.index_buffer == index_buffer && active.index_format == index_format) {
+        if (active.index_buffer == buffer && active.index_format == index_format) {
             return;
         }
     }
 
-    const BindIndexBuffer cmd{.index_buffer = index_buffer, .index_format = index_format};
+    const BindIndexBuffer cmd{.index_buffer = buffer, .index_format = index_format};
 
     m_commands.emplace_back(
         RenderCommand{
@@ -98,9 +101,9 @@ auto RenderPassRecorder::bind_index_buffer(
     m_active_index_buffer = cmd;
 }
 
-auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, const u32 slot) noexcept -> void {
+auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept -> void {
     const auto& it = m_active_uniform_buffers.find(slot);
-    if (it != m_active_vertex_buffers.end() && it->second == uniform_buffer) {
+    if (it != m_active_vertex_buffers.end() && it->second == buffer) {
         return;
     }
 
@@ -110,7 +113,7 @@ auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, 
             {
                 .bind_uniform_buffer =
                 {
-                    .uniform_buffer = uniform_buffer,
+                    .uniform_buffer = buffer,
                     .slot           = slot,
                 },
             },
@@ -118,11 +121,11 @@ auto RenderPassRecorder::bind_uniform_buffer(const BufferHandle uniform_buffer, 
         }
     );
 
-    m_active_uniform_buffers[slot] = uniform_buffer;
+    m_active_uniform_buffers[slot] = buffer;
 }
 
 auto RenderPassRecorder::bind_uniform_buffer_range(
-    const BufferHandle uniform_buffer,
+    const BufferHandle buffer,
     const u32 slot,
     const usize offset,
     const usize size
@@ -132,7 +135,7 @@ auto RenderPassRecorder::bind_uniform_buffer_range(
         RenderCommand{
             .command = {
                 .bind_uniform_buffer_range = {
-                    .uniform_buffer = uniform_buffer,
+                    .uniform_buffer = buffer,
                     .slot           = slot,
                     .offset         = offset,
                     .size           = size,
@@ -142,15 +145,15 @@ auto RenderPassRecorder::bind_uniform_buffer_range(
         }
     );
 
-    m_active_uniform_buffers[slot] = uniform_buffer;
+    m_active_uniform_buffers[slot] = buffer;
 }
 
 auto RenderPassRecorder::bind_shader_storage_buffer(
-    const BufferHandle shader_storage_buffer,
+    const BufferHandle buffer,
     const u32 slot
 ) noexcept -> void {
     const auto& it = m_active_shader_storage_buffers.find(slot);
-    if (it != m_active_shader_storage_buffers.end() && it->second == shader_storage_buffer) {
+    if (it != m_active_shader_storage_buffers.end() && it->second == buffer) {
         return;
     }
 
@@ -160,7 +163,7 @@ auto RenderPassRecorder::bind_shader_storage_buffer(
             {
                 .bind_shader_storage_buffer =
                 {
-                    .shader_storage_buffer = shader_storage_buffer,
+                    .shader_storage_buffer = buffer,
                     .slot                  = slot,
                 },
             },
@@ -168,7 +171,7 @@ auto RenderPassRecorder::bind_shader_storage_buffer(
         }
     );
 
-    m_active_shader_storage_buffers[slot] = shader_storage_buffer;
+    m_active_shader_storage_buffers[slot] = buffer;
 }
 
 auto RenderPassRecorder::bind_sampled_image(
@@ -199,7 +202,11 @@ auto RenderPassRecorder::bind_sampled_image(
     m_sampled_images[slot] = image;
 }
 
-auto RenderPassRecorder::bind_storage_image(ImageHandle image, u32 slot) noexcept -> void {
+auto RenderPassRecorder::bind_storage_image(
+    const ImageHandle image,
+    const AccessKind access,
+    const u32 slot
+) noexcept -> void {
     const auto& it = m_storage_images.find(slot);
     if (it != m_storage_images.end() && it->second == image) {
         return;
@@ -211,8 +218,9 @@ auto RenderPassRecorder::bind_storage_image(ImageHandle image, u32 slot) noexcep
             {
                 .bind_storage_image =
                 {
-                    .image = image,
-                    .slot  = slot,
+                    .image  = image,
+                    .slot   = slot,
+                    .access = access,
                 },
             },
             .type = RenderCommandType::BindStorageImage,
@@ -286,10 +294,10 @@ auto RenderPassRecorder::finish() -> RenderPassResult { return {std::move(m_comm
 // ============================================================================
 
 auto RenderCommandRecorder::begin_render_pass(
-    const RenderPassDescriptor& descriptor
+    RenderPassDescriptor&& descriptor
 ) const noexcept
     -> RenderPassRecorder {
-    return RenderPassRecorder{descriptor};
+    return RenderPassRecorder{std::move(descriptor)};
 }
 
 auto RenderCommandRecorder::consume_render_pass(const RenderPassResult& commands) noexcept -> void {

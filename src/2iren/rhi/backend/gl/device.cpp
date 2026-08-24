@@ -813,7 +813,7 @@ auto GlDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) 
     );
 }
 
-auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) const -> void {
+auto GlDevice::blit_image(const ImageHandle source, const ImageHandle destination) const -> void {
     // opengl doesn't have image blitting, so we get_create() cached fbos for images and then blit between the fbos.
     const auto source_id         = m_state.image_table.fetch(source);
     const auto destination_id    = m_state.image_table.fetch(destination);
@@ -849,6 +849,50 @@ auto GlDevice::blit(const ImageHandle source, const ImageHandle destination) con
             // clang-format on
         }
     );
+}
+
+auto GlDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
+    std::vector<u8> buffer;
+
+    m_render_thread.spawn(
+        [this, image, &buffer] {
+            const auto& details = m_state.image_table.details(image);
+
+            const auto& desc = details.descriptor;
+
+            ASSERT(
+                desc.dimension == ImageDimension::D2,
+                "Reading is only supported for 2D images."
+            );
+
+            ASSERT(
+                desc.format == ImageFormat::RGBA8 ||
+                desc.format == ImageFormat::sRGBA8,
+                "Only RGBA8 images can be read from."
+            );
+
+            const auto buffer_size =
+                static_cast<usize>(desc.extent.width) *
+                static_cast<usize>(desc.extent.height) *
+                desc.format.bytes_per_pixel();
+
+            buffer.resize(buffer_size);
+
+            const auto gl_image = m_state.image_table.fetch(image);
+
+            glGetTextureImage(
+                gl_image,
+                0,
+                GL_RGBA,
+                GL_UNSIGNED_BYTE,
+                static_cast<GLsizei>(buffer.size()),
+                buffer.data()
+            );
+        }
+    );
+
+    wait_until_idle();
+    return buffer;
 }
 
 auto GlDevice::limits() const -> const Limits& { return m_limits; }

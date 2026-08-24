@@ -86,8 +86,29 @@ public:
             case RGBA16f: return "RGBA16f";
             case RG32f: return "RG32f";
             case Depth24Stencil8: return "Depth24Stencil8";
-            default: UNREACHABLE();
+            case R32UI: return "R32UI";
+            case Depth32f: return "Depth32f";
         }
+        UNREACHABLE();
+    }
+
+    /** @brief Returns the number of bytes per pixel for this format. */
+    [[nodiscard]] constexpr auto bytes_per_pixel() const -> u32 {
+        switch (value) {
+            case Unknown: return 0;
+            case R8: return 1;
+            case RGB8: return 3;
+            case sRGB8: return 3;
+            case RGBA8: return 4;
+            case sRGBA8: return 4;
+            case RGB16f: return 6;
+            case RGBA16f: return 8;
+            case RG32f: return 8;
+            case Depth24Stencil8: return 4;
+            case R32UI: return 4;
+            case Depth32f: return 4;
+        }
+        UNREACHABLE();
     }
 };
 

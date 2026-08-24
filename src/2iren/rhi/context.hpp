@@ -8,7 +8,6 @@
 #include "fwd.hpp"
 
 namespace siren {
-
 /**
  * @brief Configuration parameters used to create a @ref Context instance.
  */
@@ -76,5 +75,4 @@ private:
     explicit Context(const ContextDescriptor& descriptor);
     ContextDescriptor m_descriptor;
 };
-
 } // namespace siren

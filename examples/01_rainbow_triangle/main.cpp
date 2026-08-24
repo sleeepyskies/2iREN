@@ -125,7 +125,7 @@ auto main() -> siren::i32 {
             }
         );
 
-        device->blit(target.colors[0].image, swapchain.next_image());
+        device->blit_image(target.colors[0].image, swapchain.next_image());
         swapchain.present();
         device->flush_delete_queue();
     }

@@ -13,6 +13,12 @@ namespace siren {
 // todo: optimization here to use a packed blob vector. we serialize the commands basically,
 // and make use of a CommandHeader indicating the size and type to interpret the next bytes as
 
+enum class AccessKind {
+    ReadOnly,
+    WriteOnly,
+    ReadWrite,
+};
+
 /**
  * @brief Identifies the type of operation recorded into the buffer.
  * Acts as a tag for a union.
@@ -137,6 +143,8 @@ struct BindStorageImage {
     ImageHandle image;
     /** @brief The slot to bind to. */
     u32 slot;
+    /** @brief Specifies how the shader may access the @ref Image. */
+    AccessKind access;
 };
 
 /**
@@ -266,7 +274,13 @@ struct RenderPassResult {
 
 class RenderPassRecorder {
 public:
-    explicit RenderPassRecorder(const RenderPassDescriptor& descriptor);
+    /**
+     * @brief Constructs a new @ref RenderPassRecorder.
+     * @param descriptor Parameters used to define the render pass.
+     * @param size_hint Defines the initial size of the inner command buffer.
+     * Use if it is known roughly how many commands will be submitted.
+     */
+    explicit RenderPassRecorder(RenderPassDescriptor&& descriptor, const usize size_hint = 1024);
     ~RenderPassRecorder() = default;
 
     /**
@@ -275,7 +289,7 @@ public:
      * including shaders used, vertex layout, blend mode etc...
      * @param pipeline_handle The @ref GraphicsPipeline to bind.
      */
-    auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline_handle) noexcept -> void;
+    auto bind_graphics_pipeline(const GraphicsPipelineHandle pipeline_handle) noexcept -> void;
 
     /**
      * @brief Sets the viewport area for all following draw calls.
@@ -287,49 +301,54 @@ public:
      * @param width The width in pixels of the viewport.
      * @param height The height in pixels of the viewport.
      */
-    auto set_viewport(u32 x, u32 y, u32 width, u32 height) noexcept -> void;
+    auto set_viewport(const u32 x, const u32 y, const u32 width, const u32 height) noexcept -> void;
 
     /**
      * @brief Assigns a vertex buffer to a slot.
      * Any following draw calls will use the provided buffer.
      * @note The caller should make sure the @ref Buffer layout matches the
      * layout in the bound @ref GraphicsPipeline.
-     * @param vertex_buffer The @ref Buffer to bind to the slot.
+     * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      * @param offset The offset into the @ref Buffer to start from.
      */
-    auto bind_vertex_buffer(BufferHandle vertex_buffer, u32 slot, u32 offset) noexcept -> void;
+    auto bind_vertex_buffer(const BufferHandle buffer, const u32 slot, const u32 offset) noexcept -> void;
 
     /**
      * @brief Binds an index buffer to the current pass.
      * @note There may only be a single index buffer bound at a time.
-     * @param index_buffer The index buffer to bind.
+     * @param buffer The index buffer to bind.
      * @param index_format The format of the indices (e.g., u8, u16, u32).
      */
-    auto bind_index_buffer(BufferHandle index_buffer, IndexFormat index_format) noexcept -> void;
+    auto bind_index_buffer(const BufferHandle buffer, const IndexFormat index_format) noexcept -> void;
 
     /**
      * @brief Binds a Uniform Buffer to the given slot.
-     * @param uniform_buffer The @ref Buffer to bind to the slot.
+     * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      */
-    auto bind_uniform_buffer(BufferHandle uniform_buffer, u32 slot) noexcept -> void;
+    auto bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept -> void;
 
     /**
      * @brief Binds a sub range of a Uniform Buffer to the given slot.
-     * @param uniform_buffer The @ref Buffer to bind to the slot.
+     * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      * @param offset The offset into the buffer to start from.
      * @param size The size of the sub range to bind.
      */
-    auto bind_uniform_buffer_range(BufferHandle uniform_buffer, u32 slot, usize offset, usize size) noexcept -> void;
+    auto bind_uniform_buffer_range(
+        const BufferHandle buffer,
+        const u32 slot,
+        const usize offset,
+        const usize size
+    ) noexcept -> void;
 
     /**
      * @brief Binds a Shader Storage Buffer to the given slot.
-     * @param shader_storage_buffer The @ref Buffer to bind to the slot.
+     * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      */
-    auto bind_shader_storage_buffer(BufferHandle shader_storage_buffer, u32 slot) noexcept -> void;
+    auto bind_shader_storage_buffer(const BufferHandle buffer, const u32 slot) noexcept -> void;
 
     /**
      * @brief Binds an @ref Image to the given slot for sampled access.
@@ -337,14 +356,15 @@ public:
      * @param sampler The @ref Sampler to access the @ref Image through.
      * @param slot The slot to bind to.
      */
-    auto bind_sampled_image(ImageHandle image, SamplerHandle sampler, u32 slot) noexcept -> void;
+    auto bind_sampled_image(const ImageHandle image, const SamplerHandle sampler, const u32 slot) noexcept -> void;
 
     /**
      * @brief Binds an @ref Image to the given slot for direct access.
      * @param image The @ref Image to bind to the slot.
+     * @param access The access permissions the shader will have.
      * @param slot The slot to bind to.
      */
-    auto bind_storage_image(ImageHandle image, u32 slot) noexcept -> void;
+    auto bind_storage_image(const ImageHandle image, const AccessKind access, const u32 slot) noexcept -> void;
 
     /**
      * @brief Begins recording query information.
@@ -363,7 +383,7 @@ public:
      * @param start The first vertex to draw.
      * @param count The amount of vertices starting from the first to draw.
      */
-    auto draw_arrays(u32 start, u32 count) noexcept -> void;
+    auto draw_arrays(const u32 start, const u32 count) noexcept -> void;
 
     /**
      * @brief Shorthand function for drawing a fullscreen. Simple uses draw_arrays() under the hood.
@@ -376,7 +396,7 @@ public:
      * @param index_count The amount of indices to draw.
      * @param first_index The offset (in indices) into the index buffer to start from.
      */
-    auto draw_indexed(u32 index_count, u32 first_index) noexcept -> void;
+    auto draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void;
 
     /** @brief Consumes the RenderPassRecorder. Result should be passed into @ref RenderCommandRecorder. */
     auto finish() -> RenderPassResult;
@@ -418,14 +438,14 @@ public:
     ~RenderCommandRecorder() = default;
 
     /** @brief Begins a render pass. */
-    [[nodiscard]] auto begin_render_pass(const RenderPassDescriptor& descriptor) const noexcept -> RenderPassRecorder;
+    [[nodiscard]] auto begin_render_pass(RenderPassDescriptor&& descriptor) const noexcept -> RenderPassRecorder;
     /** @brief Consumes the result of a @ref RenderPassRecorder. */
     auto consume_render_pass(const RenderPassResult& commands) noexcept -> void;
 
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderPassRecorder&>)
-    auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
-        auto pass = begin_render_pass(descriptor);
+    auto render_pass(RenderPassDescriptor&& descriptor, Function&& func) noexcept -> void {
+        auto pass = begin_render_pass(std::move(descriptor));
         std::invoke(func, pass);
         consume_render_pass(pass.finish());
     }

@@ -524,7 +524,7 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
         0,
         true,
         0,
-        GL_READ_ONLY,
+        gl::access_kind_to_gl(bind_storage_image.access),
         gl::img_format_to_gl_internal(desc.format)
     );
 }

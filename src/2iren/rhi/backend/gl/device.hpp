@@ -198,7 +198,8 @@ public:
     auto query(QueryHandle handle) const -> u64 override;
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const -> ImageHandle override;
     auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const -> void override;
-    auto blit(ImageHandle source, ImageHandle destination) const -> void override;
+    auto blit_image(ImageHandle source, ImageHandle destination) const -> void override;
+    auto read_image(const ImageHandle image) const -> std::vector<u8> override;
 
     [[nodiscard]] auto limits() const -> const Limits& override;
     [[nodiscard]] auto statistics() const -> Statistics override;
