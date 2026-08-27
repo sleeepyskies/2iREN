@@ -114,6 +114,5 @@ auto main() -> siren::i32 {
         device->flush_delete_queue();
     }
 
-    device->wait_until_idle();
     return 0;
 }

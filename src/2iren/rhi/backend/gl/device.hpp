@@ -154,7 +154,7 @@ public:
     explicit GlDevice(GLFWwindow* window);
     ~GlDevice() override;
 
-    auto wait_until_idle() const noexcept -> void override;
+    auto wait_idle() const noexcept -> void override;
 
     [[nodiscard]] auto create_buffer(const BufferDescriptor& descriptor) -> Buffer override;
     auto destroy_buffer(BufferHandle handle) -> void override;

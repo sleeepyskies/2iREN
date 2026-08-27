@@ -3,8 +3,8 @@ from conan.tools.cmake import cmake_layout, CMakeToolchain, CMakeDeps, CMake
 
 
 class ConanApplication(ConanFile):
-    name = "2iren"
-    version = "alpha"
+    name = "2iREN"
+    version = "0.1.0"
     description = "a cpp23 graphics framework"
     topics = ("graphics", "rendering", "opengl")
 

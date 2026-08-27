@@ -99,6 +99,5 @@ int main() {
         device->flush_delete_queue();
     }
 
-    device->wait_until_idle();
     return 0;
 }

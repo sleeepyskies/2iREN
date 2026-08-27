@@ -118,17 +118,6 @@ struct GraphicsPipelineDescriptor {
     AlphaMode alpha_mode = AlphaMode::Opaque;
     /** @brief Depth function. */
     DepthFunction depth_function = DepthFunction::Less;
-    /*
-    union {
-        struct {
-            /** @brief Describes how to blend color values. Only used if alpha_mode == AlphaMode::Blend.  #
-            BlendDescription color_blend;
-            /** @brief Describes how to blend alpha values. Only used if alpha_mode == AlphaMode::Blend.  #1#
-            BlendDescription alpha_blend;
-        };
-        BlendDescription color_alpha_blend = {};
-    };
-    */
     /** @brief Describes how to blend color values. Only used if alpha_mode == AlphaMode::Blend. */
     BlendDescription color_blend = {};
     /** @brief Describes how to blend alpha values. Only used if alpha_mode == AlphaMode::Blend. */

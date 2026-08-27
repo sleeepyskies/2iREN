@@ -1,5 +1,6 @@
 #include "command_executor.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <glad/gl.h>
 
@@ -249,13 +250,18 @@ auto GlCommandExecutor::execute_pass(
         const GLuint framebuffer = m_state.framebuffer_cache.get_create_for(descriptor.target);
 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        if (descriptor.target.is_srgb) {
+            glEnable(GL_FRAMEBUFFER_SRGB);
+        } else {
+            glDisable(GL_FRAMEBUFFER_SRGB);
+        }
 
         // reset some pipeline state to prevent state bleeds (tySM OpenGL :D)
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glStencilMask(0xFF);
 
-        for (const auto& [index, attachment] : views::enumerate(descriptor.target.colors)) {
+        for (const auto& [index, attachment] : std::views::enumerate(descriptor.target.colors)) {
             if (attachment.begin_operation == BeginOperation::Clear) {
                 glClearNamedFramebufferfv(
                     framebuffer,
@@ -347,8 +353,8 @@ auto GlCommandExecutor::execute_pass(
     }
 
     // clean up pass
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
 auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {

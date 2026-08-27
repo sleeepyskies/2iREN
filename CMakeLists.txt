@@ -1,26 +1,20 @@
-cmake_minimum_required(VERSION 3.30)
-project(2iren)
-
-# create compile_commands.json, needed for nvim navigation
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# warnings as errors
-set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
-add_compile_options(
-        # todo: research more what flags there are, could b some more useful ones idk
-        -Wall               # activate multiple reliable warnings
-        -Wextra             # similar to Wall, just more
-        -Wpedantic          # warnings about non standard compiler extensions
-        -Wnull-dereference  # identifies some null dereference cases
-        -Wno-error=comment  # prevent this warning from being an error
+cmake_minimum_required(VERSION 3.24)
+project(
+        2iREN
+        VERSION 0.1.0
+        LANGUAGES CXX
+        DESCRIPTION "A c++23 Rendering Framework"
 )
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(SIREN_BUILD_EXAMPLES "Build 2iREN Examples" ${PROJECT_IS_TOP_LEVEL})
+option(SIREN_BUILD_TESTS "Build 2iREN Tests" ${PROJECT_IS_TOP_LEVEL})
+option(SIREN_SINGLE_THREADED "Compile 2iREN to run without multi-threading" ON)
+
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 add_library(
-        2iren
+        # todo: clean this up?
+        2iREN
         STATIC
         src/2iren/rhi/backend/gl/command_executor.cpp
         src/2iren/rhi/backend/gl/device.cpp
@@ -62,15 +56,45 @@ add_library(
         src/2iren/util/camera.cpp
 )
 
-target_include_directories(2iren PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+add_library(2iREN::2iREN ALIAS 2iREN)
 
-# pass root dir for VFS of 2iren to work
-target_compile_definitions(2iren PRIVATE SIREN_ENGINE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(
+        2iREN
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+            $<INSTALL_INTERFACE:include>
+)
+
+target_compile_definitions(
+        2iREN
+        PUBLIC
+        GLFW_INCLUDE_NONE
+        SIREN_SINGLE_THREADED=$<BOOL:${SIREN_SINGLE_THREADED}>
+)
+
+
+set_target_properties(2iREN PROPERTIES
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+)
+target_compile_features(2iREN PUBLIC cxx_std_23)
+target_compile_options(2iREN PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wnull-dereference
+)
 
 include(dependencies.cmake)
 
-option(2IREN_BUILD_EXAMPLES "Build 2iREN examples" ON)
-if (2IREN_BUILD_EXAMPLES)
-    include(examples.cmake)
+if (SIREN_BUILD_EXAMPLES)
+    message(STATUS "Building 2iREN Examples...")
+    add_subdirectory(examples/01_hello_triangle)
+    add_subdirectory(examples/02_spinning_cube)
+    add_subdirectory(examples/03_load_shader)
+    add_subdirectory(examples/04_load_gltf)
 endif ()
 
+if (SIREN_BUILD_TESTS)
+    message(STATUS "Running 2iREN Tests...")
+endif ()

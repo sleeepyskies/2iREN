@@ -1,10 +1,10 @@
 add_executable(
-        load_gltf
+        hello_triangle
         main.cpp
 )
 
 target_link_libraries(
-        load_gltf
+        hello_triangle
         PRIVATE
         2iREN::2iREN
 )

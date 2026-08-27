@@ -46,7 +46,6 @@ const siren::ByteBuffer vertices{
 };
 
 auto main() -> siren::i32 {
-    // init siren
     auto ctx = siren::Context::create(
         {
             .debug   = true,
@@ -130,6 +129,5 @@ auto main() -> siren::i32 {
         device->flush_delete_queue();
     }
 
-    device->wait_until_idle();
     return 0;
 }

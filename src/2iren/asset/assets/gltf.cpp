@@ -8,7 +8,7 @@
 #include "2iren/asset/asset_server.hpp"
 #include "2iren/asset/asset_utils.hpp"
 #include "2iren/rhi/device.hpp"
-#include "2iren/util/cgltf.cpp"
+#include "2iren/util/cgltf.h"
 #include "2iren/util/filesystem.hpp"
 
 /// For docs on GLTF see: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#indices-and-names
@@ -803,7 +803,7 @@ static auto load_nodes(const cgltf_data* data, const std::vector<StrongHandle<Me
         node->children = std::move(children);
     }
 
-    return vec | views::keys | ranges::to<std::vector>();
+    return vec | std::views::keys | std::ranges::to<std::vector>();
 }
 
 static auto load_scenes(const cgltf_data* data, const std::vector<StrongHandle<GltfNode>>& nodes, LoadContext& ctx)

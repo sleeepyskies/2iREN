@@ -188,6 +188,5 @@ int main() {
         cnt++;
     }
 
-    device->wait_until_idle();
     return 0;
 }

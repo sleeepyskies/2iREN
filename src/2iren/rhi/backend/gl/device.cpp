@@ -111,7 +111,7 @@ static auto make_label(
 auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
     const Key key{
-        .colors        = target.colors | views::transform(&ColorAttachment::image) | ranges::to<std::vector>(),
+        .colors = target.colors | std::views::transform(&ColorAttachment::image) | std::ranges::to<std::vector>(),
         .depth_stencil = target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
     };
     if (const auto it = m_cache.find(key); it != m_cache.end()) {
@@ -141,7 +141,7 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint 
     GLuint framebuffer;
     glCreateFramebuffers(1, &framebuffer);
 
-    for (const auto [index, attachment] : views::enumerate(target.colors)) {
+    for (const auto [index, attachment] : std::views::enumerate(target.colors)) {
         const auto image_id = m_image_table.fetch(attachment.image);
         glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0 + index, image_id, 0);
     }
@@ -190,10 +190,10 @@ GlDevice::GlDevice(GLFWwindow* window) : m_render_thread(
 }
 
 GlDevice::~GlDevice() {
-    wait_until_idle();
+    wait_idle();
 }
 
-auto GlDevice::wait_until_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
+auto GlDevice::wait_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
 
 auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
     ASSERT(descriptor.size > 0, "Cannot legally allocate empty buffer (sorry).");
@@ -542,7 +542,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
     auto attachment = ColorAttachment{
         .image           = image.handle(),
         .begin_operation = BeginOperation::Clear,
-        .clear_color     = Rgba::black(),
+        .clear_color     = Rgba::BLACK,
     };
 
     m_state.swapchain_table.link(
@@ -598,7 +598,7 @@ auto GlDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descri
                 );
             }
 
-            for (const auto& [index, attribute] : descriptor.layout.components | views::enumerate) {
+            for (const auto& [index, attribute] : descriptor.layout.components | std::views::enumerate) {
                 // enables some element aka the layout(location = n) shader side
                 glEnableVertexArrayAttrib(vertex_array, static_cast<GLuint>(index));
 
@@ -774,7 +774,7 @@ auto GlDevice::query(const QueryHandle handle) const -> u64 {
             glGetQueryObjectui64v(apihandle, GL_QUERY_RESULT, &result);
         }
     );
-    wait_until_idle();
+    wait_idle();
     return result;
 }
 
@@ -840,12 +840,12 @@ auto GlDevice::blit_image(const ImageHandle source, const ImageHandle destinatio
 
     m_render_thread.spawn(
         [source_id, destination_id, source_desc = source_desc]() -> void {
-        // clang-format off
-        glCopyImageSubData(
-            source_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
-            destination_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
-            source_desc.extent.width, source_desc.extent.height, 1
-        );
+            // clang-format off
+            glCopyImageSubData(
+                source_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
+                destination_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
+                source_desc.extent.width, source_desc.extent.height, 1
+            );
             // clang-format on
         }
     );
@@ -891,7 +891,7 @@ auto GlDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
         }
     );
 
-    wait_until_idle();
+    wait_idle();
     return buffer;
 }
 

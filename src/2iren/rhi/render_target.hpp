@@ -56,5 +56,7 @@ struct RenderTarget {
     std::vector<ColorAttachment> colors = {};
     /** @brief Optional depth + stencil attachment. */
     std::optional<DepthStencilAttachment> depth_stencil = std::nullopt;
+    /** @brief Whether to treat this attachment as sRGB color space. @todo This is kinda hacky. */
+    bool is_srgb = false;
 };
 } // namespace siren

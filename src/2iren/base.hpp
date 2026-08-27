@@ -5,26 +5,27 @@
 #include <cstddef>
 #include <ranges>
 
-
 namespace siren {
-namespace ranges = std::ranges;
-namespace views = std::ranges::views;
+
+#ifndef SIREN_SINGLE_THREADED
+#define SIREN_SINGLE_THREADED 0
+#endif
+
+inline constexpr bool SINGLE_THREADED = SIREN_SINGLE_THREADED;
+
 
 /** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
 #define UNIMPLEMENTED() PANIC("Not implemented")
 
 /**
- * @brief The backend to initialize 2iren with.
+ * @brief The backend to initialize 2iREN with.
  */
 enum class Backend {
-    /** @brief Let 2iren handle selecting the best rendering API. */
+    /** @brief Let 2iREN handle selecting the best rendering API. */
     Auto,
     /** @brief Use OpenGL 4.6. */
     OpenGL,
 };
-
-/** @brief Toggles single threaded mode in siren. @todo Maybe this should be a cmake option instead. */
-inline constexpr bool SINGLE_THREADED = true;
 
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
@@ -34,8 +35,6 @@ using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 /** @brief An unsigned 64-bit integer */
 using u64 = std::uint64_t;
-/** @brief An unsigned 128-bit integer */
-using u128 = __uint128_t;
 
 /** @brief A signed 8-bit integer */
 using i8 = std::int8_t;
@@ -45,19 +44,11 @@ using i16 = std::int16_t;
 using i32 = std::int32_t;
 /** @brief A signed 64-bit integer */
 using i64 = std::int64_t;
-/** @brief A signed 128-bit integer */
-using i128 = __int128_t;
 
-// todo: clang doesnt seem to support std::floatx_t, so we use these compiler primitives instead, not ideal though.
-
-/** @brief A 16-bit floating point number. */
-using f16 = _Float16;
 /** @brief A 32-bit floating point number. */
-using f32 = _Float32;
+using f32 = float;
 /** @brief A 64-bit floating point number. */
-using f64 = _Float64;
-/** @brief A 128-bit floating point number. */
-using f128 = _Float128;
+using f64 = double;
 
 /** @brief An unsigned integer capable of holding the largest memory address. */
 using usize = std::size_t;
@@ -67,7 +58,7 @@ using usize = std::size_t;
  * @param end The exclusive end point of the range.
  * @return A range from [0, end).
  */
-constexpr auto range(const usize end) { return views::iota(0u, end); }
+constexpr auto range(const usize end) { return std::views::iota(0u, end); }
 
 /**
  * @brief Creates an iterable range.
@@ -75,7 +66,7 @@ constexpr auto range(const usize end) { return views::iota(0u, end); }
  * @param end The exclusive end point of the range.
  * @return A range from [start, end).
  */
-constexpr auto range(const usize start, const usize end) { return views::iota(start, end); }
+constexpr auto range(const usize start, const usize end) { return std::views::iota(start, end); }
 
 /**
  * Aligns the provided size parameter according to the alignment parameter.

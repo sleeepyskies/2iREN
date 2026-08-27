@@ -76,12 +76,12 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
         return *cfg.format;
     }
 
-    if (ranges::contains(filetypes::SRGB, ext)) {
+    if (std::ranges::contains(filetypes::SRGB, ext)) {
         log::trace("Guessing extension {} image has format LinearColor8.", ext);
         return ImageFormat::RGBA8;
     }
 
-    if (ranges::contains(filetypes::HDR, ext)) {
+    if (std::ranges::contains(filetypes::HDR, ext)) {
         log::trace("Guessing extension {} image has format Hdr16.", ext);
         return ImageFormat::RGB16f;
     }
