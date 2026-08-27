@@ -1,5 +1,4 @@
 requirements:
-  - "cgltf/1.15"
   - "yaml-cpp/0.9.0"
   - "glm/1.0.1"
   - "libassert/2.2.1"
