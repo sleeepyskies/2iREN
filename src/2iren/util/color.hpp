@@ -4,8 +4,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#define DEFINE_RGBA(name, r, g, b, a)                                                                                  \
-    [[nodiscard]] static constexpr auto name() noexcept -> Rgba { return {r, g, b, a}; }
+#include "2iren/base.hpp"
 
 namespace siren {
 /**
@@ -33,10 +32,13 @@ struct Rgba {
     /** @brief Constructs a new RGBA color provided the given values. */
     constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept : r(r), g(g), b(b), a(a) {}
 
-    Rgba(const Rgba&)            = default;
-    Rgba(Rgba&&)                 = default;
+    Rgba(const Rgba&) = default;
+
+    Rgba(Rgba&&) = default;
+
     Rgba& operator=(const Rgba&) = default;
-    Rgba& operator=(Rgba&&)      = default;
+
+    Rgba& operator=(Rgba&&) = default;
 
     /** @brief Formats this RGBA as a string. */
     [[nodiscard]] auto to_string() const -> std::string { return std::format("Rgba({}, {}, {}, {})", r, g, b, a); }
@@ -103,22 +105,30 @@ struct Rgba {
     }
 
     /** @brief All values set to 0. */
-    DEFINE_RGBA(zero, 0.f, 0.f, 0.f, 0.f)
+    static const Rgba ZERO;
     /** @brief All values set to 1. */
-    DEFINE_RGBA(one, 1.f, 1.f, 1.f, 1.f)
+    static const Rgba ONE;
     /** @brief A pure black color. */
-    DEFINE_RGBA(black, 0.f, 0.f, 0.f, 1.f)
+    static const Rgba BLACK;
     /** @brief A gray color. */
-    DEFINE_RGBA(gray, 0.5f, 0.5f, 0.5f, 1.f)
+    static const Rgba GRAY;
     /** @brief A pure white color. */
-    DEFINE_RGBA(white, 1.f, 1.f, 1.f, 1.f)
+    static const Rgba WHITE;
     /** @brief A pure red color. */
-    DEFINE_RGBA(red, 1.f, 0.f, 0.f, 1.f)
+    static const Rgba RED;
     /** @brief A pure green color. */
-    DEFINE_RGBA(green, 0.f, 1.f, 0.f, 1.f)
+    static const Rgba GREEN;
     /** @brief A pure blue color. */
-    DEFINE_RGBA(blue, 0.f, 0.f, 1.f, 1.f)
+    static const Rgba BLUE;
+
 };
 
-#undef DEFINE_RGBA
+inline const Rgba Rgba::ZERO{0.f, 0.f, 0.f, 0.f};
+inline const Rgba Rgba::ONE{1.f, 1.f, 1.f, 1.f};
+inline const Rgba Rgba::BLACK{0.f, 0.f, 0.f, 1.f};
+inline const Rgba Rgba::GRAY{0.5f, 0.5f, 0.5f, 1.f};
+inline const Rgba Rgba::WHITE{1.f, 1.f, 1.f, 1.f};
+inline const Rgba Rgba::RED{1.f, 0.f, 0.f, 1.f};
+inline const Rgba Rgba::GREEN{0.f, 1.f, 0.f, 1.f};
+inline const Rgba Rgba::BLUE{0.f, 0.f, 1.f, 1.f};
 } // namespace siren
