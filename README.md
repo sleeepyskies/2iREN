@@ -1,45 +1,83 @@
-# 2iren
+# 2iREN
 
-2iren is a simple cpp23 rendering library extracted and modified from the [siren](https://github.com/sleeepyskies/siren)
-game engine.
+2iREN is a c++23 rendering framework. The code originates from the [siren](https://github.com/sleeepyskies/siren)
+game engine, but has since evolved further.
 
 Currently only OpenGL 4.6 is supported, but other APIs may be supported in the future.
 
 ## Building 2iREN
 
+2iREN uses Conan for package management, as well as Just for running commands.
 
+To build 2iREN, make sure you have both of these installed.
+
+After cloning the repository, first run:
+
+```bash
+just configure
+```
+
+To fetch dependencies and configure CMake. Then run:
+
+```bash
+just build
+```
+
+To build the library.
 
 ## Dependencies
 
-Conan is used for package management.
-
 * **stb_image**: Single header file used for image loading.
 * **cgltf**: Loading gltf files.
-* **yaml-cpp**: Used for certain 2iren specific file types (sshg etc.).
+* **yaml-cpp**: Used for certain 2iREN specific file types (sshg etc.).
 * **GLFW**: Windowing
 * **GLM**: Math library
 * **libassert**: Runtime assertions with stacktrace output
 * **glad**: OpenGL loader
 * **OpenGL**: Rendering API
 
-# Examples
+## Running Tests
 
-2iren includes a set of examples to show how to use the library. These can be found under `/examples`.
+2iREN uses DocTest. Tests can be run via:
 
-For a more detailed look into how 2iREN can be used as a framework, checkout oiter.
+```bash
+just test
+```
 
-1. Rainbow Triangle
+## Examples
 
-![tri.png](images/tri.png)
+2iREN has multiple examples to showcase what can be done using the framework, as
+well as to demonstrate how to use the API. Examples can be found under:
 
-2. Spinning Cube
+```
+examples/
+```
 
-![cube.png](images/cube.png)
+The 2iREN examples can be run via:
 
-3. Load Shader
+```bash
+just example [number]
+```
 
-Demos loading a simple asset from the VFS. Also shows the yaml like file type for defining 2iren shaders.
+2iREN includes a set of examples to show how to use the library. These can be
+found under `/examples`.
 
-4. Load Gltf (WIP)
+For a more detailed look into how 2iREN can be used as a framework, checkout
+oiter.
+
+1 Rainbow Triangle
+
+![tri.png](docs/images/tri.png)
+
+2 Spinning Cube
+
+![cube.png](docs/images/cube.png)
+
+3 Load Shader
+
+Demos loading a simple asset from the VFS. Also shows the yaml like file type
+for defining 2iREN shaders.
+
+4 Load Gltf (WIP)
 
 Demos loading a mesh from a gltf file using the asset server and rendering it.

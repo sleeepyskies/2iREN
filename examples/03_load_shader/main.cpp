@@ -1,8 +1,10 @@
-#include "2iren/2iren.hpp"
-#include "2iren/asset/asset_server.hpp"
-#include "2iren/asset/assets/gltf.hpp"
-#include "2iren/asset/assets/shader.hpp"
-#include "2iren/util/filesystem.hpp"
+#include "2iREN/asset/asset_server.hpp"
+#include "2iREN/asset/assets/gltf.hpp"
+#include "2iREN/asset/assets/shader.hpp"
+#include "2iREN/context.hpp"
+#include "2iREN/rhi/resources/swapchain.hpp"
+#include "2iREN/util/filesystem.hpp"
+#include "2iREN/window.hpp"
 
 struct Vertex {
     siren::f32 x, y, z;
@@ -16,84 +18,60 @@ const siren::ByteBuffer vertices{
 };
 
 int main() {
-    const auto ctx = siren::Context::create(
-        {
-            .debug   = true,
-            .level   = siren::log::Level::Trace,
-            .backend = siren::Backend::Auto
-        }
-    );
+    const auto ctx =
+        siren::Context::create({.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto});
     auto window       = ctx.create_window({});
     const auto device = ctx.create_device({.window = window});
     siren::AssetServer server{*device};
 
-    const auto swapchain = device->create_swapchain(
-        {
-            .label  = std::nullopt,
-            .vsync  = true,
-            .extent = window.size(),
-            .window = &window
-        }
-    );
+    const auto swapchain =
+        device->create_swapchain({.label = std::nullopt, .vsync = true, .extent = window.size(), .window = &window});
 
-    const auto buffer = device->create_buffer(
-        {
-            .label = "Sample Buffer",
-            .data  = vertices.data(),
-            .size  = vertices.size_bytes(),
-            .usage = siren::BufferUsage::Static
-        }
-    );
+    const auto buffer = device->create_buffer({.label = "Sample Buffer",
+        .data                                         = vertices.data(),
+        .size                                         = vertices.size_bytes(),
+        .usage                                        = siren::BufferUsage::Static});
     const auto layout = siren::LayoutBuilder::create()
-                        .add(siren::Attribute::Position, 3, siren::DataType::Float32)
-                        .add(siren::Attribute::Color, 4, siren::DataType::Float32)
-                        .finish();
+                            .add(siren::Attribute::Position, 3, siren::DataType::Float32)
+                            .add(siren::Attribute::Color, 4, siren::DataType::Float32)
+                            .finish();
 
     const auto shaderh = server.load<siren::ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
     server.wait_until_loaded(shaderh);
     auto* shader_asset = server.get<siren::ShaderAsset>(shaderh);
 
-    const auto pipeline = device->create_graphics_pipeline(
-        {
-            .label             = std::nullopt,
-            .layout            = layout,
-            .shader            = shader_asset->shader.handle(),
-            .topology          = siren::PrimitiveTopology::Triangles,
-            .alpha_mode        = siren::AlphaMode::Opaque,
-            .depth_function    = siren::DepthFunction::Less,
-            .back_face_culling = true,
-            .depth_test        = true,
-            .depth_write       = true,
-        }
-    );
+    const auto pipeline = device->create_graphics_pipeline({
+        .label             = std::nullopt,
+        .layout            = layout,
+        .shader            = shader_asset->shader.handle(),
+        .topology          = siren::PrimitiveTopology::Triangles,
+        .alpha_mode        = siren::AlphaMode::Opaque,
+        .depth_function    = siren::DepthFunction::Less,
+        .back_face_culling = true,
+        .depth_test        = true,
+        .depth_write       = true,
+    });
 
-    const siren::RenderTarget target{
-        .colors = {
-            {
-                .image           = swapchain.next_image(),
-                .begin_operation = siren::BeginOperation::Clear,
-                .clear_color     = siren::Rgba::black()
-            },
-        },
-        .depth_stencil = std::nullopt
-    };
+    const siren::RenderTarget target{.colors =
+                                         {
+                                             {.image              = swapchain.next_image(),
+                                                 .begin_operation = siren::BeginOperation::Clear,
+                                                 .clear_color     = siren::Rgba::BLACK
+                                             },
+                                         },
+        .depth_stencil = std::nullopt};
 
     // main render loop
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_submit(
-            [&](siren::RenderCommandRecorder& cmds) -> void {
-                cmds.render_pass(
-                    {.target = target},
-                    [&](siren::RenderPassRecorder& pass) -> void {
-                        pass.bind_graphics_pipeline(pipeline.handle());
-                        pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                        pass.draw_fullscreen();
-                    }
-                );
-            }
-        );
+        device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {
+            cmds.render_pass({.target = target}, [&](siren::RenderPassRecorder& pass) -> void {
+                pass.bind_graphics_pipeline(pipeline.handle());
+                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+                pass.draw_fullscreen();
+            });
+        });
 
         device->present(swapchain.handle());
         device->flush_delete_queue();

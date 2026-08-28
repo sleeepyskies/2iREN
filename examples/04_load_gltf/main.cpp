@@ -1,9 +1,11 @@
-#include "2iren/2iren.hpp"
-#include "2iren/asset/asset_server.hpp"
-#include "2iren/asset/assets/gltf.hpp"
-#include "2iren/asset/assets/shader.hpp"
-#include "2iren/util/camera.hpp"
-#include "2iren/util/filesystem.hpp"
+#include "2iREN/asset/asset_server.hpp"
+#include "2iREN/asset/assets/gltf.hpp"
+#include "2iREN/asset/assets/shader.hpp"
+#include "2iREN/context.hpp"
+#include "2iREN/rhi/render_command.hpp"
+#include "2iREN/rhi/resources/swapchain.hpp"
+#include "2iREN/util/camera.hpp"
+#include "2iREN/window.hpp"
 
 struct UBO {
     glm::mat4 view_proj;
@@ -81,7 +83,7 @@ auto main() -> siren::i32 {
             {
                 .image           = swapchain.next_image(),
                 .begin_operation = siren::BeginOperation::Clear,
-                .clear_color     = siren::Rgba::black()
+                .clear_color     = siren::Rgba::BLACK,
             },
         },
         .depth_stencil = std::nullopt

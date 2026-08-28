@@ -4,7 +4,7 @@
 
 #include "2iREN/base.hpp"
 #include "2iREN/util/log.hpp"
-#include "device.hpp"
+#include "rhi/device.hpp"
 
 namespace siren {
 struct WindowDescriptor;

@@ -122,7 +122,7 @@ auto read_bytes(const Path& path) -> std::optional<std::vector<u8>>;
 auto read_text(const Path& path) -> std::optional<std::string>;
 
 /** @brief Writes the given data to the file at the path. */
-auto write(const Path& path, std::span<const u8> buf) -> bool;
+auto write(const Path& path, const std::span<u8> buf) -> bool;
 
 /** @brief Writes the string to the file at the path. */
 auto write(const Path& path, const std::string& str) -> bool;

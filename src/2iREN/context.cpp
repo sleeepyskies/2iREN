@@ -1,11 +1,11 @@
 #include "context.hpp"
 
-#include "device.hpp"
 #include "2iREN/util/filesystem.hpp"
-#include "backend/gl/device.hpp"
 #include "2iREN/util/platform.hpp"
-#include "2iREN/util/time.hpp"
 #include "2iREN/util/stb_image.h"
+#include "2iREN/util/time.hpp"
+#include "rhi/backend/gl/device.hpp"
+#include "rhi/device.hpp"
 
 #include "2iREN/sync/thread_pool.hpp"
 #include "2iREN/window.hpp"

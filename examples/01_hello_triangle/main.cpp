@@ -1,4 +1,4 @@
-#include "2iREN/rhi/context.hpp"
+#include "2iREN/context.hpp"
 #include "2iREN/rhi/render_command.hpp"
 #include "2iREN/rhi/render_target.hpp"
 #include "2iREN/rhi/resources/graphics_pipeline.hpp"

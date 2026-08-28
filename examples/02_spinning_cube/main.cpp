@@ -2,8 +2,14 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_transform.hpp>
 
-#include "2iren/2iren.hpp"
-#include "2iren/util/byte_buffer.hpp"
+#include "2iREN/context.hpp"
+#include "2iREN/rhi/layout.hpp"
+#include "2iREN/rhi/resources/buffer.hpp"
+#include "2iREN/rhi/resources/graphics_pipeline.hpp"
+#include "2iREN/rhi/resources/shader.hpp"
+#include "2iREN/rhi/resources/swapchain.hpp"
+#include "2iREN/util/byte_buffer.hpp"
+#include "2iREN/window.hpp"
 
 struct Vertex {
     siren::f32 x, y, z;
@@ -147,7 +153,7 @@ int main() {
             {
                 .image           = color.handle(),
                 .begin_operation = siren::BeginOperation::Clear,
-                .clear_color     = siren::Rgba::black()
+                .clear_color     = siren::Rgba::BLACK,
             },
         },
         .depth_stencil = std::nullopt
