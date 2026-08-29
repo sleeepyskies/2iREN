@@ -2,9 +2,8 @@
 
 #include <optional>
 
+#include "2iREN/math/color.hpp"
 #include "fwd.hpp"
-#include "2iREN/util/color.hpp"
-
 
 namespace siren {
 

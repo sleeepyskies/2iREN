@@ -5,7 +5,6 @@
 
 #include "2iREN/base.hpp"
 #include "2iREN/input/input.hpp"
-#include "log.hpp"
 #include "time.hpp"
 
 namespace siren {
@@ -18,10 +17,14 @@ auto PerspectiveCamera::near() const noexcept -> f32 { return m_descriptor.near;
 auto PerspectiveCamera::far() const noexcept -> f32 { return m_descriptor.far; }
 auto PerspectiveCamera::fov() const noexcept -> f32 { return m_descriptor.fov; }
 
-auto PerspectiveCamera::set_position(const glm::vec3& position) noexcept -> void { m_descriptor.position = position; }
+auto PerspectiveCamera::set_position(const glm::vec3& position) noexcept -> void {
+    m_descriptor.position = position;
+}
 auto PerspectiveCamera::set_yaw(const f32 yaw) noexcept -> void { m_descriptor.yaw = yaw; }
 auto PerspectiveCamera::set_pitch(const f32 pitch) noexcept -> void { m_descriptor.pitch = pitch; }
-auto PerspectiveCamera::set_aspect(const f32 aspect) noexcept -> void { m_descriptor.aspect = aspect; }
+auto PerspectiveCamera::set_aspect(const f32 aspect) noexcept -> void {
+    m_descriptor.aspect = aspect;
+}
 auto PerspectiveCamera::set_near(const f32 near) noexcept -> void { m_descriptor.near = near; }
 auto PerspectiveCamera::set_far(const f32 far) noexcept -> void { m_descriptor.far = far; }
 auto PerspectiveCamera::set_fov(const f32 fov) noexcept -> void { m_descriptor.fov = fov; }
@@ -35,14 +38,20 @@ auto PerspectiveCamera::look_at(const glm::vec3 point) -> void {
 }
 
 auto PerspectiveCamera::view() const noexcept -> glm::mat4 {
-    const glm::vec3 direction{cos(glm::radians(m_descriptor.yaw)) * cos(glm::radians(m_descriptor.pitch)),
+    const glm::vec3 direction{
+        cos(glm::radians(m_descriptor.yaw)) * cos(glm::radians(m_descriptor.pitch)),
         sin(glm::radians(m_descriptor.pitch)),
-        sin(glm::radians(m_descriptor.yaw)) * cos(glm::radians(m_descriptor.pitch))};
-    return glm::lookAt(m_descriptor.position, m_descriptor.position + direction, glm::vec3(0, 1, 0));
+        sin(glm::radians(m_descriptor.yaw)) * cos(glm::radians(m_descriptor.pitch))
+    };
+    return glm::lookAt(
+        m_descriptor.position, m_descriptor.position + direction, glm::vec3(0, 1, 0)
+    );
 }
 
 auto PerspectiveCamera::projection() const noexcept -> glm::mat4 {
-    return glm::perspective(glm::radians(m_descriptor.fov), m_descriptor.aspect, m_descriptor.near, m_descriptor.far);
+    return glm::perspective(
+        glm::radians(m_descriptor.fov), m_descriptor.aspect, m_descriptor.near, m_descriptor.far
+    );
 }
 
 auto PerspectiveCameraController::update(PerspectiveCamera& camera, const Input& input) -> void {
@@ -50,9 +59,10 @@ auto PerspectiveCameraController::update(PerspectiveCamera& camera, const Input&
     update_position(camera, input);
 }
 
-auto PerspectiveCameraController::update_position(PerspectiveCamera& camera, const Input& input) -> void {
-    const f32 dt  = time::delta_s();
-    auto position = camera.position();
+auto PerspectiveCameraController::update_position(PerspectiveCamera& camera, const Input& input)
+    -> void {
+    const auto delta = time::delta().seconds();
+    auto position    = camera.position();
 
     const f32 yaw   = glm::radians(camera.yaw());
     const f32 pitch = glm::radians(camera.pitch());
@@ -82,11 +92,12 @@ auto PerspectiveCameraController::update_position(PerspectiveCamera& camera, con
         movement = glm::normalize(movement);
     }
 
-    position += movement * static_cast<float>(m_speed * dt);
+    position += movement * static_cast<float>(m_speed * delta);
     camera.set_position(position);
 }
 
-auto PerspectiveCameraController::update_look(PerspectiveCamera& camera, const Input& input) -> void {
+auto PerspectiveCameraController::update_look(PerspectiveCamera& camera, const Input& input)
+    -> void {
     if (input.mouse().just_pressed(Mouse::Left)) {
         input.set_cursor_mode(CursorMode::Locked);
     }
@@ -98,7 +109,9 @@ auto PerspectiveCameraController::update_look(PerspectiveCamera& camera, const I
     if (input.mouse().pressed(Mouse::Left)) {
         const glm::vec2 mouse_delta = input.movement().mouse_delta();
         camera.set_yaw(camera.yaw() + mouse_delta.x * m_sensitivity);
-        camera.set_pitch(glm::clamp(float(camera.pitch() - mouse_delta.y * m_sensitivity), -89.0f, 89.0f));
+        camera.set_pitch(
+            glm::clamp(float(camera.pitch() - mouse_delta.y * m_sensitivity), -89.0f, 89.0f)
+        );
     }
 }
 

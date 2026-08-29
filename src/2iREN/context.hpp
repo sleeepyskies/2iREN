@@ -64,7 +64,8 @@ public:
     /**
      * @brief Creates a graphics device.
      */
-    [[nodiscard]] auto create_device(const DeviceDescriptor& descriptor) const -> std::unique_ptr<Device>;
+    [[nodiscard]] auto create_device(const DeviceDescriptor& descriptor) const
+        -> std::unique_ptr<Device>;
 
     /**
      * @brief Creates a new window based on the provided descriptor.

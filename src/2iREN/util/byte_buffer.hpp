@@ -3,9 +3,8 @@
 #include <libassert/assert.hpp>
 #include <vector>
 
-#include "concepts.hpp"
 #include "2iREN/base.hpp"
-
+#include "concepts.hpp"
 
 namespace siren {
 /**
@@ -39,7 +38,9 @@ public:
      * @param items Items to append to the buffer.
      */
     template <IsCopyable T>
-    explicit ByteBuffer(const std::initializer_list<T> items) { append<T>(items); }
+    explicit ByteBuffer(const std::initializer_list<T> items) {
+        append<T>(items);
+    }
 
     ByteBuffer(const ByteBuffer& other)            = default;
     ByteBuffer(ByteBuffer&& other)                 = default;
@@ -56,7 +57,9 @@ public:
      * @warning Assumes buffer is evenly divisible by sizeof(T).
      */
     template <typename T>
-    auto size_as() const noexcept -> usize { return size_bytes() / sizeof(T); }
+    auto size_as() const noexcept -> usize {
+        return size_bytes() / sizeof(T);
+    }
 
     /**
      * @brief Checks if buffer is empty.
@@ -72,7 +75,9 @@ public:
      * @brief Reserves memory for N elements of type T.
      */
     template <typename T>
-    auto reserve_as(const usize size) noexcept -> void { reserve_bytes(size * sizeof(T)); }
+    auto reserve_as(const usize size) noexcept -> void {
+        reserve_bytes(size * sizeof(T));
+    }
 
     /**
      * @brief Clears the buffer contents.
@@ -127,7 +132,6 @@ public:
      */
     auto data() const -> const std::vector<u8>& { return m_data; }
 
-
     /**
      * @brief Returns raw pointer to byte data.
      */
@@ -169,12 +173,16 @@ private:
      * @brief Ensures buffer size is a multiple of sizeof(T).
      */
     template <typename T>
-    auto assert_size() -> void { ASSERT(size_bytes() % sizeof(T) == 0); }
+    auto assert_size() -> void {
+        ASSERT(size_bytes() % sizeof(T) == 0);
+    }
 
     /**
      * @brief Ensures buffer is aligned for type T.
      */
     template <typename T>
-    auto assert_alignment() -> void { ASSERT(reinterpret_cast<uintptr_t>(raw()) % alignof(T) == 0); }
+    auto assert_alignment() -> void {
+        ASSERT(reinterpret_cast<uintptr_t>(raw()) % alignof(T) == 0);
+    }
 };
 } // namespace siren

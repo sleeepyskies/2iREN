@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 
-#include "2iREN/util/color.hpp"
+#include "2iREN/math/color.hpp"
 #include "resources/fwd.hpp"
 
 namespace siren {

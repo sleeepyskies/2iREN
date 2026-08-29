@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdfloat>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <ranges>
+#include <stdfloat>
 
 namespace siren {
 
@@ -12,7 +12,6 @@ namespace siren {
 #endif
 
 inline constexpr bool SINGLE_THREADED = SIREN_SINGLE_THREADED;
-
 
 /** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
 #define UNIMPLEMENTED() PANIC("Not implemented")

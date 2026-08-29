@@ -35,6 +35,9 @@ class ConanApplication(ConanFile):
             },
         )
 
+    def build_requirements(self):
+        self.test_requires("doctest/2.5.2")
+
     def build(self):
         """Instructs Conan on how to build this package."""
         cmake = CMake(self)

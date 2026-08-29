@@ -2,11 +2,10 @@
 
 #include <libassert/assert.hpp>
 
+#include "../util/byte_buffer.hpp"
+#include "2iREN/math/color.hpp"
 #include "resources/buffer.hpp"
 #include "resources/image.hpp"
-#include "../util/byte_buffer.hpp"
-#include "2iREN/util/color.hpp"
-
 
 namespace siren {
 /**

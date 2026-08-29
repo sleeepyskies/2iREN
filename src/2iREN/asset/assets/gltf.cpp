@@ -4,12 +4,12 @@
 #include <glm/gtc/integer.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "2iREN/util/stb_image.h"
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/asset_utils.hpp"
 #include "2iREN/rhi/device.hpp"
 #include "2iREN/util/cgltf.h"
 #include "2iREN/util/filesystem.hpp"
+#include "2iREN/util/stb_image.h"
 
 /// For docs on GLTF see: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#indices-and-names
 /// For a brief overview of GLTF see: https://www.khronos.org/files/gltf20-reference-guide.pdf
@@ -220,11 +220,11 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
             // todo: add name?
             auto img      = ctx.device().create_image({
-                     .label         = std::nullopt,
-                     .format        = format,
-                     .extent        = extent,
-                     .dimension     = ImageDimension::D2,
-                     .mipmap_levels = mipmap_levels,
+                .label         = std::nullopt,
+                .format        = format,
+                .extent        = extent,
+                .dimension     = ImageDimension::D2,
+                .mipmap_levels = mipmap_levels,
             });
             auto resource = ctx.device().record_resource_commands();
             resource.upload_to_image(img.handle(), std::span(img_data.get(), img_data_size));
@@ -269,7 +269,7 @@ static auto load_materials(const cgltf_data* data, const std::vector<StrongHandl
 
         if (gltf_material.has_pbr_metallic_roughness) {
             const auto& pbr_mr = gltf_material.pbr_metallic_roughness;
-            mat->set_base_color(Rgba{glm::make_vec4(pbr_mr.base_color_factor)});
+            mat->set_base_color(Rgba::from_data(pbr_mr.base_color_factor));
             mat->set_metallic(pbr_mr.metallic_factor);
             mat->set_roughness(pbr_mr.roughness_factor);
             if (pbr_mr.base_color_texture.texture) {
@@ -565,7 +565,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
     const usize unpacked_count = cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(u32), index_count);
     ASSERT(index_count == unpacked_count, "Number of parsed indices did not match original accessor index count.");
 
-    static usize bufferid= 0;
+    static usize bufferid = 0;
 
     return IndexBuffer{
         .buffer = device.create_buffer({

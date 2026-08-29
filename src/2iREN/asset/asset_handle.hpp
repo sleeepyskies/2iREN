@@ -52,7 +52,7 @@ private:
     /** @brief The raw untyped handle. */
     AssetId m_id = NullHandle;
     /** @brief The pool this handles asset belongs to. */
-    AssetPoolBase* m_pool{ nullptr };
+    AssetPoolBase* m_pool{nullptr};
 };
 
 /**
@@ -85,9 +85,9 @@ public:
     }
 
     StrongHandle(const AssetId& id, AssetPool<A>& pool, const AssetPath& asset_path) :
-        m_weak(WeakHandle{ id, &pool, asset_path }) {
+        m_weak(WeakHandle{id, &pool, asset_path}) {
         ASSERT(AssetId::type_id<A>() == id.type(),
-                "Cannot construct a StrongHandle if AssetID and AssetPool types do not match.");
+            "Cannot construct a StrongHandle if AssetID and AssetPool types do not match.");
         pool.inc_ref(id);
     }
 

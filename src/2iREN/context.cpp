@@ -30,21 +30,17 @@ static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
 
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
-    libassert::set_failure_handler(
-        [](const libassert::assertion_info& info) {
-            log::error("{}", info);
-            std::abort();
-        }
-    );
-    glfwSetErrorCallback(
-        [](i32 err, const char* desc) {
-            PANIC(std::format("GLFW Error encountered. Code: {}, description: {}", err, desc));
-        }
-    );
+    libassert::set_failure_handler([](const libassert::assertion_info& info) {
+        log::error("{}", info);
+        std::abort();
+    });
+    glfwSetErrorCallback([](i32 err, const char* desc) {
+        PANIC(std::format("GLFW Error encountered. Code: {}, description: {}", err, desc));
+    });
 
     ASSERT(glfwInit(), "Could not initialize GLFW.");
 
-    time::init();
+    time::initialize();
 
     // select backend
     switch (descriptor.backend) {

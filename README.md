@@ -56,7 +56,7 @@ examples/
 The 2iREN examples can be run via:
 
 ```bash
-just example [number]
+just example-[name]
 ```
 
 2iREN includes a set of examples to show how to use the library. These can be

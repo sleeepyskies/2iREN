@@ -11,6 +11,11 @@ option(SIREN_BUILD_EXAMPLES
     ${PROJECT_IS_TOP_LEVEL}
 )
 
+option(SIREN_BUILD_TESTS
+    "Build 2iREN tests"
+    ${PROJECT_IS_TOP_LEVEL}
+)
+
 option(SIREN_SINGLE_THREADED
     "Compile 2iREN without multithreading"
     ON
@@ -73,7 +78,6 @@ target_compile_definitions(
             SIREN_SINGLE_THREADED=$<BOOL:${SIREN_SINGLE_THREADED}>
 )
 
-
 target_compile_features(2iREN PUBLIC cxx_std_23)
 
 set_target_properties(2iREN PROPERTIES
@@ -108,6 +112,7 @@ if(SIREN_BUILD_EXAMPLES)
 endif()
 
 if(SIREN_BUILD_TESTS)
+    enable_testing()
     message(STATUS "Building 2iREN tests")
     add_subdirectory(tests)
 endif()

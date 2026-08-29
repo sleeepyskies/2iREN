@@ -3,8 +3,8 @@
 #include <optional>
 #include <string>
 
+#include "2iREN/math/color.hpp"
 #include "fwd.hpp"
-#include "2iREN/util/color.hpp"
 
 namespace siren {
 /** @brief Defines the amount of dimensions an @ref Image may have. */

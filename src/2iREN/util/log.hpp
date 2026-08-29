@@ -1,87 +1,91 @@
 #pragma once
 
-#include <iostream>
-#include <optional>
-#include <source_location>
-#include <type_traits>
+#include <chrono>
 #include <format>
+#include <iostream>
 #include <libassert/assert.hpp>
+#include <optional>
+#include <print>
+#include <source_location>
+#include <thread>
+#include <type_traits>
 
 #include "2iREN/sync/mutex.hpp"
 #include "string_utils.hpp"
 
-/// @todo:
-///     log functions show error msg in my IDE but still compile and run... fix that prolly
-///     this seems to be a clang bug though??? annoying...
-
+/// @brief Logging module of 2iREN. Provides a thread safe way to log structured messages to the
+/// console.
 namespace siren::log {
-
-namespace detail {
-/** @brief Global mutex used by the logger. */
-inline Mutex<void> log_mutex{ };
-}
-
 
 /**
  * @struct Level
  * @brief Represents the severity level of a log message.
  */
 struct Level {
-    enum Value {
-        Trace = 0,
-        Debug,
-        Info,
-        Warn,
-        Error,
-        None
-    } value;
+    enum Value { Trace = 0, Debug, Info, Warn, Error, None } value;
 
-    constexpr Level(const Value v) : value(v) { }
+    constexpr Level(const Value v) : value(v) {}
     constexpr auto Value() const { return value; }
 
     /** @brief Returns the string representation of this Level. */
-    constexpr auto to_string() const -> std::string_view {
+    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (this->value) {
-            case Trace: return "Trace";
-            case Debug: return "Debug";
-            case Info: return "Info ";
-            case Warn: return "Warn ";
-            case Error: return "Error";
-            case None: return "None ";
+            case Trace: return "TRACE";
+            case Debug: return "DEBUG";
+            case Info: return "INFO";
+            case Warn: return "WARN";
+            case Error: return "ERROR";
+            case None: return "NONE";
             default: UNREACHABLE();
         }
     }
 
     /** @brief Factory method to create a new @ref Level instance from a string. */
-    static auto from_string(const std::string_view str) -> std::optional<Level> {
-        if (str::equals_ignore_case(str, "trace")) return Trace;
-        if (str::equals_ignore_case(str, "debug")) return Debug;
-        if (str::equals_ignore_case(str, "info")) return Info;
-        if (str::equals_ignore_case(str, "warn")) return Warn;
-        if (str::equals_ignore_case(str, "error")) return Error;
+    [[nodiscard]] static auto from_string(const std::string_view str) -> std::optional<Level> {
+        if (str::equals_ignore_case(str, "trace"))
+            return Trace;
+        if (str::equals_ignore_case(str, "debug"))
+            return Debug;
+        if (str::equals_ignore_case(str, "info"))
+            return Info;
+        if (str::equals_ignore_case(str, "warn"))
+            return Warn;
+        if (str::equals_ignore_case(str, "error"))
+            return Error;
         return std::nullopt;
     }
 
     auto operator<=>(const Level& level) const -> auto = default;
 };
 
+namespace impl {
+/** @brief Global mutex used by the logger. */
+inline Mutex<void> log_mutex{};
 /** @brief The globally configured minimum logging level. Defaults to Info. */
-inline Level level{ Level::None };
+inline Level level{Level::None};
+
+[[nodiscard]] constexpr auto strip_path(const std::string_view path) -> std::string_view {
+    if (auto pos = path.find("src/"); pos != std::string_view::npos) {
+        return path.substr(pos);
+    }
+    return path;
+}
+} // namespace impl
 
 /**
  * @brief Inits the siren logger with the provided level.
  * @param lvl The desired log level.
  */
-inline auto init(const Level lvl) -> void { level = lvl; }
+inline auto init(const Level lvl) -> void { impl::level = lvl; }
 
 /**
  * @brief Inits the siren logger with the provided level.
  * @param lvl The desired log level as a string.
  */
 inline auto init(const std::string_view lvl) -> void {
-    const auto level_ = Level::from_string(lvl);
-    ASSERT(level_.has_value(), "Passed invalid level to siren::log::init()");
-    init(level_.value());
+    const auto level = Level::from_string(lvl);
+    ASSERT(level.has_value(), "Passed invalid level to siren::log::init()");
+    init(level.value());
 }
 
 /**
@@ -94,29 +98,38 @@ inline auto init(const std::string_view lvl) -> void {
  *
  * @todo can we make log output a shortened filepath? it does absolute one atm
  */
-inline void log(
-    const Level lvl,
+inline void
+log(const Level lvl,
     const u32 color_code,
     const std::source_location& loc,
     const std::string_view fmt,
-    const std::format_args args
-) {
-    if (lvl < level) { return; }
+    const std::format_args args) {
+    if (lvl < impl::level) {
+        return;
+    }
 
-    auto msg = std::format(
-        "\033[{}m[{}]\033[0m  [{}:{}:{}] {}",
+    const auto usermsg = std::vformat(fmt, args);
+    const auto now =
+        std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
+    const auto threadid = std::this_thread::get_id();
+    const std::string locationstring =
+        std::format("{}:{}", impl::strip_path(loc.file_name()), loc.line());
+
+    const auto msg = std::format(
+        "[{:%F %T}] \033[{}m[{:<5}]\033[0m [thread:{:<15}] [{:<45}] {}",
+        now,
         color_code,
         lvl.to_string(),
-        loc.file_name(),
-        loc.line(),
-        loc.column(),
-        std::vformat(fmt, args)
+        threadid,
+        locationstring,
+        usermsg
     );
 
     if constexpr (SINGLE_THREADED) {
+        std::println("{}", msg);
         std::cout << msg << std::endl;
     } else {
-        detail::log_mutex.run([msg = std::move(msg)]{ std::cout << msg << std::endl; });
+        impl::log_mutex.run([msg = std::move(msg)] { std::println("{}", msg); });
     }
 }
 
@@ -127,24 +140,14 @@ struct LogMessage {
 
     template <typename T>
     consteval LogMessage(
-        const T& s,
-        const std::source_location loc = std::source_location::current()
-    ) : fmt(s), sl(loc) { }
+        const T& s, const std::source_location loc = std::source_location::current()
+    ) : fmt(s), sl(loc) {}
 };
 
-#define LOG_FUNCTION(fn_name, level_val, color_code)                            \
-    template <typename... Args>                                                 \
-    auto fn_name(                                                               \
-        std::type_identity_t<LogMessage<Args...>> msg,                          \
-        Args&&... args                                                          \
-    ) -> void {                                                                 \
-        log(                                                                    \
-            level_val,                                                          \
-            color_code,                                                         \
-            msg.sl,                                                             \
-            msg.fmt.get(),                                                      \
-            std::make_format_args(args...)                                      \
-        );                                                                      \
+#define LOG_FUNCTION(fn_name, level_val, color_code)                                               \
+    template <typename... Args>                                                                    \
+    auto fn_name(std::type_identity_t<LogMessage<Args...>> msg, Args&&... args) -> void {          \
+        log(level_val, color_code, msg.sl, msg.fmt.get(), std::make_format_args(args...));         \
     }
 
 /**
@@ -190,11 +193,9 @@ concept HasToString = requires(const T& t) {
     { t.to_string() } -> std::convertible_to<std::string_view>;
 };
 
-template<HasToString T>
+template <HasToString T>
 struct std::formatter<T> {
-    constexpr auto parse(format_parse_context& ctx) const {
-        return ctx.begin();
-    }
+    constexpr auto parse(format_parse_context& ctx) const { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const T& t, FormatContext& ctx) const {
