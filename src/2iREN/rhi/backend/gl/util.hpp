@@ -5,7 +5,6 @@
 #pragma once
 
 #include <glad/gl.h>
-#include <libassert/assert.hpp>
 
 #include "2iREN/rhi/resources/buffer.hpp"
 #include "2iREN/rhi/resources/graphics_pipeline.hpp"

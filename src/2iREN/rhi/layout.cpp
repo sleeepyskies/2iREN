@@ -1,5 +1,7 @@
 #include "layout.hpp"
 
+#include "2iREN/core/assert.hpp"
+
 namespace siren {
 
 /// @todo: do we need to account for padding here?

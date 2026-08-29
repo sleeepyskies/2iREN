@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <libassert/assert.hpp>
 #include <unordered_map>
 
 #include "2iREN/base.hpp"

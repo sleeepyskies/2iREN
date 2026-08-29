@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libassert/assert.hpp>
 #include <vector>
 
 #include "2iREN/base.hpp"
@@ -20,7 +19,8 @@ enum class Attribute : u8 {
 
 /**
  * @struct DataType
- * @brief Simple enum like class representing a data type, whilst providing some extra functionality.
+ * @brief Simple enum like class representing a data type, whilst providing some extra
+ * functionality.
  */
 struct DataType {
     enum Value {
@@ -111,30 +111,29 @@ private:
 };
 
 /**
- * @brief The default vertex layout of 2iREN. This is a temp solution, but provides some consistency when writing
- * shaders.
+ * @brief The default vertex layout of 2iREN. This is a temp solution, but provides some consistency
+ * when writing shaders.
  */
 const auto DEFAULT_VERTEX_LAYOUT = LayoutBuilder::create()
-                                   .add(Attribute::Position, 4, DataType::Float32)
-                                   .add(Attribute::Normal, 4, DataType::Float32)
-                                   .add(Attribute::Color, 4, DataType::Float32)
-                                   .add(Attribute::Texture, 2, DataType::Float32)
-                                   .add(Attribute::Tangent, 4, DataType::Float32)
-                                   .finish();
+                                       .add(Attribute::Position, 4, DataType::Float32)
+                                       .add(Attribute::Normal, 4, DataType::Float32)
+                                       .add(Attribute::Color, 4, DataType::Float32)
+                                       .add(Attribute::Texture, 2, DataType::Float32)
+                                       .add(Attribute::Tangent, 4, DataType::Float32)
+                                       .finish();
 
 /**
  * @brief A minimal default vertex layout for 2iREN.
  */
 const auto MINIMAL_VERTEX_LAYOUT = LayoutBuilder::create()
-                                   .add(Attribute::Position, 4, DataType::Float32)
-                                   .add(Attribute::Normal, 4, DataType::Float32)
-                                   .add(Attribute::Texture, 2, DataType::Float32)
-                                   .finish();
+                                       .add(Attribute::Position, 4, DataType::Float32)
+                                       .add(Attribute::Normal, 4, DataType::Float32)
+                                       .add(Attribute::Texture, 2, DataType::Float32)
+                                       .finish();
 
 /**
  * @brief A simple reusable layout for fullscreen shaders.
  */
-const auto FULLSCREEN_VERTEX_LAYOUT = LayoutBuilder::create()
-                                      .add(Attribute::Texture, 2, DataType::Float32)
-                                      .finish();
+const auto FULLSCREEN_VERTEX_LAYOUT =
+    LayoutBuilder::create().add(Attribute::Texture, 2, DataType::Float32).finish();
 } // namespace siren

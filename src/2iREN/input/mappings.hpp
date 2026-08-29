@@ -1,9 +1,9 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <libassert/assert.hpp>
 
 #include "2iREN/base.hpp"
+#include "2iREN/core/assert.hpp"
 #include "codes.hpp"
 
 namespace siren {
@@ -126,7 +126,7 @@ constexpr auto to_glfw(const Key key) -> u32 {
         case Key::F23: return GLFW_KEY_F23;
         case Key::F24: return GLFW_KEY_F24;
         case Key::F25: return GLFW_KEY_F25;
-        default: UNREACHABLE("Invalid Siren Key value found."); ;
+        default: UNREACHABLE();
     }
 }
 
@@ -248,7 +248,7 @@ constexpr auto from_glfw_key(const u32 key) -> Key {
         case GLFW_KEY_F24: return Key::F24;
         case GLFW_KEY_F25: return Key::F25;
 
-        default: UNREACHABLE(false, "Invalid GLFW KeyCode");
+        default: UNREACHABLE();
     }
 }
 
@@ -262,7 +262,7 @@ constexpr auto to_glfw(const Mouse key) -> u32 {
         case Mouse::Left: return GLFW_MOUSE_BUTTON_LEFT;
         case Mouse::Right: return GLFW_MOUSE_BUTTON_RIGHT;
         case Mouse::Middle: return GLFW_MOUSE_BUTTON_MIDDLE;
-        default: UNREACHABLE("Invalid Siren core::MouseCode");
+        default: UNREACHABLE();
     }
 }
 
@@ -276,7 +276,7 @@ constexpr auto from_glfw_mouse(const u32 key) -> Mouse {
         case GLFW_MOUSE_BUTTON_LEFT: return Mouse::Left;
         case GLFW_MOUSE_BUTTON_RIGHT: return Mouse::Right;
         case GLFW_MOUSE_BUTTON_MIDDLE: return Mouse::Middle;
-        default: UNREACHABLE("Invalid GLFW core::MouseCode");
+        default: UNREACHABLE();
     }
 }
 

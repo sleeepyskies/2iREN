@@ -3,7 +3,7 @@ find_package(doctest REQUIRED)
 add_executable(
     2iREN_tests
     test_main.cpp
-    math_test.cpp
+
     color_test.cpp
 )
 

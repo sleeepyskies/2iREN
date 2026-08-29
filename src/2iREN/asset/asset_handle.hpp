@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libassert/assert.hpp>
 
 #include "2iREN/util/log.hpp"
 #include "asset_id.hpp"

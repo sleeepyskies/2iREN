@@ -1,7 +1,6 @@
 #include "filesystem.hpp"
 
-#include "libassert/assert.hpp"
-
+#include "2iREN/core/assert.hpp"
 
 namespace siren {
 // ============================================================================

@@ -32,7 +32,6 @@ To build the library.
 * **yaml-cpp**: Used for certain 2iREN specific file types (sshg etc.).
 * **GLFW**: Windowing
 * **GLM**: Math library
-* **libassert**: Runtime assertions with stacktrace output
 * **glad**: OpenGL loader
 * **OpenGL**: Rendering API
 

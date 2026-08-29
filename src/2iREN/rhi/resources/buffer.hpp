@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libassert/assert.hpp>
 #include <vector>
 
 #include "2iREN/base.hpp"

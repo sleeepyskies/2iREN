@@ -2,14 +2,13 @@
 
 #include <chrono>
 #include <format>
-#include <iostream>
-#include <libassert/assert.hpp>
 #include <optional>
 #include <print>
 #include <source_location>
 #include <thread>
 #include <type_traits>
 
+#include "2iREN/core/assert.hpp"
 #include "2iREN/sync/mutex.hpp"
 #include "string_utils.hpp"
 
@@ -25,7 +24,7 @@ struct Level {
     enum Value { Trace = 0, Debug, Info, Warn, Error, None } value;
 
     constexpr Level(const Value v) : value(v) {}
-    constexpr auto Value() const { return value; }
+    [[nodiscard]] constexpr auto Value() const { return value; }
 
     /** @brief Returns the string representation of this Level. */
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
@@ -59,16 +58,17 @@ struct Level {
 };
 
 namespace impl {
-/** @brief Global mutex used by the logger. */
-inline Mutex<void> log_mutex{};
 /** @brief The globally configured minimum logging level. Defaults to Info. */
 inline Level level{Level::None};
-
+/** @brief Attempts to trim a file path to 2iREN root. */
 [[nodiscard]] constexpr auto strip_path(const std::string_view path) -> std::string_view {
-    if (auto pos = path.find("src/"); pos != std::string_view::npos) {
+    const auto pos = path.find("2iREN/");
+
+    if (pos != std::string_view::npos) {
         return path.substr(pos);
     }
-    return path;
+
+    return path; // fallback to original path if we cant trim somehow
 }
 } // namespace impl
 
@@ -98,12 +98,13 @@ inline auto init(const std::string_view lvl) -> void {
  *
  * @todo can we make log output a shortened filepath? it does absolute one atm
  */
-inline void
-log(const Level lvl,
+inline void log(
+    const Level lvl,
     const u32 color_code,
     const std::source_location& loc,
     const std::string_view fmt,
-    const std::format_args args) {
+    const std::format_args args
+) {
     if (lvl < impl::level) {
         return;
     }
@@ -113,7 +114,7 @@ log(const Level lvl,
         std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
     const auto threadid = std::this_thread::get_id();
     const std::string locationstring =
-        std::format("{}:{}", impl::strip_path(loc.file_name()), loc.line());
+        std::format("{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column());
 
     const auto msg = std::format(
         "[{:%F %T}] \033[{}m[{:<5}]\033[0m [thread:{:<15}] [{:<45}] {}",
@@ -125,12 +126,7 @@ log(const Level lvl,
         usermsg
     );
 
-    if constexpr (SINGLE_THREADED) {
-        std::println("{}", msg);
-        std::cout << msg << std::endl;
-    } else {
-        impl::log_mutex.run([msg = std::move(msg)] { std::println("{}", msg); });
-    }
+    std::println("{}", msg);
 }
 
 template <typename... Args>

@@ -24,7 +24,6 @@ class ConanApplication(ConanFile):
     def requirements(self):
         self.requires("yaml-cpp/0.9.0")
         self.requires("glm/1.0.1")
-        self.requires("libassert/2.2.1")
         self.requires("opengl/system")
         self.requires("glfw/3.4", options={"with_wayland": False})
         self.requires(

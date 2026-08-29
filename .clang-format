@@ -11,6 +11,8 @@ AlignOperands: false
 AlignTrailingComments: true
 AllowShortCaseLabelsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: Yes
+BreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 100000
 BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:

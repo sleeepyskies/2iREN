@@ -1,6 +1,5 @@
 find_package(opengl_system REQUIRED)
 find_package(glad REQUIRED)
-find_package(libassert REQUIRED)
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -11,11 +10,11 @@ target_link_libraries(
         PUBLIC
             glfw
             glm::glm
-            libassert::assert
 
         PRIVATE
             glad::glad
             opengl::opengl
             yaml-cpp::yaml-cpp
             Threads::Threads
+            stdc++exp # otherwise std::stacktrace wont work D:
 )

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libassert/assert.hpp>
 
 #include "../util/byte_buffer.hpp"
 #include "2iREN/math/color.hpp"

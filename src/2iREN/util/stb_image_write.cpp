@@ -1,4 +1,4 @@
-#include <libassert/assert.hpp>
+#include "2iREN/core/assert.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"

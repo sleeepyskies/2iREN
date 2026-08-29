@@ -1,11 +1,11 @@
 #pragma once
 
 #include <expected>
-#include <libassert/assert.hpp>
 #include <optional>
-#include <string>
+#include <string_view>
 #include <vector>
 
+#include "2iREN/core/assert.hpp"
 #include "fwd.hpp"
 
 namespace siren {
@@ -78,7 +78,8 @@ struct AssetLoader : AssetLoaderBase {
      * @param config A config determining how to load the asset.
      * @return Nothing on success, or an error code on fail.
      */
-    virtual auto load(LoadContext&& ctx, const std::optional<ConfigType> config) const -> AssetLoadError = 0;
+    virtual auto load(LoadContext&& ctx, const std::optional<ConfigType> config) const
+        -> AssetLoadError = 0;
 };
 
 } // namespace siren

@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <vector>
-#include <libassert/assert.hpp>
 
 #include "asset_id.hpp"
 

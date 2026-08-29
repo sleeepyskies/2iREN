@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libassert/assert.hpp>
 #include <format>
 
 #include "fwd.hpp"

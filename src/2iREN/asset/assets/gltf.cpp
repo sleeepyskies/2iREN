@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "2iREN/asset/asset_server.hpp"
+#include "2iREN/core/assert.hpp"
 #include "2iREN/asset/asset_utils.hpp"
 #include "2iREN/rhi/device.hpp"
 #include "2iREN/util/cgltf.h"
@@ -48,7 +49,7 @@ static auto gltf_attribute_to_siren(const cgltf_attribute_type attribute) -> Att
         case cgltf_attribute_type_custom: PANIC("Unsupported cgltf attribute type encountered.");
         case cgltf_attribute_type_invalid:
         case cgltf_attribute_type_max_enum:
-        default: UNREACHABLE("Could not convert cgltf attribute type to native 2iREN type.");
+        default: UNREACHABLE();
     }
 }
 
@@ -65,7 +66,7 @@ static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFo
 
         case cgltf_component_type_max_enum:
         case cgltf_component_type_invalid:
-        default: UNREACHABLE("Could not convert cgltf_component_type to 2iREN DataType");
+        default: UNREACHABLE();
     }
 }
 
@@ -81,7 +82,7 @@ static auto gltf_type_to_siren(const cgltf_component_type type) -> DataType {
 
         case cgltf_component_type_max_enum:
         case cgltf_component_type_invalid:
-        default: UNREACHABLE("Could not convert cgltf_component_type to 2iREN DataType");
+        default: UNREACHABLE();
     }
 }
 
@@ -97,7 +98,7 @@ static auto gltf_filter_to_siren(const i32 filter) -> ImageFilterMode {
         case cgltf_filter_type_linear: return ImageFilterMode::Linear;
 
         case cgltf_filter_type_undefined: PANIC("These filter types are not supported yet.");
-        default: UNREACHABLE("Could not convert cgltf filter type to native 2iREN type.");
+        default: UNREACHABLE();
     }
 }
 
@@ -116,7 +117,7 @@ static auto gltf_mipmap_filter_to_siren(const i32 filter) -> ImageFilterMode {
         case cgltf_filter_type_nearest: return ImageFilterMode::None;
 
         case cgltf_filter_type_undefined: PANIC("These filter types are not supported yet.");
-        default: UNREACHABLE("Could not convert cgltf mipmap filter type to native 2iREN type.");
+        default: UNREACHABLE();
     }
 }
 
@@ -125,7 +126,7 @@ static auto gltf_wrap_to_siren(const i32 wrap) -> ImageWrapMode {
         case cgltf_wrap_mode_clamp_to_edge: return ImageWrapMode::ClampEdge;
         case cgltf_wrap_mode_mirrored_repeat: return ImageWrapMode::Mirror;
         case cgltf_wrap_mode_repeat: return ImageWrapMode::Repeat;
-        default: UNREACHABLE("Could not convert cgltf wrap mode to native 2iREN type.");
+        default: UNREACHABLE();
     }
 }
 
@@ -134,7 +135,7 @@ static auto gltf_alpha_mode_to_siren(const i32 alpha_mode) -> AlphaMode {
         case cgltf_alpha_mode_opaque: return AlphaMode::Opaque;
         case cgltf_alpha_mode_mask: return AlphaMode::Mask;
         case cgltf_alpha_mode_blend: return AlphaMode::Blend;
-        default: UNREACHABLE("Could not convert cgltf alpha mode to native 2iREN type.");
+        default: UNREACHABLE();
     }
 }
 

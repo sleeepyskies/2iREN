@@ -1,7 +1,6 @@
 #include "device.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
-#include <libassert/assert.hpp>
 
 #include "2iREN/rhi/resource_command.hpp"
 #include "command_executor.hpp"

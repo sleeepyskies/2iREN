@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 
+#include "2iREN/core/assert.hpp"
 #include "2iREN/math/color.hpp"
 #include "fwd.hpp"
 
@@ -25,7 +26,8 @@ struct ImageExtent {
     u32 width;
     /** @brief The desired height of the Image. */
     u32 height;
-    /** @brief The desired amount of layers (for Image arrays) of depth (for 3D images) of the Image. */
+    /** @brief The desired amount of layers (for Image arrays) of depth (for 3D images) of the
+     * Image. */
     u32 depth_or_layers = 1;
 
     /** @brief Equality comparison operator. */

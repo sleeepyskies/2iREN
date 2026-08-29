@@ -30,12 +30,8 @@ static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
 
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
-    libassert::set_failure_handler([](const libassert::assertion_info& info) {
-        log::error("{}", info);
-        std::abort();
-    });
     glfwSetErrorCallback([](i32 err, const char* desc) {
-        PANIC(std::format("GLFW Error encountered. Code: {}, description: {}", err, desc));
+        PANIC("GLFW Error encountered. Code: {}, description: {}", err, desc);
     });
 
     ASSERT(glfwInit(), "Could not initialize GLFW.");
@@ -94,7 +90,7 @@ auto Context::create_device(const DeviceDescriptor& descriptor) const -> std::un
         case Backend::OpenGL: {
             return create_gl_device(descriptor.window);
         }
-        default: UNREACHABLE("Invalid Backend.");
+        default: UNREACHABLE();
     }
 }
 
