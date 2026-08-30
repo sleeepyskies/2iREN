@@ -50,6 +50,8 @@ struct Level {
             return Warn;
         if (str::equals_ignore_case(str, "error"))
             return Error;
+        if (str::equals_ignore_case(str, "none"))
+            return None;
         return std::nullopt;
     }
 
