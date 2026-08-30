@@ -1,10 +1,9 @@
 #pragma once
 
-
-#include "2iREN/util/log.hpp"
-#include "asset_id.hpp"
-#include "asset_path.hpp"
-#include "asset_pool.hpp"
+#include "2iREN/asset/asset_id.hpp"
+#include "2iREN/asset/asset_path.hpp"
+#include "2iREN/asset/asset_pool.hpp"
+#include "2iREN/core/assert.hpp"
 
 namespace siren {
 
@@ -20,7 +19,8 @@ public:
     /** @brief Default constructs an invalid handle. */
     WeakHandle() = default;
     /** @brief Constructs a new WeakHandle. */
-    WeakHandle(const AssetId id, AssetPoolBase* pool, const AssetPath& path) : m_path(path), m_id(id), m_pool(pool) {}
+    WeakHandle(const AssetId id, AssetPoolBase* pool, const AssetPath& path) :
+        m_path(path), m_id(id), m_pool(pool) {}
 
     /** @brief Constructs a new invalid WeakHandle. */
     static auto invalid() -> WeakHandle { return WeakHandle{}; }
@@ -43,7 +43,9 @@ public:
     [[nodiscard]] auto to_string() const -> std::string { return std::format("Weak({})", m_id); }
 
     /** @brief Equality comparison operator. */
-    [[nodiscard]] constexpr auto operator==(const WeakHandle& other) const -> bool { return id() == other.id(); }
+    [[nodiscard]] constexpr auto operator==(const WeakHandle& other) const -> bool {
+        return id() == other.id();
+    }
 
 private:
     /** @brief The @ref AssetPath to the referenced asset. */
@@ -70,7 +72,9 @@ private:
 template <typename A>
 class StrongHandle {
     // enforce here not in template declaration to avoid issues with recursive types, like GltfNode.
-    static_assert(siren::IsAsset<A>, "StrongHandle can only be used with types derived from Asset.");
+    static_assert(
+        siren::IsAsset<A>, "StrongHandle can only be used with types derived from Asset."
+    );
 
 public:
     using TypeID = WeakHandle::TypeID;
@@ -85,8 +89,10 @@ public:
 
     StrongHandle(const AssetId& id, AssetPool<A>& pool, const AssetPath& asset_path) :
         m_weak(WeakHandle{id, &pool, asset_path}) {
-        ASSERT(AssetId::type_id<A>() == id.type(),
-            "Cannot construct a StrongHandle if AssetID and AssetPool types do not match.");
+        ASSERT(
+            AssetId::type_id<A>() == id.type(),
+            "Cannot construct a StrongHandle if AssetID and AssetPool types do not match."
+        );
         pool.inc_ref(id);
     }
 
@@ -127,7 +133,9 @@ public:
     /** @brief Returns the raw untyped version of this handle. */
     [[nodiscard]] constexpr auto id() const noexcept -> AssetId { return m_weak.id(); }
     /** @brief Returns the typed AssetPool reference where the referenced asset is stored. */
-    [[nodiscard]] auto pool() const -> AssetPool<A>& { return *dynamic_cast<AssetPool<A>*>(m_weak.pool()); }
+    [[nodiscard]] auto pool() const -> AssetPool<A>& {
+        return *dynamic_cast<AssetPool<A>*>(m_weak.pool());
+    }
     /** @brief Returns the AssetPath of the referenced asset. */
     [[nodiscard]] auto path() const -> AssetPath { return m_weak.path(); }
     /** @brief Returns the string representation of this handle. */
@@ -151,5 +159,7 @@ private:
 
 template <>
 struct std::hash<siren::WeakHandle> {
-    auto operator()(const siren::WeakHandle& handle) const noexcept -> siren::usize { return handle.id().hash(); }
+    auto operator()(const siren::WeakHandle& handle) const noexcept -> siren::usize {
+        return handle.id().hash();
+    }
 };

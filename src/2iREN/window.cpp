@@ -5,7 +5,7 @@
 #include "2iREN/core/assert.hpp"
 #include "context.hpp"
 #include "input/mappings.hpp"
-#include "util/log.hpp"
+#include "2iREN/utility/log.hpp"
 
 /// @todo:
 ///     - Window resize has static data in function -> only works with one instance

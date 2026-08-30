@@ -5,10 +5,11 @@
 #include <iostream>
 #include <print>
 #include <source_location>
+#include <stacktrace>
+#include <stdexcept>
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <stacktrace>
 
 namespace siren::impl {
 
@@ -28,8 +29,9 @@ namespace siren::impl {
     const std::string_view expression,
     const std::string_view message
 ) -> void {
-    const std::string locationstring =
-        std::format("{}:{}:{}", strip_path(location.file_name()), location.line(), location.column());
+    const std::string locationstring = std::format(
+        "{}:{}:{}", strip_path(location.file_name()), location.line(), location.column()
+    );
 
     std::println(
         std::cerr,

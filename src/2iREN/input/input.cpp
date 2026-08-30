@@ -1,6 +1,6 @@
 #include "input.hpp"
 
-#include "2iREN/util/log.hpp"
+#include "2iREN/utility/log.hpp"
 #include "2iREN/window.hpp"
 #include "mappings.hpp"
 

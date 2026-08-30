@@ -4,8 +4,8 @@
 #include <glm/glm.hpp>
 
 #include "2iREN/base.hpp"
-#include "2iREN/util/concepts.hpp"
-#include "codes.hpp"
+#include "2iREN/input/codes.hpp"
+#include "2iREN/utility/concepts.hpp"
 
 namespace siren {
 
@@ -22,7 +22,9 @@ public:
     [[nodiscard]] auto just_pressed(Button button) const noexcept -> bool;
     [[nodiscard]] auto just_released(Button button) const noexcept -> bool;
 
-    constexpr auto to_index(Button button) const noexcept -> usize { return std::to_underlying(button); }
+    constexpr auto to_index(Button button) const noexcept -> usize {
+        return std::to_underlying(button);
+    }
 
 private:
     friend class Input;
@@ -72,7 +74,6 @@ public:
     [[nodiscard]] auto movement() const noexcept -> const MouseMovement&;
     [[nodiscard]] auto cursor_mode() const noexcept -> CursorMode;
     auto set_cursor_mode(CursorMode cursor_mode) const noexcept -> void;
-
 
 private:
     Window& m_window;

@@ -1,13 +1,11 @@
 #pragma once
 
-#include <string_view>
-#include <optional>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 #include "2iREN/base.hpp"
-#include "2iREN/util/log.hpp"
-#include "2iREN/util/hashed_string.hpp"
-
+#include "2iREN/utility/hashed_string.hpp"
 
 namespace siren {
 
@@ -29,11 +27,7 @@ public:
      * @param relative_path The path relative to the virtual file system mount.
      * @param label The optional label of the asset.
      */
-    AssetPath(
-        std::string_view vfs,
-        std::string_view relative_path,
-        std::string_view label = ""
-    );
+    AssetPath(std::string_view vfs, std::string_view relative_path, std::string_view label = "");
 
     /**
      * @brief Parses an AssetPath from its string representation.

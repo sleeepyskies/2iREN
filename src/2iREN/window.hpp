@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "2iREN/base.hpp"
-#include "2iREN/sync/mutex.hpp"
-#include "input/codes.hpp"
+#include "2iREN/concurrency/mutex.hpp"
+#include "2iREN/input/codes.hpp"
 
 namespace siren {
 
@@ -142,8 +142,10 @@ private:
     ScrollCallback m_scroll_callback;
     OnResizeCallback m_resize_callback;
 
-    static auto glfw_key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) -> void;
-    static auto glfw_mouse_button_callback(GLFWwindow* window, i32 button, i32 action, i32 mods) -> void;
+    static auto glfw_key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods)
+        -> void;
+    static auto glfw_mouse_button_callback(GLFWwindow* window, i32 button, i32 action, i32 mods)
+        -> void;
     static auto glfw_mouse_move_callback(GLFWwindow* window, f64 xpos, f64 ypos) -> void;
     static auto glfw_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset) -> void;
     static auto glfw_window_resize_callback(GLFWwindow* window, i32 w, i32 h) -> void;

@@ -24,10 +24,12 @@ struct Rgba {
     constexpr Rgba() noexcept : r(0), g(0), b(0), a(1) {}
     /** @brief Constructs a new RGBA with the provided value for each channel. */
     constexpr explicit Rgba(const f32 val) noexcept : r(val), g(val), b(val), a(val) {}
-    /** @brief Constructs a new RGBA with the provided value for each color channel and using the given alpha. */
+    /** @brief Constructs a new RGBA with the provided value for each color channel and using the
+     * given alpha. */
     constexpr Rgba(const f32 val, const f32 alpha) noexcept : r(val), g(val), b(val), a(alpha) {}
     /** @brief Constructs a new RGBA color provided the given values. */
-    constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept : r(r), g(g), b(b), a(a) {}
+    constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept :
+        r(r), g(g), b(b), a(a) {}
 
     Rgba(const Rgba&)            = default;
     Rgba(Rgba&&)                 = default;
@@ -37,7 +39,9 @@ struct Rgba {
     [[nodiscard]] auto operator==(const Rgba&) const noexcept -> bool = default;
 
     /** @brief Formats this RGBA as a string. */
-    [[nodiscard]] auto to_string() const -> std::string { return std::format("Rgba({}, {}, {}, {})", r, g, b, a); }
+    [[nodiscard]] auto to_string() const -> std::string {
+        return std::format("Rgba({}, {}, {}, {})", r, g, b, a);
+    }
 
     /** @brief Returns a raw data pointer to this Rgba. */
     [[nodiscard]] auto data() const -> const f32* { return &r; }

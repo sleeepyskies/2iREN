@@ -1,13 +1,15 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <vector>
 
-#include "asset_id.hpp"
-
+#include "2iREN/asset/asset_id.hpp"
+#include "2iREN/core/assert.hpp"
 
 namespace siren {
-// todo: i think we need to use mutex on ref counts here since handle be dropping these from any threads
+// todo: i think we need to use mutex on ref counts here since handle be dropping these from any
+// threads
 
 template <IsAsset A>
 class AssetPool;
@@ -56,7 +58,11 @@ private:
         RefCount ref_count = 0;
 
         // @formatter:off
-        void kill() { asset.reset(nullptr); generation++; ref_count = 0; }
+        void kill() {
+            asset.reset(nullptr);
+            generation++;
+            ref_count = 0;
+        }
         // @formatter:on
     };
 
@@ -69,7 +75,9 @@ private:
     };
 
 public:
-    [[nodiscard]] auto type_id() const noexcept -> AssetId::TypeID override { return AssetId::type_id<A>(); }
+    [[nodiscard]] auto type_id() const noexcept -> AssetId::TypeID override {
+        return AssetId::type_id<A>();
+    }
 
     /** @brief Creates a new AssetID for this pool, as well as allocates it a storage slot. */
     [[nodiscard]] auto reserve() -> AssetId {
@@ -112,7 +120,9 @@ public:
     /** @brief Returns the asset associated with the given ID, or nullptr. */
     [[nodiscard]]
     auto fetch(const AssetId id) const -> A* {
-        if (!is_valid_id(id)) { return nullptr; }
+        if (!is_valid_id(id)) {
+            return nullptr;
+        }
         const PoolEntry& entry = m_data.storage[id.index()];
         return entry.asset.get();
     }
@@ -122,23 +132,30 @@ private:
     friend class StrongHandle;
 
     auto is_valid_id(const AssetId id) const -> bool {
-        if (id.index() >= m_data.storage.size() || !id.is_valid()) { return false; }
+        if (id.index() >= m_data.storage.size() || !id.is_valid()) {
+            return false;
+        }
         const auto& entry = m_data.storage[id.index()];
         return entry.generation == id.generation();
     }
 
     auto inc_ref(const AssetId id) -> void {
-        if (!is_valid_id(id)) { return; }
+        if (!is_valid_id(id)) {
+            return;
+        }
         PoolEntry& entry = m_data.storage[id.index()];
-        entry.ref_count  += 1;
+        entry.ref_count += 1;
     }
 
     auto dec_ref(const AssetId id) -> void {
-        if (!is_valid_id(id)) { return; }
+        if (!is_valid_id(id)) {
+            return;
+        }
 
         PoolEntry& entry = m_data.storage[id.index()];
 
-        // todo: we should maybe emit an AssetCleanupEvent? need to handle destruction here an in asset server eventually
+        // todo: we should maybe emit an AssetCleanupEvent? need to handle destruction here an in
+        // asset server eventually
         entry.ref_count -= 1;
         if (entry.ref_count == 0) {
             m_data.free_list.emplace_back(id.index());

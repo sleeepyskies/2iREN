@@ -1,13 +1,13 @@
 #include "context.hpp"
 
-#include "2iREN/util/filesystem.hpp"
-#include "2iREN/util/platform.hpp"
-#include "2iREN/util/stb_image.h"
-#include "2iREN/util/time.hpp"
-#include "rhi/backend/gl/device.hpp"
-#include "rhi/device.hpp"
+#include <stb/stb_image.h>
 
-#include "2iREN/sync/thread_pool.hpp"
+#include "2iREN/concurrency/thread_pool.hpp"
+#include "2iREN/graphics/backend/gl/device.hpp"
+#include "2iREN/graphics/device.hpp"
+#include "2iREN/utility/filesystem.hpp"
+#include "2iREN/utility/platform.hpp"
+#include "2iREN/utility/time.hpp"
 #include "2iREN/window.hpp"
 
 #ifndef SIREN_ENGINE_ROOT

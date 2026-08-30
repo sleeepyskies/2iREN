@@ -3,8 +3,8 @@
 #include <memory>
 
 #include "2iREN/base.hpp"
-#include "2iREN/util/log.hpp"
-#include "rhi/device.hpp"
+#include "2iREN/graphics/device.hpp"
+#include "2iREN/utility/log.hpp"
 
 namespace siren {
 struct WindowDescriptor;

@@ -1,10 +1,8 @@
 #include "asset_server.hpp"
 
-#include "2iREN/rhi/device.hpp"
-#include "assets/gltf.hpp"
-#include "assets/shader.hpp"
-
-
+#include "2iREN/asset/gltf.hpp"
+#include "2iREN/asset/shader.hpp"
+#include "2iREN/graphics/device.hpp"
 
 namespace siren {
 
@@ -43,8 +41,6 @@ AssetServer::AssetServer(Device& device) : m_device(device) {
     register_default<Texture>();
     register_default<PBRMaterialAsset>();
     */
-
-
 }
 
 } // namespace siren

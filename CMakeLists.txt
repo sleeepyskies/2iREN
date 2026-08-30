@@ -24,44 +24,18 @@ option(SIREN_SINGLE_THREADED
 add_library(2iREN STATIC)
 add_library(2iREN::2iREN ALIAS 2iREN)
 
-# TODO: clean this up, CMakeLists.txt for each module please
+add_subdirectory(src/2iREN/asset)
+add_subdirectory(src/2iREN/concurrency)
+add_subdirectory(src/2iREN/core)
+add_subdirectory(src/2iREN/graphics)
+add_subdirectory(src/2iREN/impl)
+add_subdirectory(src/2iREN/input)
+add_subdirectory(src/2iREN/scene)
+add_subdirectory(src/2iREN/utility)
+
 target_sources(2iREN PRIVATE
-    src/2iREN/rhi/backend/gl/command_executor.cpp
-    src/2iREN/rhi/backend/gl/device.cpp
-    src/2iREN/rhi/backend/gl/debug.cpp
-    src/2iREN/rhi/backend/gl/render_thread.cpp
-
-    src/2iREN/rhi/resources/buffer.cpp
-    src/2iREN/rhi/resources/graphics_pipeline.cpp
-    src/2iREN/rhi/resources/image.cpp
-    src/2iREN/rhi/resources/sampler.cpp
-    src/2iREN/rhi/resources/shader.cpp
-    src/2iREN/rhi/resources/swapchain.cpp
-    src/2iREN/rhi/resources/query.cpp
-
     src/2iREN/context.cpp
-    src/2iREN/rhi/layout.cpp
-    src/2iREN/rhi/render_command.cpp
-    src/2iREN/rhi/resource_command.cpp
-
-    src/2iREN/sync/thread_pool.cpp
-
-    src/2iREN/asset/asset_path.cpp
-    src/2iREN/asset/asset_server.cpp
-    src/2iREN/asset/assets/shader.cpp
-    src/2iREN/asset/assets/gltf.cpp
-    src/2iREN/asset/assets/material.cpp
-    src/2iREN/asset/assets/texture.cpp
-
-    src/2iREN/input/input.cpp
     src/2iREN/window.cpp
-
-    src/2iREN/util/time.cpp
-    src/2iREN/util/filesystem.cpp
-    src/2iREN/util/stb_image.cpp
-    src/2iREN/util/stb_image_write.cpp
-    src/2iREN/util/cgltf.cpp
-    src/2iREN/util/camera.cpp
 )
 
 target_include_directories(
@@ -69,6 +43,14 @@ target_include_directories(
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
             $<INSTALL_INTERFACE:include>
+)
+
+# TODO: this should probably be private, and we expose only some
+# wrapper image loader
+target_include_directories(
+    2iREN
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
 target_compile_definitions(

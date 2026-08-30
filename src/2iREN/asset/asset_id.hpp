@@ -2,9 +2,9 @@
 
 #include <format>
 
-#include "2iREN/util/identifier.hpp"
-#include "2iREN/util/type_info.hpp"
-#include "fwd.hpp"
+#include "2iREN/utility/identifier.hpp"
+#include "2iREN/utility/type_info.hpp"
+#include "2iREN/asset/fwd.hpp"
 
 namespace siren {
 /**
@@ -24,7 +24,8 @@ struct AssetId final : Identifier<AssetId> {
      * @param gen The generation of this identifier.
      * @param type The type of this identifier.
      */
-    AssetId(const IndexType index, const GenerationType gen, const TypeID type) : Identifier(index, gen, type) {}
+    AssetId(const IndexType index, const GenerationType gen, const TypeID type) :
+        Identifier(index, gen, type) {}
 
     /** @brief Constructs a new invalid AssetID. */
     static constexpr auto invalid() noexcept -> AssetId { return AssetId{}; }
@@ -45,7 +46,9 @@ struct AssetId final : Identifier<AssetId> {
     [[nodiscard]] constexpr auto type() const noexcept -> TypeID { return meta(); }
 
     [[nodiscard]] constexpr auto to_string() const -> std::string {
-        return std::format("AssetId(index={}, generation={}, type={})", index(), generation(), type());
+        return std::format(
+            "AssetId(index={}, generation={}, type={})", index(), generation(), type()
+        );
     }
 
 private:
@@ -55,7 +58,15 @@ private:
 
 template <>
 struct std::hash<siren::AssetId> {
-    auto operator()(const siren::AssetId& id) const noexcept -> siren::usize {
-        return id.hash();
+    auto operator()(const siren::AssetId& id) const noexcept -> siren::usize { return id.hash(); }
+};
+
+template <>
+struct std::formatter<siren::AssetId> {
+    constexpr auto parse(std::format_parse_context& context) const { return context.begin(); }
+
+    template <typename FormatContext>
+    auto format(const siren::AssetId& id, FormatContext& context) const {
+        return std::format_to(context.out(), "{}", id.to_string());
     }
 };
