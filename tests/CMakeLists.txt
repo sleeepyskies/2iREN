@@ -4,6 +4,7 @@ add_executable(
     2iREN_tests
     test_main.cpp
 
+    byte_buffer_test.cpp
     color_test.cpp
 )
 

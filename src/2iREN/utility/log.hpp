@@ -62,7 +62,9 @@ namespace impl {
 /** @brief The globally configured minimum logging level. Defaults to Info. */
 inline Level level{Level::None};
 /** @brief Attempts to trim a file path to 2iREN root. */
-[[nodiscard]] constexpr auto strip_path(const std::string_view path) -> std::string_view {
+[[nodiscard]]
+constexpr auto strip_path(const std::string_view path) -> std::string_view {
+    // TODO: can we trim path better? not always gonna be 2iREN
     const auto pos = path.find("2iREN/");
 
     if (pos != std::string_view::npos) {
@@ -96,8 +98,6 @@ inline auto init(const std::string_view lvl) -> void {
  * @param loc The source code location of the log call.
  * @param fmt The format string.
  * @param args The type-erased format arguments.
- *
- * @todo can we make log output a shortened filepath? it does absolute one atm
  */
 inline void log(
     const Level lvl,

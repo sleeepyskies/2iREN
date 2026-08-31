@@ -49,7 +49,7 @@ namespace siren::impl {
         std::println(std::cerr, "message: {}", message);
     }
 
-    if (const auto trace = std::stacktrace::current(); !trace.empty()) {
+    if (const auto trace = std::stacktrace::current(1); !trace.empty()) {
         std::println(std::cerr, "stack trace:\n{}", trace);
     }
 

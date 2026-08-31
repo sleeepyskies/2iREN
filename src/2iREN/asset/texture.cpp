@@ -126,7 +126,6 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const auto iname = std::format("{}_Image", tname);
 
     const auto format = determine_format(*config, ctx.path().extension());
-    // const auto is_srgb = determine_srgb(format);
 
     i32 width = 0, height = 0, channels = 0;
     u8* data                 = stbi_load(path->c_str(), &width, &height, &channels, 0);

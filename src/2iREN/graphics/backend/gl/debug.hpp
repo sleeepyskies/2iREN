@@ -2,7 +2,6 @@
 
 #include <glad/gl.h>
 
-
 namespace siren::gl {
 
 /**

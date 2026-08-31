@@ -56,7 +56,7 @@ auto debug_callback(
     (void)userParam; // ignore unused
 
     // limit to 5 repeats
-    static std::unordered_map<u32, u32> count{ };
+    static std::unordered_map<u32, u32> count{};
     if (count[id] > 5) {
         return;
     }
@@ -69,39 +69,19 @@ auto debug_callback(
 
     if (severity == GL_DEBUG_SEVERITY_HIGH) {
         log::error(
-            "OpenGL: [{} - {} ({})]: [{}] {}",
-            sev_string,
-            type_string,
-            id,
-            source_string,
-            message
+            "OpenGL: [{} - {} ({})]: [{}] {}", sev_string, type_string, id, source_string, message
         );
     } else if (severity == GL_DEBUG_SEVERITY_MEDIUM) {
         log::warn(
-            "OpenGL: [{} - {} ({})]: [{}] {}",
-            sev_string,
-            type_string,
-            id,
-            source_string,
-            message
+            "OpenGL: [{} - {} ({})]: [{}] {}", sev_string, type_string, id, source_string, message
         );
     } else if (severity == GL_DEBUG_SEVERITY_LOW) {
         log::info(
-            "OpenGL: [{} - {} ({})]: [{}] {}",
-            sev_string,
-            type_string,
-            id,
-            source_string,
-            message
+            "OpenGL: [{} - {} ({})]: [{}] {}", sev_string, type_string, id, source_string, message
         );
     } else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         log::trace(
-            "OpenGL: [{} - {} ({})]: [{}] {}",
-            sev_string,
-            type_string,
-            id,
-            source_string,
-            message
+            "OpenGL: [{} - {} ({})]: [{}] {}", sev_string, type_string, id, source_string, message
         );
     }
 }
