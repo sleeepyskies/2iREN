@@ -27,13 +27,12 @@ To build the library.
 
 ## Dependencies
 
-* **stb_image**: Single header file used for image loading.
+* **stb**: Used for image saving and loading.
 * **cgltf**: Loading gltf files.
-* **yaml-cpp**: Used for certain 2iREN specific file types (sshg etc.).
+* **yaml-cpp**: Used for yaml file parsing.
 * **GLFW**: Windowing
-* **GLM**: Math library
 * **glad**: OpenGL loader
-* **OpenGL**: Rendering API
+* **OpenGL**: Graphics API.
 
 ## Running Tests
 

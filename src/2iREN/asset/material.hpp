@@ -1,11 +1,11 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include <string>
 
 #include "2iREN/asset/asset_handle.hpp"
 #include "2iREN/asset/texture.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/math/vec3.hpp"
 
 namespace siren {
 
@@ -33,23 +33,23 @@ public:
     auto set_transmission(f32 value) noexcept -> void;
     auto set_transmission_tex(const StrongHandle<Texture>& handle) noexcept -> void;
     auto set_thickness(f32 value) noexcept -> void;
-    auto set_attenuation_color(const glm::vec3& value) noexcept -> void;
+    auto set_attenuation_color(const Vec3f& value) noexcept -> void;
     auto set_attenuation_distance(f32 value) noexcept -> void;
     auto set_thickness_texture(const StrongHandle<Texture>& handle) noexcept -> void;
 
     auto set_ior(f32 value) noexcept -> void;
     auto set_specular_factor(f32 value) noexcept -> void;
-    auto set_specular_color(const glm::vec3& value) noexcept -> void;
+    auto set_specular_color(const Vec3f& value) noexcept -> void;
     auto set_specular_color_tex(const StrongHandle<Texture>& handle) noexcept -> void;
     auto set_specular_tex(const StrongHandle<Texture>& handle) noexcept -> void;
 
-    auto set_sheen_color(const glm::vec3& value) noexcept -> void;
+    auto set_sheen_color(const Vec3f& value) noexcept -> void;
     auto set_sheen_roughness(f32 value) noexcept -> void;
     auto set_sheen_color_tex(const StrongHandle<Texture>& handle) noexcept -> void;
     auto set_sheen_roughness_tex(const StrongHandle<Texture>& handle) noexcept -> void;
 
     auto set_emissive_strength(f32 value) noexcept -> void;
-    auto set_emissive_color(const glm::vec3& value) noexcept -> void;
+    auto set_emissive_color(const Vec3f& value) noexcept -> void;
     auto set_emissive_tex(const StrongHandle<Texture>& handle) noexcept -> void;
 
     auto set_iridescence_factor(f32 value) noexcept -> void;
@@ -60,7 +60,7 @@ public:
     auto set_iridescence_thickness_tex(const StrongHandle<Texture>& handle) noexcept -> void;
 
     auto set_diffuse_transmission_factor(f32 value) noexcept -> void;
-    auto set_diffuse_transmission_color(const glm::vec3& value) noexcept -> void;
+    auto set_diffuse_transmission_color(const Vec3f& value) noexcept -> void;
     auto set_diffuse_transmission_tex(const StrongHandle<Texture>& handle) noexcept -> void;
     auto set_diffuse_transmission_color_tex(const StrongHandle<Texture>& handle) noexcept -> void;
 
@@ -94,23 +94,23 @@ public:
     [[nodiscard]] auto transmission() const noexcept -> f32;
     [[nodiscard]] auto transmission_tex() const noexcept -> const StrongHandle<Texture>&;
     [[nodiscard]] auto thickness() const noexcept -> f32;
-    [[nodiscard]] auto attenuation_color() const noexcept -> const glm::vec3&;
+    [[nodiscard]] auto attenuation_color() const noexcept -> const Vec3f&;
     [[nodiscard]] auto attenuation_distance() const noexcept -> f32;
     [[nodiscard]] auto thickness_texture() const noexcept -> const StrongHandle<Texture>&;
 
     [[nodiscard]] auto ior() const noexcept -> f32;
     [[nodiscard]] auto specular_factor() const noexcept -> f32;
-    [[nodiscard]] auto specular_color() const noexcept -> const glm::vec3&;
+    [[nodiscard]] auto specular_color() const noexcept -> const Vec3f&;
     [[nodiscard]] auto specular_color_tex() const noexcept -> const StrongHandle<Texture>&;
     [[nodiscard]] auto specular_tex() const noexcept -> const StrongHandle<Texture>&;
 
-    [[nodiscard]] auto sheen_color() const noexcept -> const glm::vec3&;
+    [[nodiscard]] auto sheen_color() const noexcept -> const Vec3f&;
     [[nodiscard]] auto sheen_roughness() const noexcept -> f32;
     [[nodiscard]] auto sheen_color_tex() const noexcept -> const StrongHandle<Texture>&;
     [[nodiscard]] auto sheen_roughness_tex() const noexcept -> const StrongHandle<Texture>&;
 
     [[nodiscard]] auto emissive_strength() const noexcept -> f32;
-    [[nodiscard]] auto emissive_color() const noexcept -> const glm::vec3&;
+    [[nodiscard]] auto emissive_color() const noexcept -> const Vec3f&;
     [[nodiscard]] auto emissive_tex() const noexcept -> const StrongHandle<Texture>&;
 
     [[nodiscard]] auto iridescence_factor() const noexcept -> f32;
@@ -121,7 +121,7 @@ public:
     [[nodiscard]] auto iridescence_thickness_tex() const noexcept -> const StrongHandle<Texture>&;
 
     [[nodiscard]] auto diffuse_transmission_factor() const noexcept -> f32;
-    [[nodiscard]] auto diffuse_transmission_color() const noexcept -> const glm::vec3&;
+    [[nodiscard]] auto diffuse_transmission_color() const noexcept -> const Vec3f&;
     [[nodiscard]] auto diffuse_transmission_tex() const noexcept -> const StrongHandle<Texture>&;
     [[nodiscard]] auto diffuse_transmission_color_tex() const noexcept
         -> const StrongHandle<Texture>&;
@@ -157,17 +157,17 @@ private:
     f32 m_transmission                       = 0.0f;
     StrongHandle<Texture> m_transmission_tex = StrongHandle<Texture>::invalid();
     f32 m_thickness                          = 0.0f;
-    glm::vec3 m_attenuation_color{1.f};
+    Vec3f m_attenuation_color{1.f};
     f32 m_attenuation_distance                = 0.0f;
     StrongHandle<Texture> m_thickness_texture = StrongHandle<Texture>::invalid();
 
     f32 m_ior             = 1.5f;
     f32 m_specular_factor = 1.0f;
-    glm::vec3 m_specular_color{1.f};
+    Vec3f m_specular_color{1.f};
     StrongHandle<Texture> m_specular_color_tex = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_specular_tex       = StrongHandle<Texture>::invalid();
 
-    glm::vec3 m_sheen_color{0.f};
+    Vec3f m_sheen_color{0.f};
     f32 m_sheen_roughness                       = 0.0f;
     StrongHandle<Texture> m_sheen_color_tex     = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_sheen_roughness_tex = StrongHandle<Texture>::invalid();
@@ -180,7 +180,7 @@ private:
     StrongHandle<Texture> m_iridescence_thickness_tex = StrongHandle<Texture>::invalid();
 
     f32 m_diffuse_transmission_factor = 0.0f;
-    glm::vec3 m_diffuse_transmission_color{1.f};
+    Vec3f m_diffuse_transmission_color{1.f};
     StrongHandle<Texture> m_diffuse_transmission_tex       = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_diffuse_transmission_color_tex = StrongHandle<Texture>::invalid();
 
@@ -192,7 +192,7 @@ private:
     StrongHandle<Texture> m_normal_tex    = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_occlusion_tex = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_emissive_tex  = StrongHandle<Texture>::invalid();
-    glm::vec3 m_emissive_color{0.f};
+    Vec3f m_emissive_color{0.f};
     f32 m_emissive_strength = 1.0f;
 
     AlphaMode m_alpha_mode = AlphaMode::Opaque;

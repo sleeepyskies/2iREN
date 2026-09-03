@@ -1,10 +1,10 @@
 #pragma once
 
 #include <bitset>
-#include <glm/glm.hpp>
 
 #include "2iREN/base.hpp"
 #include "2iREN/input/codes.hpp"
+#include "2iREN/math/vec2.hpp"
 #include "2iREN/utility/concepts.hpp"
 
 namespace siren {
@@ -40,21 +40,21 @@ private:
 
 class MouseMovement {
 public:
-    [[nodiscard]] auto position() const noexcept -> glm::vec2;
-    [[nodiscard]] auto mouse_delta() const noexcept -> glm::vec2;
-    [[nodiscard]] auto scroll_delta() const noexcept -> glm::vec2;
+    [[nodiscard]] auto position() const noexcept -> Vec2f;
+    [[nodiscard]] auto mouse_delta() const noexcept -> Vec2f;
+    [[nodiscard]] auto scroll_delta() const noexcept -> Vec2f;
 
 private:
     friend class Input;
 
     auto update() noexcept -> void;
 
-    glm::vec2 m_current_mouse_position{};
-    glm::vec2 m_previous_mouse_position{};
-    glm::vec2 m_mouse_delta{};
+    Vec2f m_current_mouse_position{};
+    Vec2f m_previous_mouse_position{};
+    Vec2f m_mouse_delta{};
 
-    glm::vec2 m_scroll_delta{};
-    glm::vec2 m_accumulated_scroll{};
+    Vec2f m_scroll_delta{};
+    Vec2f m_accumulated_scroll{};
 };
 
 using MouseInput = ButtonState<Mouse>;

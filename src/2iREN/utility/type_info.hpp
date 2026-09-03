@@ -96,7 +96,8 @@ struct TypeHash final {
  * @tparam T The type to find the name of.
  */
 template <typename T>
-[[nodiscard]] constexpr auto typename_of() -> std::string_view {
+[[nodiscard]]
+constexpr inline auto typename_of() -> std::string_view {
     return TypeName<T>::value();
 }
 
@@ -105,7 +106,8 @@ template <typename T>
  * @tparam T The type to find the type hash of.
  */
 template <typename T>
-[[nodiscard]] constexpr auto typehash_of() -> HashedString::HashType {
+[[nodiscard]]
+constexpr inline auto typehash_of() -> HashedString::HashType {
     return TypeHash<T>::hash();
 }
 

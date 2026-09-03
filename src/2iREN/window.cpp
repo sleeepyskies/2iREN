@@ -2,9 +2,11 @@
 
 #include <GLFW/glfw3.h>
 
+#include "2iREN/context.hpp"
 #include "2iREN/core/assert.hpp"
-#include "context.hpp"
-#include "input/mappings.hpp"
+#include "2iREN/input/mappings.hpp"
+#include "2iREN/math/extent.hpp"
+#include "2iREN/math/vec2.hpp"
 #include "2iREN/utility/log.hpp"
 
 /// @todo:
@@ -72,11 +74,11 @@ Window::Window(const WindowDescriptor& descriptor) {
 
         i32 w, h;
         glfwGetWindowSize(m_handle, &w, &h);
-        m_size.set(glm::uvec2(w, h));
+        m_extent.set(Extent2u(w, h));
 
         i32 x, y;
         glfwGetWindowPos(m_handle, &x, &y);
-        m_position.set(glm::uvec2(x, y));
+        m_position.set(Vec2i(x, y));
 
         m_title.set(descriptor.title);
     }
@@ -95,10 +97,10 @@ Window::~Window() {
 }
 
 auto Window::handle() const noexcept -> GLFWwindow* { return m_handle; }
-auto Window::width() const noexcept -> u32 { return size().x; }
-auto Window::height() const noexcept -> u32 { return size().y; }
-auto Window::size() const noexcept -> glm::uvec2 { return m_size.get(); }
-auto Window::position() const noexcept -> glm::ivec2 { return m_position.get(); }
+auto Window::width() const noexcept -> u32 { return extent().x; }
+auto Window::height() const noexcept -> u32 { return extent().y; }
+auto Window::extent() const noexcept -> Extent2u { return m_extent.get(); }
+auto Window::position() const noexcept -> Vec2i { return m_position.get(); }
 auto Window::title() const noexcept -> std::string { return m_title.get(); }
 auto Window::is_minimized() const noexcept -> bool {
     return m_window_mode.load() == WindowMode::Minimized;
@@ -140,8 +142,8 @@ auto Window::maximize() const -> void {
 
 auto Window::set_fullscreen(const bool val) const -> void {
     // setting to same, so skip
-    if ((val && m_window_mode == WindowMode::Fullscreen) ||
-        (!val && m_window_mode != WindowMode::Fullscreen)) {
+    if ((val && m_window_mode == WindowMode::Fullscreen)
+        || (!val && m_window_mode != WindowMode::Fullscreen)) {
         return;
     }
 
@@ -151,9 +153,9 @@ auto Window::set_fullscreen(const bool val) const -> void {
     if (val) {
         cached_x = position().x;
         cached_y = position().y;
-        cached_w = size().x;
-        cached_h = size().y;
-    }
+        cached_w = width();
+        cached_h = height();
+    };
 
     m_requests.lock()->emplace_back([this, val] {
         if (val) {
@@ -174,15 +176,15 @@ auto Window::set_fullscreen(const bool val) const -> void {
     });
 }
 
-auto Window::set_size(glm::uvec2 size) const -> void {
-    m_requests.lock()->emplace_back([this, size] {
-        glfwSetWindowSize(m_handle, static_cast<i32>(size.x), static_cast<i32>(size.y));
-        this->m_size.set(size);
-        log::trace("Window size set to ({}, {})", size.x, size.y);
+auto Window::set_extent(const Extent2u extent) const -> void {
+    m_requests.lock()->emplace_back([this, extent] {
+        glfwSetWindowSize(m_handle, static_cast<i32>(extent.x), static_cast<i32>(extent.y));
+        this->m_extent.set(extent);
+        log::trace("window extent set to {}.", extent);
     });
 }
 
-auto Window::set_position(glm::ivec2 position) const -> void {
+auto Window::set_position(Vec2i position) const -> void {
     m_requests.lock()->emplace_back([this, position] {
         glfwSetWindowPos(m_handle, position.x, position.y);
         this->m_position.set(position);
@@ -236,7 +238,11 @@ auto Window::set_scroll_callback(ScrollCallback&& callback) -> void {
 }
 
 void Window::glfw_key_callback(
-    GLFWwindow* window, const i32 key, const i32, const i32 action, const i32
+    GLFWwindow* window,
+    const i32 key,
+    const i32,
+    const i32 action,
+    const i32
 ) {
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_key_callback) {
@@ -245,7 +251,10 @@ void Window::glfw_key_callback(
 }
 
 auto Window::glfw_mouse_button_callback(
-    GLFWwindow* window, const i32 button, const i32 action, const i32
+    GLFWwindow* window,
+    const i32 button,
+    const i32 action,
+    const i32
 ) -> void {
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_mouse_button_callback) {
@@ -256,7 +265,7 @@ auto Window::glfw_mouse_button_callback(
 auto Window::glfw_mouse_move_callback(GLFWwindow* window, const f64 xpos, const f64 ypos) -> void {
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_mouse_move_callback) {
-        self->m_mouse_move_callback(glm::vec2{static_cast<f32>(xpos), static_cast<f32>(ypos)});
+        self->m_mouse_move_callback(Vec2f{static_cast<f32>(xpos), static_cast<f32>(ypos)});
     }
 }
 
@@ -264,15 +273,16 @@ auto Window::glfw_scroll_callback(GLFWwindow* window, const f64 xoffset, const f
     -> void {
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_scroll_callback) {
-        self->m_scroll_callback(glm::vec2{static_cast<f32>(xoffset), static_cast<f32>(yoffset)});
+        self->m_scroll_callback(Vec2f{static_cast<f32>(xoffset), static_cast<f32>(yoffset)});
     }
 }
 
 auto Window::glfw_window_resize_callback(GLFWwindow* window, const i32 w, const i32 h) -> void {
+    ASSERT(w > 0 && h > 0, "window extent cannot be 0.");
     const auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    self->m_size.set(glm::uvec2{w, h});
+    self->m_extent.set(Extent2u{(u32)w, (u32)h});
     if (self->m_resize_callback) {
-        self->m_resize_callback(glm::ivec2{static_cast<f32>(w), static_cast<f32>(h)});
+        self->m_resize_callback(Extent2u{(u32)w, (u32)h});
     }
 }
 } // namespace siren

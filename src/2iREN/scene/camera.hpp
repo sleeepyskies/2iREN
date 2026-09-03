@@ -1,77 +1,73 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
-
 #include "2iREN/base.hpp"
+#include "2iREN/input/input.hpp"
+#include "2iREN/math/angle.hpp"
+#include "2iREN/math/bounded.hpp"
+#include "2iREN/math/mat4x4.hpp"
+#include "2iREN/math/point.hpp"
+#include "2iREN/math/vec3.hpp"
 
 namespace siren {
-class Input;
 
-struct PerspectiveCameraDescriptor {
-    glm::vec3 position{0.f};
-    f32 yaw{0.f};
-    f32 pitch{0.f};
-    f32 aspect{1280.f / 720.f};
-    f32 near{0.1f};
-    f32 far{1000.f};
-    f32 fov{75.f};
+/// @brief A degree value clamped to the range [-89, 89] represting camera yaw.
+using Yaw = Bounded<Degrees, Degrees{-89.f}, Degrees{89.f}, ClampBoundsPolicy>;
+/// @brief A degree value clamped to [0, 500] representing the camera fov.
+using Fov = Bounded<Degrees, Degrees{0}, Degrees{500}, ClampBoundsPolicy>;
+
+struct CameraDescriptor {
+    Point3f position = {0.f, 0.f, 0.f};
+    Degrees pitch    = Degrees{0.f};
+    Yaw yaw          = Degrees{0.f};
+    Fov fov          = Degrees{75.f};
+    f32 nearplane    = 0.1f;
+    f32 farplane     = 100.f;
 };
 
-class PerspectiveCamera {
+class Camera {
 public:
-    explicit PerspectiveCamera(const PerspectiveCameraDescriptor& descriptor = {}) :
-        m_descriptor(descriptor) {}
+    explicit Camera(const CameraDescriptor& descriptor);
 
-    [[nodiscard]] auto position() const noexcept -> glm::vec3;
-    [[nodiscard]] auto yaw() const noexcept -> f32;
-    [[nodiscard]] auto pitch() const noexcept -> f32;
-    [[nodiscard]] auto aspect() const noexcept -> f32;
-    [[nodiscard]] auto near() const noexcept -> f32;
-    [[nodiscard]] auto far() const noexcept -> f32;
-    [[nodiscard]] auto fov() const noexcept -> f32;
+    auto position() const noexcept -> Point3f;
+    auto front() const noexcept -> Vec3f;
+    auto up() const noexcept -> Vec3f;
+    auto right() const noexcept -> Vec3f;
+    auto yaw() const noexcept -> Yaw;
+    auto pitch() const noexcept -> Degrees;
+    auto fov() const noexcept -> Fov;
+    auto projection_view(const NonZeroPositiveF32 aspect_ratio) const noexcept -> Mat4x4f;
 
-    auto set_position(const glm::vec3& position) noexcept -> void;
-    auto set_yaw(f32 yaw) noexcept -> void;
-    auto set_pitch(f32 pitch) noexcept -> void;
-    auto set_aspect(f32 aspect) noexcept -> void;
-    auto set_near(f32 near) noexcept -> void;
-    auto set_far(f32 far) noexcept -> void;
-    auto set_fov(f32 fov) noexcept -> void;
-
-    auto look_at(const glm::vec3 point) -> void;
-
-    /** @brief Returns the view matrix. This transforms world space to camera space. */
-    [[nodiscard]] auto view() const noexcept -> glm::mat4;
-    /** @brief Returns the projection matrix. This transforms view space to NDC. */
-    [[nodiscard]] auto projection() const noexcept -> glm::mat4;
-    /** @brief Returns the projection view matrix. This transforms world space to NDC. */
-    [[nodiscard]] auto projection_view() const noexcept -> glm::mat4 {
-        return projection() * view();
-    };
+    auto set_position(Point3f position) noexcept -> void;
+    auto set_yaw(Yaw yaw) noexcept -> void;
+    auto set_pitch(Degrees pitch) noexcept -> void;
 
 private:
-    PerspectiveCameraDescriptor m_descriptor;
+    auto update_vectors() noexcept -> void;
+
+private:
+    Point3f m_position;
+    Vec3f m_front;
+    Vec3f m_up;
+    Vec3f m_right;
+
+    Yaw m_yaw;
+    Degrees m_pitch;
+
+    f32 m_nearplane;
+    f32 m_farplane;
+    Fov m_fov;
 };
 
-class PerspectiveCameraController {
+class CameraController {
 public:
-    explicit PerspectiveCameraController(const f32 speed = 5.f, const f32 sensitivity = 0.5f) :
-        m_sensitivity(sensitivity), m_speed(speed) {}
+    CameraController(const PositiveF32 speed, const PositiveF32 m_sensitivity);
 
-    auto update(PerspectiveCamera& camera, const Input& input) -> void;
-    auto update_position(PerspectiveCamera& camera, const Input& input) -> void;
-    auto update_look(PerspectiveCamera& camera, const Input& input) -> void;
-
-    [[nodiscard]] auto speed() const noexcept -> f32;
-    [[nodiscard]] auto sensitivity() const noexcept -> f32;
-
-    auto set_speed(f32 speed) noexcept -> void;
-    auto set_sensitivity(f32 sensitivity) noexcept -> void;
+    auto process_movement(Camera& camera, KeyInput& keys, const f32 delta) const -> void;
+    auto process_look(Camera& camera, MouseMovement& mouse, const f32 delta) const -> void;
 
 private:
-    f32 m_sensitivity;
-    f32 m_speed;
+    PositiveF32 m_speed;
+    PositiveF32 m_sensitivity;
 };
 
 } // namespace siren

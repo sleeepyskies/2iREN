@@ -9,6 +9,8 @@
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
+#include "2iREN/graphics/query.hpp"
+#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 
@@ -31,7 +33,10 @@ namespace siren::gl {
  * @brief Maps minification and LOD filtering modes to OpenGL's combined constants.
  * @note OpenGL requires a single enum to describe both base minification and mipmap sampling.
  */
-[[nodiscard]] constexpr auto min_img_filter_to_gl(const ImageFilterMode min, const ImageFilterMode lod) -> GLenum {
+[[nodiscard]] constexpr auto min_img_filter_to_gl(
+    const ImageFilterMode min,
+    const ImageFilterMode lod
+) -> GLenum {
     if (min == ImageFilterMode::Linear) {
         return lod == ImageFilterMode::Linear ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
     }
@@ -137,7 +142,8 @@ namespace siren::gl {
 /**
  * @brief Converts an OpenGL internal format constant back to a 2iREN ImageFormat.
  */
-[[nodiscard]] constexpr auto img_format_from_gl_internal(const GLenum internal_format) -> ImageFormat {
+[[nodiscard]] constexpr auto img_format_from_gl_internal(const GLenum internal_format)
+    -> ImageFormat {
     switch (internal_format) {
         case GL_R8: return ImageFormat::R8;
         case GL_R32UI: return ImageFormat::R32UI;
@@ -258,15 +264,16 @@ namespace siren::gl {
  * @param dimension The @ref ImageDimension.
  * @return GLenum The resulting OpenGL texture target (e.g., @c GL_TEXTURE_2D_ARRAY).
  */
-[[nodiscard]] constexpr auto img_to_target_gl(const ImageExtent extent, const ImageDimension dimension) -> GLenum {
+[[nodiscard]] constexpr auto img_to_target_gl(const Extent3u extent, const ImageDimension dimension)
+    -> GLenum {
     switch (dimension) {
-        case ImageDimension::D1: return (extent.depth_or_layers > 1) ? GL_TEXTURE_1D_ARRAY : GL_TEXTURE_1D;
-        case ImageDimension::D2: return (extent.depth_or_layers > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+        case ImageDimension::D1: return (extent.z > 1) ? GL_TEXTURE_1D_ARRAY : GL_TEXTURE_1D;
+        case ImageDimension::D2: return (extent.z > 1) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
         // There are no 3D arrays in GL.
         case ImageDimension::D3: return GL_TEXTURE_3D;
         // 6 layers = 1 cube. > 6 layers = Array of cubes.
         case ImageDimension::Cube:
-            return (extent.depth_or_layers > 6) ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
+            return (extent.z > 6) ? GL_TEXTURE_CUBE_MAP_ARRAY : GL_TEXTURE_CUBE_MAP;
     }
     UNREACHABLE();
 }
@@ -294,7 +301,10 @@ namespace siren::gl {
         return GL_DYNAMIC_STORAGE_BIT;
     }
     if (usage == BufferUsage::Stream) {
-        return GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+        return GL_DYNAMIC_STORAGE_BIT
+            | GL_MAP_WRITE_BIT
+            | GL_MAP_PERSISTENT_BIT
+            | GL_MAP_COHERENT_BIT;
     }
     return 0;
 }

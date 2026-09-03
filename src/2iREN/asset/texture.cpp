@@ -7,6 +7,7 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/base.hpp"
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/math/extent.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -61,14 +62,16 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 }
 
 [[nodiscard]] static auto invalid_format(
-    const std::string_view path, const std::string_view msg = ""
+    const std::string_view path,
+    const std::string_view msg = ""
 ) -> AssetLoadError {
     log::warn("Invalid YAML syntax in cubmap file: {}. Message: {}", path, msg);
     return std::unexpected(AssetErrorCode::InvalidFormat);
 }
 
 [[nodiscard]] static auto determine_format(
-    const TextureLoader::ConfigType& cfg, const std::string& ext
+    const TextureLoader::ConfigType& cfg,
+    const std::string& ext
 ) -> ImageFormat {
     if (cfg.format) {
         return *cfg.format;
@@ -128,12 +131,8 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const auto format = determine_format(*config, ctx.path().extension());
 
     i32 width = 0, height = 0, channels = 0;
-    u8* data                 = stbi_load(path->c_str(), &width, &height, &channels, 0);
-    const ImageExtent extent = {
-        .width           = static_cast<u32>(width),
-        .height          = static_cast<u32>(height),
-        .depth_or_layers = 1,
-    };
+    u8* data          = stbi_load(path->c_str(), &width, &height, &channels, 0);
+    const auto extent = Extent3u{width, height, 1};
     const u32 mipmap_levels =
         config->generate_mipmap_levels ? calc_mipmap_levels(width, height) : 1;
     if (!data) {
@@ -217,7 +216,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
     auto image = ctx.device().create_image({
         .label         = map_name,
         .format        = ImageFormat::RGBA8,
-        .extent        = {.width = u32(size), .height = u32(size), .depth_or_layers = 6},
+        .extent        = Extent3u{size, size, 6},
         .dimension     = ImageDimension::Cube,
         .mipmap_levels = 1,
     });

@@ -64,7 +64,7 @@ auto ShaderLoader::load(LoadContext&& ctx, const std::optional<ConfigType>) cons
     -> AssetLoadError {
     const auto path = FileSystem::to_physical(ctx.path().full_path());
     if (!path.has_value()) {
-        return file_not_found(ctx.path().full_path());
+        return file_not_found(FileSystem::to_physical(ctx.path().full_path())->string());
     }
 
     try {

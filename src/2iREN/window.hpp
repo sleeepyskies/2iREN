@@ -3,12 +3,13 @@
 #include <GLFW/glfw3.h>
 #include <atomic>
 #include <functional>
-#include <glm/vec2.hpp>
 #include <vector>
 
 #include "2iREN/base.hpp"
 #include "2iREN/concurrency/mutex.hpp"
 #include "2iREN/input/codes.hpp"
+#include "2iREN/math/extent.hpp"
+#include "2iREN/math/vec2.hpp"
 
 namespace siren {
 
@@ -49,9 +50,9 @@ struct WindowDescriptor {
 
 using KeyCallback         = std::function<void(int key, int action)>;
 using MouseButtonCallback = std::function<void(int button, int action)>;
-using MouseMoveCallback   = std::function<void(glm::vec2)>;
-using ScrollCallback      = std::function<void(glm::vec2)>;
-using OnResizeCallback    = std::function<void(glm::ivec2)>;
+using MouseMoveCallback   = std::function<void(Vec2f)>;
+using ScrollCallback      = std::function<void(Vec2f)>;
+using OnResizeCallback    = std::function<void(Extent2u)>;
 
 /**
  * @class Window
@@ -77,10 +78,10 @@ public:
     [[nodiscard]] auto width() const noexcept -> u32;
     /** @brief Returns the current height of the window. */
     [[nodiscard]] auto height() const noexcept -> u32;
-    /** @brief Returns the current size of the window. */
-    [[nodiscard]] auto size() const noexcept -> glm::uvec2;
+    /** @brief Returns the current extent of the window. */
+    [[nodiscard]] auto extent() const noexcept -> Extent2u;
     /** @brief Returns the current position of the window. */
-    [[nodiscard]] auto position() const noexcept -> glm::ivec2;
+    [[nodiscard]] auto position() const noexcept -> Vec2i;
     /** @brief Returns the current title of the window. */
     [[nodiscard]] auto title() const noexcept -> std::string;
     /** @brief Checks whether the window is currently minimized. */
@@ -102,10 +103,10 @@ public:
     auto maximize() const -> void;
     /** @brief Sets the fullscreen status of the window. */
     auto set_fullscreen(bool val) const -> void;
-    /** @brief Sets the size of the window. */
-    auto set_size(glm::uvec2 size) const -> void;
+    /** @brief Sets the extent of the window. */
+    auto set_extent(Extent2u extent) const -> void;
     /** @brief Sets the position of the window. */
-    auto set_position(glm::ivec2 position) const -> void;
+    auto set_position(Vec2i position) const -> void;
     /** @brief Sets the @ref CursorMode of the window. */
     auto set_cursor_mode(CursorMode mode) const noexcept -> void;
     /**
@@ -131,8 +132,8 @@ private:
     GLFWwindow* m_handle;
     mutable std::atomic<WindowMode> m_window_mode;
     mutable std::atomic<CursorMode> m_cursor_mode;
-    Mutex<glm::uvec2> m_size;
-    Mutex<glm::ivec2> m_position;
+    Mutex<Extent2u> m_extent;
+    Mutex<Vec2i> m_position;
     Mutex<std::string> m_title;
     Mutex<std::vector<WindowRequest>> m_requests;
 

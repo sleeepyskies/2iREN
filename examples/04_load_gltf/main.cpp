@@ -3,12 +3,16 @@
 #include "2iREN/asset/shader.hpp"
 #include "2iREN/context.hpp"
 #include "2iREN/graphics/render_command.hpp"
+#include "2iREN/graphics/render_target.hpp"
 #include "2iREN/graphics/swapchain.hpp"
+#include "2iREN/math/mat4x4.hpp"
 #include "2iREN/scene/camera.hpp"
 #include "2iREN/window.hpp"
 
+using namespace siren;
+
 struct UBO {
-    glm::mat4 view_proj;
+    siren::Mat4x4f view_proj;
 };
 
 auto render_node(
@@ -43,7 +47,7 @@ auto main() -> siren::i32 {
     auto window          = ctx.create_window({});
     const auto device    = ctx.create_device({.window = window});
     const auto swapchain = device->create_swapchain(
-        {.label = std::nullopt, .vsync = true, .extent = window.size(), .window = &window}
+        {.label = std::nullopt, .vsync = true, .extent = window.extent(), .window = &window}
     );
     siren::AssetServer server{*device};
 
@@ -69,7 +73,7 @@ auto main() -> siren::i32 {
     const auto& gltf  = server.get_unsafe(gltfh);
     const auto& scene = server.get_unsafe(*gltf.default_scene);
 
-    siren::PerspectiveCamera camera;
+    auto camera    = siren::Camera({});
     const auto ubo = device->create_buffer({
         .label = "Camera UBO",
         .data  = std::nullopt,
@@ -83,7 +87,7 @@ auto main() -> siren::i32 {
                 {
                     .image           = swapchain.next_image(),
                     .begin_operation = siren::BeginOperation::Clear,
-                    .clear_color     = siren::Rgba::BLACK,
+                    .clear_color     = siren::Rgba::BLACK(),
                 },
             },
         .depth_stencil = std::nullopt
@@ -93,7 +97,9 @@ auto main() -> siren::i32 {
     while (!window.should_close()) {
         window.poll_events();
 
-        const UBO data{.view_proj = camera.projection_view()};
+        const UBO data{
+            .view_proj = camera.projection_view((f32)window.width() / (f32)window.height())
+        };
         ubo.upload(siren::ByteBuffer{data});
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {

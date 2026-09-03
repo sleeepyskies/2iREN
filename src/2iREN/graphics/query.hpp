@@ -16,9 +16,7 @@ struct QueryKind {
     } value;
 
     QueryKind() : value(None) {}
-    // ReSharper disable once CppNonExplicitConvertingConstructor
     constexpr QueryKind(const Value value) noexcept : value(value) {}
-    // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 };
 

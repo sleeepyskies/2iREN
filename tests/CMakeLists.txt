@@ -3,10 +3,10 @@ find_package(doctest REQUIRED)
 add_executable(
     2iREN_tests
     test_main.cpp
-
-    byte_buffer_test.cpp
-    color_test.cpp
 )
+
+add_subdirectory(math)
+add_subdirectory(utility)
 
 target_link_libraries(
     2iREN_tests

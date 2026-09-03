@@ -53,6 +53,12 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
+# TODO: really, we should just have an embedded asset loader, remove the whole
+# VFS thing and just query the hidden embedded manager for core assets.
+target_compile_definitions(2iREN PRIVATE
+    SIREN_ENGINE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
 target_compile_definitions(
         2iREN
         PUBLIC

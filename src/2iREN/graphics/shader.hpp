@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/utility/string_utils.hpp"
+#include "2iREN/utility/string.hpp"
 
 namespace siren {
 /** @brief Represents the various possible shader stages. */
@@ -25,13 +25,12 @@ struct ShaderStage {
         Mesh,
     } value;
 
-    // ReSharper disable once CppNonExplicitConvertingConstructor
     constexpr ShaderStage(const Value v) : value(v) {}
-    // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
     /** @brief Returns the string representation of this value. */
-    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
+    [[nodiscard]]
+    constexpr auto to_string() const -> std::string_view {
         switch (value) {
             case Vertex: return "Vertex";
             case Fragment: return "Fragment";
@@ -44,8 +43,9 @@ struct ShaderStage {
     }
 
     /** @brief Creates a new ShaderStage parsed from a string. */
+    [[nodiscard]]
     static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
-        const std::string lower = str::tolower(std::string(str));
+        const std::string lower = string::tolower(str);
 
         if (lower == "vertex") {
             return Vertex;

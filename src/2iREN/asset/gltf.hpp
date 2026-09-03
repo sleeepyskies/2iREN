@@ -5,9 +5,10 @@
 #include "2iREN/asset/asset_handle.hpp"
 #include "2iREN/asset/asset_loader.hpp"
 #include "2iREN/asset/fwd.hpp"
+#include "2iREN/asset/material.hpp"
+#include "2iREN/asset/mesh.hpp"
 #include "2iREN/base.hpp"
-#include "material.hpp"
-#include "mesh.hpp"
+#include "2iREN/math/mat4x4.hpp"
 
 namespace siren {
 
@@ -18,7 +19,7 @@ struct GltfNode : Asset {
     /** @brief The index of the node in the main gltf asset. */
     usize index;
     /** @brief The transform of the node. */
-    glm::mat4 transform;
+    Mat4x4f transform;
     /** @brief The mesh of the node. */
     std::optional<StrongHandle<Mesh>> mesh;
     /** @brief The parent node of the node (if present). */

@@ -499,7 +499,10 @@ private:
 class LoadContext {
 public:
     LoadContext(
-        AssetServer& server, const AssetPath& path, const WeakHandle& handle, Device& device
+        AssetServer& server,
+        const AssetPath& path,
+        const WeakHandle& handle,
+        Device& device
     ) : m_server(server), m_handle(handle), m_path(path), m_device(device) {}
 
     template <IsAsset A>
@@ -639,7 +642,8 @@ private:
 // 4. spawn new load task
 template <IsAsset A>
 [[nodiscard]] auto AssetServer::load(
-    const AssetPath& path, std::optional<typename AssetLoader<A>::ConfigType>&& config
+    const AssetPath& path,
+    std::optional<typename AssetLoader<A>::ConfigType>&& config
 ) -> StrongHandle<A> {
     ensure_asset_registered<A>();
     log::debug("Loading new asset from path {}", path);

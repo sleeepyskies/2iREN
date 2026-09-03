@@ -1,13 +1,12 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
 
 #include "2iREN/base.hpp"
-#include "2iREN/graphics/render_target.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
+#include "2iREN/graphics/render_target.hpp"
 
 namespace siren {
 // todo: optimization here to use a packed blob vector. we serialize the commands basically,

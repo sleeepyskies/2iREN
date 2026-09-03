@@ -1,11 +1,21 @@
 #pragma once
 
+#include <compare>
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
-#include "../base.hpp"
+#include "2iREN/base.hpp"
 
 namespace siren {
+
+/// @brief Ensures that the type T is some numerical type.
+template <typename T>
+concept IsArithmetic = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept IsComparable = std::three_way_comparable<T>;
+
 /**
  * @brief Ensures some type T is a reference.
  * @tparam T The type to check.
@@ -58,6 +68,6 @@ concept IsCopyable = std::is_trivially_copyable_v<T>;
  * @tparam T The type to check
  */
 template <typename T>
-concept IsDefaultCtor = std::is_default_constructible_v<T>;
+concept HasDefaultConstructor = std::is_default_constructible_v<T>;
 
 } // namespace siren

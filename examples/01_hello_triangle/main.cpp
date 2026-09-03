@@ -9,12 +9,14 @@
 #include "2iREN/utility/log.hpp"
 #include "2iREN/window.hpp"
 
+using namespace siren;
+
 struct Vertex {
-    siren::f32 x, y, z;
-    siren::f32 r, g, b, a;
+    f32 x, y, z;
+    f32 r, g, b, a;
 };
 
-const siren::ShaderData vertex_shader{
+const ShaderData vertex_shader{
     .label  = std::nullopt,
     .source = R"(
         #version 460
@@ -28,7 +30,7 @@ const siren::ShaderData vertex_shader{
             v_color = a_color;
         })",
 };
-const siren::ShaderData fragment_shader{
+const ShaderData fragment_shader{
     .label  = std::nullopt,
     .source = R"(
         #version 460
@@ -41,22 +43,22 @@ const siren::ShaderData fragment_shader{
         })",
 };
 
-const std::unordered_map<siren::ShaderStage, siren::ShaderData> shaders = {
-    {siren::ShaderStage::Vertex, vertex_shader},
-    {siren::ShaderStage::Fragment, fragment_shader},
+const std::unordered_map<ShaderStage, ShaderData> shaders = {
+    {ShaderStage::Vertex, vertex_shader},
+    {ShaderStage::Fragment, fragment_shader},
 };
 
-const siren::ByteBuffer vertices{
+const ByteBuffer vertices{
     Vertex{.x = 0.0f, .y = 0.5f, .z = 0.0f, .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f},
     Vertex{.x = -0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f},
     Vertex{.x = 0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f},
 };
 
-auto main() -> siren::i32 {
-    auto ctx    = siren::Context::create({
+auto main() -> i32 {
+    auto ctx    = Context::create({
         .debug   = true,
-        .level   = siren::log::Level::Trace,
-        .backend = siren::Backend::Auto,
+        .level   = log::Level::Trace,
+        .backend = Backend::Auto,
     });
     auto window = ctx.create_window({});
 
@@ -64,7 +66,7 @@ auto main() -> siren::i32 {
     const auto swapchain = device->create_swapchain({
         .label  = std::nullopt,
         .vsync  = true,
-        .extent = glm::uvec2{window.width(), window.height()},
+        .extent = window.extent(),
         .window = &window,
     });
 
@@ -72,11 +74,11 @@ auto main() -> siren::i32 {
         .label = std::nullopt,
         .data  = vertices.data(),
         .size  = vertices.size_bytes(),
-        .usage = siren::BufferUsage::Static,
+        .usage = BufferUsage::Static,
     });
-    const auto layout = siren::LayoutBuilder::create()
-                            .add(siren::Attribute::Position, 3, siren::DataType::Float32)
-                            .add(siren::Attribute::Color, 4, siren::DataType::Float32)
+    const auto layout = LayoutBuilder::create()
+                            .add(Attribute::Position, 3, DataType::Float32)
+                            .add(Attribute::Color, 4, DataType::Float32)
                             .finish();
 
     const auto shader   = device->create_shader({.label = std::nullopt, .source = shaders});
@@ -84,27 +86,27 @@ auto main() -> siren::i32 {
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader.handle(),
-        .topology          = siren::PrimitiveTopology::Triangles,
-        .alpha_mode        = siren::AlphaMode::Opaque,
-        .depth_function    = siren::DepthFunction::Less,
+        .topology          = PrimitiveTopology::Triangles,
+        .alpha_mode        = AlphaMode::Opaque,
+        .depth_function    = DepthFunction::Less,
         .back_face_culling = false,
         .depth_test        = false,
         .depth_write       = true,
     });
 
     const auto color = device->create_image({
-        .format        = siren::ImageFormat::RGBA8,
-        .extent        = siren::ImageExtent{.width = window.width(), .height = window.height()},
-        .dimension     = siren::ImageDimension::D2,
+        .format        = ImageFormat::RGBA8,
+        .extent        = Extent3u{window.width(), window.height(), 1},
+        .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
     });
-    const siren::RenderTarget target{
+    const RenderTarget target{
         .colors =
             {
                 {
                     .image           = color.handle(),
-                    .begin_operation = siren::BeginOperation::Clear,
-                    .clear_color     = siren::Rgba::BLACK,
+                    .begin_operation = BeginOperation::Clear,
+                    .clear_color     = Rgba::BLACK(),
                 },
             },
         .depth_stencil = std::nullopt
@@ -113,7 +115,7 @@ auto main() -> siren::i32 {
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_pass({.target = target}, [&](siren::RenderPassRecorder& pass) -> void {
+        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(buffer.handle(), 0, 0);
             pass.draw_fullscreen();

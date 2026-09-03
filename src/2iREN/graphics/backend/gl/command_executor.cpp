@@ -13,13 +13,16 @@ namespace siren {
 // ============================================================================
 
 static constexpr auto get_buffer_slice(
-    const std::vector<u8>& buffer, const usize offset, const usize size
+    const std::vector<u8>& buffer,
+    const usize offset,
+    const usize size
 ) -> std::span<const u8> {
     return std::span(buffer.data() + offset, size);
 }
 
 static constexpr auto extract_cmds(
-    const RenderPass& pass, const std::vector<RenderCommand>& commands
+    const RenderPass& pass,
+    const std::vector<RenderCommand>& commands
 ) -> std::span<const RenderCommand> {
     ASSERT(pass.start < commands.size(), "RenderPass has an invalid start index.");
     ASSERT(
@@ -80,7 +83,8 @@ auto GlCommandExecutor::statistics() const -> const Statistics& { return m_stati
 // ============================================================================
 
 auto GlCommandExecutor::upload_image(
-    const UploadImage& cmd, const std::span<const u8> data_slice
+    const UploadImage& cmd,
+    const std::span<const u8> data_slice
 ) const -> void {
     m_statistics.count_upload_image++;
     // just upload it all in one go, this should be fine even for cube maps
@@ -93,7 +97,7 @@ auto GlCommandExecutor::upload_image(
                 gl_handle,
                 0,
                 0,
-                static_cast<GLsizei>(desc.extent.width),
+                static_cast<GLsizei>(desc.extent.x),
                 gl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
@@ -107,8 +111,8 @@ auto GlCommandExecutor::upload_image(
                 0,
                 0,
                 0,
-                static_cast<GLsizei>(desc.extent.width),
-                static_cast<GLsizei>(desc.extent.height),
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
                 gl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
@@ -123,9 +127,9 @@ auto GlCommandExecutor::upload_image(
                 0,
                 0,
                 0,
-                static_cast<GLsizei>(desc.extent.width),
-                static_cast<GLsizei>(desc.extent.height),
-                static_cast<GLsizei>(desc.extent.depth_or_layers),
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
+                static_cast<GLsizei>(desc.extent.z),
                 gl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
@@ -140,8 +144,8 @@ auto GlCommandExecutor::upload_image(
                 0,
                 0,
                 cmd.layer,
-                static_cast<GLsizei>(desc.extent.width),
-                static_cast<GLsizei>(desc.extent.height),
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
                 1,
                 gl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
@@ -157,7 +161,8 @@ auto GlCommandExecutor::upload_image(
 }
 
 auto GlCommandExecutor::upload_buffer(
-    const UploadBuffer& cmd, const std::span<const u8> data_slice
+    const UploadBuffer& cmd,
+    const std::span<const u8> data_slice
 ) const -> void {
     m_statistics.count_upload_buffer++;
 
@@ -236,7 +241,8 @@ auto GlCommandExecutor::clear_image(const ClearImage& cmd) const -> void {
 
 /// @todo: do we need to reset all state at the start of this function?
 auto GlCommandExecutor::execute_pass(
-    const RenderPassDescriptor& descriptor, const std::span<const RenderCommand> commands
+    const RenderPassDescriptor& descriptor,
+    const std::span<const RenderCommand> commands
 ) const -> void {
     m_statistics.count_render_passes++;
 
@@ -429,14 +435,15 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
 }
 
 auto GlCommandExecutor::set_viewport(
-    const SetViewport& set_viewport, const RenderTarget& target
+    const SetViewport& set_viewport,
+    const RenderTarget& target
 ) const -> void {
     m_statistics.count_set_viewport++;
     // 2iREN uses top left as origin, OpenGL uses bottom left, so we must convert
     // we need the target size for conversion
     // assume all attachments are the same size
     const auto target_height =
-        m_state.image_table.details(target.colors[0].image).descriptor.extent.height;
+        m_state.image_table.details(target.colors[0].image).descriptor.extent.x;
 
     const auto x      = set_viewport.x;
     const auto y      = target_height - (set_viewport.y + set_viewport.height);

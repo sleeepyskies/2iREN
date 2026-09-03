@@ -37,9 +37,7 @@ struct DataType {
         Float64,
     } value;
 
-    // ReSharper disable once CppNonExplicitConvertingConstructor
     constexpr DataType(const Value v) : value(v) {}
-    // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
     /** @brief Returns the size of this DataType instance in bytes. */

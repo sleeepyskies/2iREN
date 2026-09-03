@@ -56,9 +56,9 @@ auto ButtonState<Button>::release(Button button) noexcept -> void {
 template class ButtonState<Key>;
 template class ButtonState<Mouse>;
 
-auto MouseMovement::position() const noexcept -> glm::vec2 { return m_current_mouse_position; }
-auto MouseMovement::mouse_delta() const noexcept -> glm::vec2 { return m_mouse_delta; }
-auto MouseMovement::scroll_delta() const noexcept -> glm::vec2 { return m_scroll_delta; }
+auto MouseMovement::position() const noexcept -> Vec2f { return m_current_mouse_position; }
+auto MouseMovement::mouse_delta() const noexcept -> Vec2f { return m_mouse_delta; }
+auto MouseMovement::scroll_delta() const noexcept -> Vec2f { return m_scroll_delta; }
 
 auto MouseMovement::update() noexcept -> void {
     m_mouse_delta = m_current_mouse_position - m_previous_mouse_position;
@@ -66,7 +66,7 @@ auto MouseMovement::update() noexcept -> void {
     m_previous_mouse_position = m_current_mouse_position;
 
     m_scroll_delta       = m_accumulated_scroll;
-    m_accumulated_scroll = glm::vec2{0.0f};
+    m_accumulated_scroll = Vec2f{0.0f};
 }
 
 Input::Input(Window& window) : m_window(window) {
@@ -86,10 +86,13 @@ Input::Input(Window& window) : m_window(window) {
         }
     });
 
-    m_window.set_mouse_move_callback(
-        [this](const glm::vec2 position) { m_movement.m_current_mouse_position = position; });
+    m_window.set_mouse_move_callback([this](const Vec2f position) {
+        m_movement.m_current_mouse_position = position;
+    });
 
-    m_window.set_scroll_callback([this](const glm::vec2 delta) { m_movement.m_accumulated_scroll += delta; });
+    m_window.set_scroll_callback([this](const Vec2f delta) {
+        m_movement.m_accumulated_scroll += delta;
+    });
 }
 
 auto Input::update() noexcept -> void {

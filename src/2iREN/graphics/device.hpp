@@ -5,6 +5,7 @@
 #include "2iREN/graphics/query.hpp"
 #include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/resource_command.hpp"
+#include "2iREN/math/vec3.hpp"
 
 namespace siren {
 class Window;
@@ -107,9 +108,9 @@ struct Limits {
     /** @brief Maximum number of local invocations in a compute work group. */
     u32 max_compute_work_group_invocations;
     /** @brief Maximum work group counts along the X, Y, and Z dimensions. */
-    glm::uvec3 max_compute_work_group_count;
+    Vec3u max_compute_work_group_count;
     /** @brief Maximum local work group sizes along the X, Y, and Z dimensions. */
-    glm::uvec3 max_compute_work_group_size;
+    Vec3u max_compute_work_group_size;
 };
 
 using OverlayFunction = std::function<void()>;

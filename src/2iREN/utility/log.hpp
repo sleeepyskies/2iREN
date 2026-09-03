@@ -1,5 +1,7 @@
 #pragma once
 
+#include "2iREN/core/format.hpp"
+
 #include <chrono>
 #include <format>
 #include <optional>
@@ -9,10 +11,10 @@
 #include <type_traits>
 
 #include "2iREN/core/assert.hpp"
-#include "2iREN/utility/string_utils.hpp"
+#include "2iREN/utility/string.hpp"
 
-/// @brief Logging module of 2iREN. Provides a thread safe way to log structured messages to the
-/// console.
+/// @brief Logging module of 2iREN. Provides a thread safe way to
+/// log structured messages to the console.
 namespace siren::log {
 
 /**
@@ -25,9 +27,9 @@ struct Level {
     constexpr Level(const Value v) : value(v) {}
     [[nodiscard]] constexpr auto Value() const { return value; }
 
-    /** @brief Returns the string representation of this Level. */
-    [[nodiscard]] constexpr auto to_string() const -> std::string_view {
-        switch (this->value) {
+    [[nodiscard]]
+    constexpr auto to_string() const -> std::string_view {
+        switch (value) {
             case Trace: return "TRACE";
             case Debug: return "DEBUG";
             case Info: return "INFO";
@@ -38,19 +40,20 @@ struct Level {
         }
     }
 
-    /** @brief Factory method to create a new @ref Level instance from a string. */
-    [[nodiscard]] static auto from_string(const std::string_view str) -> std::optional<Level> {
-        if (str::equals_ignore_case(str, "trace"))
+    [[nodiscard]]
+    static auto from_string(const std::string_view str)
+        -> std::optional<Level> {
+        if (string::equals_ignore_case(str, "trace"))
             return Trace;
-        if (str::equals_ignore_case(str, "debug"))
+        if (string::equals_ignore_case(str, "debug"))
             return Debug;
-        if (str::equals_ignore_case(str, "info"))
+        if (string::equals_ignore_case(str, "info"))
             return Info;
-        if (str::equals_ignore_case(str, "warn"))
+        if (string::equals_ignore_case(str, "warn"))
             return Warn;
-        if (str::equals_ignore_case(str, "error"))
+        if (string::equals_ignore_case(str, "error"))
             return Error;
-        if (str::equals_ignore_case(str, "none"))
+        if (string::equals_ignore_case(str, "none"))
             return None;
         return std::nullopt;
     }
@@ -59,9 +62,7 @@ struct Level {
 };
 
 namespace impl {
-/** @brief The globally configured minimum logging level. Defaults to Info. */
 inline Level level{Level::None};
-/** @brief Attempts to trim a file path to 2iREN root. */
 [[nodiscard]]
 constexpr auto strip_path(const std::string_view path) -> std::string_view {
     // TODO: can we trim path better? not always gonna be 2iREN
@@ -111,11 +112,13 @@ inline void log(
     }
 
     const auto usermsg = std::vformat(fmt, args);
-    const auto now =
-        std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
-    const auto threadid = std::this_thread::get_id();
-    const std::string locationstring =
-        std::format("{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column());
+    const auto now     = std::chrono::time_point_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now()
+    );
+    const auto threadid              = std::this_thread::get_id();
+    const std::string locationstring = std::format(
+        "{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column()
+    );
 
     const auto msg = std::format(
         "[{:%F %T}] \033[{}m[{:<5}]\033[0m [thread:{:<15}] [{:<45}] {}",
@@ -137,14 +140,21 @@ struct LogMessage {
 
     template <typename T>
     consteval LogMessage(
-        const T& s, const std::source_location loc = std::source_location::current()
+        const T& s,
+        const std::source_location loc = std::source_location::current()
     ) : fmt(s), sl(loc) {}
 };
 
-#define LOG_FUNCTION(fn_name, level_val, color_code)                                               \
-    template <typename... Args>                                                                    \
-    auto fn_name(std::type_identity_t<LogMessage<Args...>> msg, Args&&... args) -> void {          \
-        log(level_val, color_code, msg.sl, msg.fmt.get(), std::make_format_args(args...));         \
+#define LOG_FUNCTION(fn_name, level_val, color_code)                           \
+    template <typename... Args>                                                \
+    auto fn_name(                                                              \
+        std::type_identity_t<LogMessage<Args...>> msg, Args&&... args          \
+    ) -> void {                                                                \
+        log(level_val,                                                         \
+            color_code,                                                        \
+            msg.sl,                                                            \
+            msg.fmt.get(),                                                     \
+            std::make_format_args(args...));                                   \
     }
 
 /**
@@ -184,18 +194,3 @@ LOG_FUNCTION(error, Level::Error, 31)
 
 #undef LOG_FUNCTION
 } // namespace siren::log
-
-template <typename T>
-concept HasToString = requires(const T& t) {
-    { t.to_string() } -> std::convertible_to<std::string_view>;
-};
-
-template <HasToString T>
-struct std::formatter<T> {
-    constexpr auto parse(format_parse_context& ctx) const { return ctx.begin(); }
-
-    template <typename FormatContext>
-    auto format(const T& t, FormatContext& ctx) const {
-        return std::format_to(ctx.out(), "{}", t.to_string());
-    }
-};

@@ -4,40 +4,13 @@
 #include <string>
 
 #include "2iREN/core/assert.hpp"
-#include "2iREN/math/color.hpp"
 #include "2iREN/graphics/fwd.hpp"
+#include "2iREN/math/color.hpp"
+#include "2iREN/math/extent.hpp"
 
 namespace siren {
 /** @brief Defines the amount of dimensions an @ref Image may have. */
-enum class ImageDimension {
-    /** @brief A single dimensional image. */
-    D1,
-    /** @brief A two-dimensional image. */
-    D2,
-    /** @brief A three-dimensional image, aka an array of D2 images. */
-    D3,
-    /** @brief A cube map image. */
-    Cube
-};
-
-/** @brief Defines the size of an @ref Image. */
-struct ImageExtent {
-    /** @brief The desired width of the Image. */
-    u32 width;
-    /** @brief The desired height of the Image. */
-    u32 height;
-    /** @brief The desired amount of layers (for Image arrays) of depth (for 3D images) of the
-     * Image. */
-    u32 depth_or_layers = 1;
-
-    /** @brief Equality comparison operator. */
-    [[nodiscard]] constexpr auto operator==(const ImageExtent& other) const -> bool = default;
-
-    /** @brief Stringifies the @ref ImageExtent. */
-    constexpr auto to_string() const noexcept -> std::string {
-        return std::format("ImageExtent({}x{}x{})", width, height, depth_or_layers);
-    }
-};
+enum class ImageDimension { D1, D2, D3, Cube };
 
 class ImageFormat {
 public:
@@ -68,17 +41,14 @@ public:
         Depth32f,
     } value;
 
-    // ReSharper disable once CppNonExplicitConvertingConstructor
     constexpr ImageFormat(const Value v) : value(v) {}
     constexpr ImageFormat() : value(Unknown) {}
 
-    // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
     /** @brief Stringifies the given ImageFormat. */
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (value) {
-            case Unknown: return "Unknown";
             case R8: return "R8";
             case RGB8: return "RGB8";
             case sRGB8: return "sRGB8";
@@ -90,6 +60,8 @@ public:
             case Depth24Stencil8: return "Depth24Stencil8";
             case R32UI: return "R32UI";
             case Depth32f: return "Depth32f";
+
+            case Unknown: return "Unknown";
         }
         UNREACHABLE();
     }
@@ -122,8 +94,8 @@ struct ImageDescriptor {
     std::optional<std::string> label = std::nullopt;
     /** @brief The format of the image data (num channels/bytes per channel). */
     ImageFormat format;
-    /** @brief Size of the image. */
-    ImageExtent extent;
+    /** @brief Extent of the image. */
+    Extent3u extent;
     /** @brief The dimensionality of the image. */
     ImageDimension dimension;
     /** @brief How many mip map levels to generate. */

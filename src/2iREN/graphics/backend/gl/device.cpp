@@ -1,7 +1,5 @@
 #include "device.hpp"
 
-#include <glm/gtc/type_ptr.hpp>
-
 #include "2iREN/graphics/resource_command.hpp"
 #include "command_executor.hpp"
 #include "render_thread.hpp"
@@ -103,8 +101,9 @@ static auto make_label(const std::optional<std::string>& prefix, const std::stri
 auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
     const Key key{
-        .colors = target.colors | std::views::transform(&ColorAttachment::image) |
-            std::ranges::to<std::vector>(),
+        .colors = target.colors
+            | std::views::transform(&ColorAttachment::image)
+            | std::ranges::to<std::vector>(),
         .depth_stencil =
             target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
     };
@@ -251,8 +250,7 @@ auto GlDevice::destroy_buffer(const BufferHandle handle) -> void {
 
 auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
     ASSERT(
-        descriptor.extent.width > 0 && descriptor.extent.height > 0 &&
-            descriptor.extent.depth_or_layers > 0,
+        descriptor.extent.x > 0 && descriptor.extent.y > 0 && descriptor.extent.z > 0,
         "Cannot create an empty image."
     );
     const auto image_handle = m_state.image_table.reserve();
@@ -283,7 +281,7 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                     img,
                     static_cast<GLsizei>(descriptor.mipmap_levels),
                     internal_format,
-                    static_cast<GLsizei>(extent.width)
+                    static_cast<GLsizei>(extent.x)
                 );
                 break;
             case GL_TEXTURE_1D_ARRAY:
@@ -293,8 +291,8 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                     img,
                     static_cast<GLsizei>(descriptor.mipmap_levels),
                     internal_format,
-                    static_cast<GLsizei>(extent.width),
-                    static_cast<GLsizei>(extent.height)
+                    static_cast<GLsizei>(extent.x),
+                    static_cast<GLsizei>(extent.y)
                 );
                 break;
             case GL_TEXTURE_2D_ARRAY:
@@ -304,9 +302,9 @@ auto GlDevice::create_image(const ImageDescriptor& descriptor) -> Image {
                     img,
                     static_cast<GLsizei>(descriptor.mipmap_levels),
                     internal_format,
-                    static_cast<GLsizei>(extent.width),
-                    static_cast<GLsizei>(extent.height),
-                    static_cast<GLsizei>(extent.depth_or_layers)
+                    static_cast<GLsizei>(extent.x),
+                    static_cast<GLsizei>(extent.y),
+                    static_cast<GLsizei>(extent.z)
                 );
                 break;
             default: PANIC("Unsupported texture target");
@@ -533,11 +531,8 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
     auto image = create_image({
         .label =
             make_label(descriptor.label, "Swapchain Backbuffer").value_or("Swapchain Backbuffer"),
-        .format = ImageFormat::RGBA8,
-        .extent =
-            ImageExtent{
-                .width = descriptor.extent.x, .height = descriptor.extent.y, .depth_or_layers = 1
-            },
+        .format        = ImageFormat::RGBA8,
+        .extent        = Extent3u{descriptor.extent.x, descriptor.extent.y, 1},
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
     });
@@ -545,7 +540,7 @@ auto GlDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapch
     auto attachment = ColorAttachment{
         .image           = image.handle(),
         .begin_operation = BeginOperation::Clear,
-        .clear_color     = Rgba::BLACK,
+        .clear_color     = Rgba::BLACK(),
     };
 
     m_state.swapchain_table.link(
@@ -835,7 +830,7 @@ auto GlDevice::blit_image(const ImageHandle source, const ImageHandle destinatio
             glCopyImageSubData(
                 source_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
                 destination_id, GL_TEXTURE_2D, /*level*/ 0, 0, 0, 0,
-                source_desc.extent.width, source_desc.extent.height, 1
+                source_desc.extent.x, source_desc.extent.y, 1
             );
         // clang-format on
     });
@@ -856,8 +851,9 @@ auto GlDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
             "Only RGBA8 images can be read from."
         );
 
-        const auto buffer_size = static_cast<usize>(desc.extent.width) *
-            static_cast<usize>(desc.extent.height) * desc.format.bytes_per_pixel();
+        const auto buffer_size = static_cast<usize>(desc.extent.x)
+            * static_cast<usize>(desc.extent.y)
+            * desc.format.bytes_per_pixel();
 
         buffer.resize(buffer_size);
 

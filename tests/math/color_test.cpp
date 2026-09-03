@@ -16,10 +16,10 @@ TEST_SUITE("Rgba") {
         CHECK_EQ(color.r, 2.f);
         CHECK_EQ(color.g, 2.f);
         CHECK_EQ(color.b, 2.f);
-        CHECK_EQ(color.a, 2.f);
+        CHECK_EQ(color.a, 1.f);
     }
 
-    TEST_CASE("value alpha constructor test") {
+    TEST_CASE("rgb alpha constructor test") {
         const auto color = siren::Rgba{2.f, 5.f};
         CHECK_EQ(color.r, 2.f);
         CHECK_EQ(color.g, 2.f);
@@ -27,7 +27,7 @@ TEST_SUITE("Rgba") {
         CHECK_EQ(color.a, 5.f);
     }
 
-    TEST_CASE("all args constructor test") {
+    TEST_CASE("rgba constructor test") {
         const auto color = siren::Rgba{2.f, 5.f, 4.f, 3.f};
         CHECK_EQ(color.r, 2.f);
         CHECK_EQ(color.g, 5.f);
@@ -45,18 +45,27 @@ TEST_SUITE("Rgba") {
     }
 
     TEST_CASE("constants test") {
-        CHECK_EQ(siren::Rgba::ZERO.a, 0.f);
-        CHECK_EQ(siren::Rgba::ONE.r, 1.f);
-        CHECK_EQ(siren::Rgba::ONE.g, 1.f);
-        CHECK_EQ(siren::Rgba::ONE.b, 1.f);
-        CHECK_EQ(siren::Rgba::ONE.a, 1.f);
+        constexpr auto zero  = siren::Rgba::ZERO();
+        constexpr auto one   = siren::Rgba::ONE();
+        constexpr auto black = siren::Rgba::BLACK();
+        constexpr auto gray  = siren::Rgba::GRAY();
+        constexpr auto white = siren::Rgba::WHITE();
+        constexpr auto red   = siren::Rgba::RED();
+        constexpr auto green = siren::Rgba::GREEN();
+        constexpr auto blue  = siren::Rgba::BLUE();
 
-        CHECK_EQ(siren::Rgba::BLACK.a, 1.f);
-        CHECK_EQ(siren::Rgba::GRAY.r, 0.5f);
-        CHECK_EQ(siren::Rgba::WHITE.r, 1.f);
-        CHECK_EQ(siren::Rgba::RED, siren::Rgba{1.f, 0.f, 0.f, 1.f});
-        CHECK_EQ(siren::Rgba::GREEN, siren::Rgba{0.f, 1.f, 0.f, 1.f});
-        CHECK_EQ(siren::Rgba::BLUE, siren::Rgba{0.f, 0.f, 1.f, 1.f});
+        CHECK_EQ(zero.a, 0.f);
+        CHECK_EQ(one.r, 1.f);
+        CHECK_EQ(one.g, 1.f);
+        CHECK_EQ(one.b, 1.f);
+        CHECK_EQ(one.a, 1.f);
+
+        CHECK_EQ(black.a, 1.f);
+        CHECK_EQ(gray.r, 0.5f);
+        CHECK_EQ(white.r, 1.f);
+        CHECK_EQ(red, siren::Rgba{1.f, 0.f, 0.f, 1.f});
+        CHECK_EQ(green, siren::Rgba{0.f, 1.f, 0.f, 1.f});
+        CHECK_EQ(blue, siren::Rgba{0.f, 0.f, 1.f, 1.f});
     }
 
     TEST_CASE("format test") {

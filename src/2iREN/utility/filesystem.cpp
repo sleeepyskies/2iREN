@@ -62,13 +62,15 @@ auto File::operator=(File&& other) noexcept -> File& {
 }
 
 auto File::can_read() const noexcept -> bool {
-    return (m_mode == FileOpenMode::Read || m_mode == FileOpenMode::ReadWrite) &&
-        m_stream.lock()->is_open() && m_size.has_value();
+    return (m_mode == FileOpenMode::Read || m_mode == FileOpenMode::ReadWrite)
+        && m_stream.lock()->is_open()
+        && m_size.has_value();
 }
 
 auto File::can_write() const noexcept -> bool {
-    return (m_mode == FileOpenMode::Write || m_mode == FileOpenMode::ReadWrite) &&
-        m_stream.lock()->is_open() && m_size.has_value();
+    return (m_mode == FileOpenMode::Write || m_mode == FileOpenMode::ReadWrite)
+        && m_stream.lock()->is_open()
+        && m_size.has_value();
 }
 
 auto File::path() const noexcept -> Path { return m_path; }

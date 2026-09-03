@@ -26,7 +26,7 @@ using WriteGuard = Guard<T, std::unique_lock<std::shared_mutex>>;
  * the wrapped resource, but only one writer to have a lock.
  * @tparam T The wrapped resource.
  */
-template <IsDefaultCtor T>
+template <HasDefaultConstructor T>
 class RwLock {
 public:
     using ReadLock  = typename ReadGuard<T>::LockType;

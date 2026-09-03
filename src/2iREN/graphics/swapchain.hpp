@@ -1,6 +1,7 @@
 #pragma once
 
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/math/extent.hpp"
 #include "fwd.hpp"
 
 namespace siren {
@@ -17,7 +18,7 @@ struct SwapchainDescriptor {
     /** @brief If the swapchain should be created with vsync enabled. */
     bool vsync;
     /** @brief The size dimensions of the desired @ref Swapchain. */
-    glm::uvec2 extent;
+    siren::Extent2u extent;
     /** @brief The @ref Window to associate the @ref Swapchain with. */
     Window* window;
 };

@@ -16,10 +16,6 @@ struct Record {
 };
 
 template <typename T>
-concept AppendableToByteBuffer =
-    requires(siren::ByteBuffer& buffer, const T& value) { buffer.append(value); };
-
-template <typename T>
 auto read_at(const siren::ByteBuffer& buffer, const siren::usize offset) -> T {
     T value{};
     std::memcpy(&value, buffer.raw() + offset, sizeof(T));

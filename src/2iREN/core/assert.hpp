@@ -6,7 +6,6 @@
 #include <print>
 #include <source_location>
 #include <stacktrace>
-#include <stdexcept>
 #include <string_view>
 #include <thread>
 #include <utility>
@@ -61,14 +60,17 @@ namespace siren::impl {
 }
 
 [[noreturn]] inline auto do_panic(
-    const std::source_location& location, const std::string_view message
+    const std::source_location& location,
+    const std::string_view message
 ) -> void {
     report_and_terminate(location, "", message);
 }
 
 template <typename... Args>
 [[noreturn]] inline auto do_panic(
-    const std::source_location& location, const std::format_string<Args...> format, Args&&... args
+    const std::source_location& location,
+    const std::format_string<Args...> format,
+    Args&&... args
 ) -> void {
     do_panic(location, std::format(format, std::forward<Args>(args)...));
 }
@@ -78,20 +80,24 @@ template <typename... Args>
 }
 
 [[noreturn]] inline auto do_unreachable(
-    const std::source_location& location, const std::string_view message
+    const std::source_location& location,
+    const std::string_view message
 ) -> void {
     do_panic(location, message);
 }
 
 template <typename... Args>
 [[noreturn]] inline auto do_unreachable(
-    const std::source_location& location, const std::format_string<Args...> format, Args&&... args
+    const std::source_location& location,
+    const std::format_string<Args...> format,
+    Args&&... args
 ) -> void {
     do_panic(location, format, std::forward<Args>(args)...);
 }
 
 [[noreturn]] inline auto do_assertion_failed(
-    const std::source_location& location, const std::string_view expression
+    const std::source_location& location,
+    const std::string_view expression
 ) -> void {
     report_and_terminate(location, expression, "");
 }

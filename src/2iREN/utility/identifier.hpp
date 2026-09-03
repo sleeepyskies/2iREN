@@ -8,16 +8,16 @@
 
 namespace siren {
 
-namespace detail {
+namespace impl {
 struct NullHandle_t {
     template <typename Handle>
     constexpr operator Handle() const {
         return Handle::invalid();
     }
 };
-} // namespace detail
+} // namespace impl
 
-inline constexpr auto NullHandle = detail::NullHandle_t{};
+inline constexpr auto NullHandle = impl::NullHandle_t{};
 
 /**
  * @struct Identifier

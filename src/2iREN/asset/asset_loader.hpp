@@ -30,9 +30,7 @@ public:
         NoConfig,
     } value;
 
-    // ReSharper disable once CppNonExplicitConvertingConstructor
     constexpr AssetErrorCode(const Value v) : value(v) {}
-    // ReSharper disable once CppNonExplicitConversionOperator
     constexpr operator Value() const { return value; }
 
     /** @brief Stringifies the given AssetErrorCode. */

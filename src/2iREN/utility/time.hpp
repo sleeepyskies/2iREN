@@ -7,19 +7,20 @@
 /// @brief A collection of time related utilities.
 namespace siren::time {
 
+/// @brief Represents some duration of time between two points.
 struct Duration {
     [[nodiscard]]
-    constexpr auto nanoseconds() const noexcept -> f64 {
-        return value.count();
+    constexpr auto nanoseconds() const -> f64 {
+        return std::chrono::duration<f64, std::nano>{value}.count();
     }
 
     [[nodiscard]]
-    constexpr auto miliseconds() const noexcept -> f64 {
+    constexpr auto miliseconds() const -> f64 {
         return std::chrono::duration<f64, std::milli>{value}.count();
     }
 
     [[nodiscard]]
-    constexpr auto seconds() const noexcept -> f64 {
+    constexpr auto seconds() const -> f64 {
         return std::chrono::duration<f64>{value}.count();
     }
 
@@ -34,12 +35,15 @@ auto step() -> void;
 
 /// @brief Returns the time elapsed since 2iREN start until the start of the
 /// current frame.
-[[nodiscard]] auto elapsed() -> Duration;
+[[nodiscard]]
+auto elapsed() -> Duration;
 
 /// @brief Returns the time elapsed in since the previous frame.
-[[nodiscard]] auto delta() -> Duration;
+[[nodiscard]]
+auto delta() -> Duration;
 
 /// @brief Retuns the current frame number.
-[[nodiscard]] auto frame_count() -> u32;
+[[nodiscard]]
+auto frame_count() -> u32;
 
 } // namespace siren::time

@@ -2,8 +2,6 @@
 
 #include <cgltf/cgltf.h>
 #include <expected>
-#include <glm/gtc/integer.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <stb/stb_image.h>
 
 #include "2iREN/asset/asset_server.hpp"
@@ -222,11 +220,10 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                 : channels == 4               ? ImageFormat::RGBA8
                                               : ImageFormat::Unknown;
 
-            const auto extent =
-                ImageExtent{.width = (u32)width, .height = (u32)height, .depth_or_layers = 1};
+            const auto extent = Extent3u{width, height, 1};
 
-            const u32 max_dim = std::max({extent.width, extent.height, extent.depth_or_layers});
-            const u32 mipmap_levels = 1 + static_cast<u32>(glm::floor(glm::log2(max_dim)));
+            const u32 max_dim       = std::max(extent.x, extent.y);
+            const u32 mipmap_levels = 1 + static_cast<u32>(std::floor(std::log2(max_dim)));
 
             // todo: add name?
             auto img      = ctx.device().create_image({
@@ -256,7 +253,9 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 }
 
 static auto load_materials(
-    const cgltf_data* data, const std::vector<StrongHandle<Texture>>& textures, LoadContext& ctx
+    const cgltf_data* data,
+    const std::vector<StrongHandle<Texture>>& textures,
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<MaterialAsset>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Material"};
 
@@ -347,7 +346,7 @@ static auto load_materials(
         if (gltf_material.has_volume) {
             const auto& vol = gltf_material.volume;
             mat->set_thickness(vol.thickness_factor);
-            mat->set_attenuation_color(glm::make_vec3(vol.attenuation_color));
+            mat->set_attenuation_color(Vec3f::make(vol.attenuation_color));
             mat->set_attenuation_distance(vol.attenuation_distance);
             if (vol.thickness_texture.texture) {
                 const auto texture = get_texture(vol.thickness_texture.texture);
@@ -365,7 +364,7 @@ static auto load_materials(
         if (gltf_material.has_specular) {
             const auto& spec = gltf_material.specular;
             mat->set_specular_factor(spec.specular_factor);
-            mat->set_specular_color(glm::make_vec3(spec.specular_color_factor));
+            mat->set_specular_color(Vec3f::make(spec.specular_color_factor));
             if (spec.specular_color_texture.texture) {
                 const auto texture = get_texture(spec.specular_color_texture.texture);
                 if (!texture.has_value()) {
@@ -384,7 +383,7 @@ static auto load_materials(
 
         if (gltf_material.has_sheen) {
             const auto& sh = gltf_material.sheen;
-            mat->set_sheen_color(glm::make_vec3(sh.sheen_color_factor));
+            mat->set_sheen_color(Vec3f::make(sh.sheen_color_factor));
             mat->set_sheen_roughness(sh.sheen_roughness_factor);
             if (sh.sheen_color_texture.texture) {
                 const auto texture = get_texture(sh.sheen_color_texture.texture);
@@ -431,9 +430,7 @@ static auto load_materials(
         if (gltf_material.has_diffuse_transmission) {
             const auto& df = gltf_material.diffuse_transmission;
             mat->set_diffuse_transmission_factor(df.diffuse_transmission_factor);
-            mat->set_diffuse_transmission_color(
-                glm::make_vec3(df.diffuse_transmission_color_factor)
-            );
+            mat->set_diffuse_transmission_color(Vec3f::make(df.diffuse_transmission_color_factor));
             if (df.diffuse_transmission_texture.texture) {
                 const auto texture = get_texture(df.diffuse_transmission_texture.texture);
                 if (!texture.has_value()) {
@@ -491,7 +488,7 @@ static auto load_materials(
             mat->set_emissive_tex(texture.value());
         }
 
-        mat->set_emissive_color(glm::make_vec3(gltf_material.emissive_factor));
+        mat->set_emissive_color(Vec3f::make(gltf_material.emissive_factor));
 
         mat->set_alpha_mode(gltf_alpha_mode_to_siren(gltf_material.alpha_mode));
         mat->set_alpha_cutoff(gltf_material.alpha_cutoff);
@@ -558,8 +555,9 @@ static auto validate_gltf_indices(const cgltf_accessor* indices) -> AssetLoadErr
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    if (!indices->buffer_view || !indices->buffer_view->buffer ||
-        !indices->buffer_view->buffer->data) {
+    if (!indices->buffer_view
+        || !indices->buffer_view->buffer
+        || !indices->buffer_view->buffer->data) {
         log::error("gltf mesh indices point to missing or invalid buffer data.");
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
@@ -780,13 +778,15 @@ static auto load_meshes(
 }
 
 static auto load_nodes(
-    const cgltf_data* data, const std::vector<StrongHandle<Mesh>>& meshes, LoadContext& ctx
+    const cgltf_data* data,
+    const std::vector<StrongHandle<Mesh>>& meshes,
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Node_"};
 
-    const auto get_transform = [](const cgltf_node& node) -> glm::mat4 {
-        glm::mat4 transform;
-        cgltf_node_transform_local(&node, glm::value_ptr(transform));
+    const auto get_transform = [](const cgltf_node& node) -> Mat4x4f {
+        Mat4x4f transform;
+        cgltf_node_transform_local(&node, transform.data());
         return transform;
     };
 
@@ -849,7 +849,9 @@ static auto load_nodes(
 }
 
 static auto load_scenes(
-    const cgltf_data* data, const std::vector<StrongHandle<GltfNode>>& nodes, LoadContext& ctx
+    const cgltf_data* data,
+    const std::vector<StrongHandle<GltfNode>>& nodes,
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Node_"};
 
