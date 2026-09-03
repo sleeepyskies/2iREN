@@ -31,15 +31,17 @@ struct Vec3 {
     constexpr Vec3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) {}
 
     template <typename S>
-        requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
+        requires(std::is_convertible_v<S, Type>)
     constexpr explicit Vec3(const S xyz) : Vec3(static_cast<Type>(xyz)) {}
+
     template <typename S>
-        requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
+        requires(std::is_convertible_v<S, Type>)
     constexpr Vec3(const S x, const S y, const S z) :
         Vec3(static_cast<Type>(x), static_cast<Type>(y), static_cast<Type>(z)) {}
 
     [[nodiscard]]
     static constexpr auto make(const Type* ptr) -> Vec3 {
+        ASSERT(ptr != nullptr, "cannot create Vec3 from nullptr");
         return Vec3{ptr[0], ptr[1], ptr[2]};
     }
 
@@ -84,7 +86,9 @@ struct Vec3 {
         requires(std::is_floating_point_v<Type>)
     {
         const auto length = vec.length();
-        ASSERT(length != 0, "cannot divide by 0");
+        if (length == 0) {
+            return vec;
+        }
         return Vec3{
             static_cast<Type>(vec.x / length),
             static_cast<Type>(vec.y / length),

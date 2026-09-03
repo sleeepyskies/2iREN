@@ -11,17 +11,18 @@
 namespace siren {
 
 /// @brief A degree value clamped to the range [-89, 89] represting camera yaw.
-using Yaw = Bounded<Degrees, Degrees{-89.f}, Degrees{89.f}, ClampBoundsPolicy>;
+using Pitch = Bounded<Degrees, Degrees{-89.f}, Degrees{89.f}, ClampBoundsPolicy>;
 /// @brief A degree value clamped to [0, 500] representing the camera fov.
 using Fov = Bounded<Degrees, Degrees{0}, Degrees{500}, ClampBoundsPolicy>;
 
 struct CameraDescriptor {
-    Point3f position = {0.f, 0.f, 0.f};
-    Degrees pitch    = Degrees{0.f};
-    Yaw yaw          = Degrees{0.f};
-    Fov fov          = Degrees{75.f};
-    f32 nearplane    = 0.1f;
-    f32 farplane     = 100.f;
+    Point3f position          = Point3f{0.f, 0.f, 0.f};
+    Pitch pitch               = Degrees{0.f};
+    Degrees yaw               = Degrees{0.f};
+    Fov fov                   = Degrees{75.f};
+    NonZeroPositiveF32 aspect = 1280.f / 720.f;
+    f32 nearplane             = 0.1f;
+    f32 farplane              = 1000.f;
 };
 
 class Camera {
@@ -32,8 +33,8 @@ public:
     auto front() const noexcept -> Vec3f;
     auto up() const noexcept -> Vec3f;
     auto right() const noexcept -> Vec3f;
-    auto yaw() const noexcept -> Yaw;
-    auto pitch() const noexcept -> Degrees;
+    auto yaw() const noexcept -> Degrees;
+    auto pitch() const noexcept -> Pitch;
     auto fov() const noexcept -> Fov;
     auto aspect() const noexcept -> NonZeroPositiveF32;
 
@@ -42,8 +43,8 @@ public:
     auto lookat(Point3f at) noexcept -> void;
 
     auto set_position(Point3f position) noexcept -> void;
-    auto set_yaw(Yaw yaw) noexcept -> void;
-    auto set_pitch(Degrees pitch) noexcept -> void;
+    auto set_yaw(Degrees yaw) noexcept -> void;
+    auto set_pitch(Pitch pitch) noexcept -> void;
     auto set_aspect(NonZeroPositiveF32 aspect) noexcept -> void;
 
 private:
@@ -56,8 +57,8 @@ private:
     Vec3f m_up;
     Vec3f m_right;
 
-    Yaw m_yaw;
-    Degrees m_pitch;
+    Degrees m_yaw;
+    Pitch m_pitch;
 
     f32 m_nearplane;
     f32 m_farplane;
@@ -67,10 +68,10 @@ private:
 
 class CameraController {
 public:
-    CameraController(const PositiveF32 speed, const PositiveF32 m_sensitivity);
+    CameraController(const PositiveF32 speed, const PositiveF32 sensitivity);
 
     auto process_movement(Camera& camera, KeyInput& keys, const f32 delta) const -> void;
-    auto process_look(Camera& camera, MouseMovement& mouse, const f32 delta) const -> void;
+    auto process_look(Camera& camera, Input& input) const -> void;
 
 private:
     PositiveF32 m_speed;

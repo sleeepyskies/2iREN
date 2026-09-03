@@ -36,7 +36,7 @@ struct Rgba {
 
     [[nodiscard]]
     static constexpr auto ZERO() noexcept -> Rgba {
-        return Rgba{0.f};
+        return Rgba{0.f, 0.f, 0.f, 0.f};
     }
     [[nodiscard]]
     static constexpr auto ONE() noexcept -> Rgba {

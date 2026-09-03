@@ -87,7 +87,6 @@ target_compile_options(2iREN PRIVATE
         -Wvarargs
         -Wvla
         -Wwrite-strings
-        -lstdc++exp
 )
 
 include(dependencies.cmake)

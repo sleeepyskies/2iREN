@@ -73,7 +73,7 @@ auto main() -> siren::i32 {
     const auto& gltf  = server.get_unsafe(gltfh);
     const auto& scene = server.get_unsafe(*gltf.default_scene);
 
-    auto camera    = siren::Camera({});
+    auto camera    = siren::Camera({.aspect = window.aspect()});
     const auto ubo = device->create_buffer({
         .label = "Camera UBO",
         .data  = std::nullopt,
@@ -97,9 +97,7 @@ auto main() -> siren::i32 {
     while (!window.should_close()) {
         window.poll_events();
 
-        const UBO data{
-            .view_proj = camera.projection_view((f32)window.width() / (f32)window.height())
-        };
+        const UBO data{.view_proj = camera.projection_view()};
         ubo.upload(siren::ByteBuffer{data});
 
         device->render_submit([&](siren::RenderCommandRecorder& cmds) -> void {

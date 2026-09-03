@@ -43,7 +43,7 @@ struct Point3 {
     constexpr auto operator!=(const Point3&) const noexcept -> bool = default;
 };
 
-/// @brief Returns a Vec3 that goes from a to b.
+/// @brief Returns a Vec3 that goes from b to a.
 template <typename T>
 constexpr auto operator-(const Point3<T> a, const Point3<T> b) noexcept -> Vec3<T> {
     return Vec3<T>{

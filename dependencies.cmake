@@ -8,11 +8,11 @@ target_link_libraries(
         2iREN
         PUBLIC
             glfw
+            stdc++exp # otherwise std::stacktrace wont work D:
 
         PRIVATE
             glad::glad
             opengl::opengl
             yaml-cpp::yaml-cpp
             Threads::Threads
-            stdc++exp # otherwise std::stacktrace wont work D:
 )
