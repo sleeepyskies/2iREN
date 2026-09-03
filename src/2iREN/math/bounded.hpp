@@ -18,7 +18,10 @@ struct AssertBoundsPolicy {
     static constexpr auto check_bounds(T& value, const T& min, const T& max) -> void {
         ASSERT(
             LowerPolicy::check_lower(value, min) && UpperPolicy::check_upper(value, max),
-            "value {} is not within bounds [{}, {}]."
+            "value {} is not within bounds [{}, {}].",
+            value,
+            min,
+            max
         );
     }
 };
@@ -68,11 +71,11 @@ class Bounded;
 
 /// @brief An f32 that is bounded by an inclusive min and max.
 template <
-    f32 Min              = std::numeric_limits<f32>::min(),
-    f32 Max              = std::numeric_limits<f32>::max(),
+    f32 Min               = std::numeric_limits<f32>::min(),
+    f32 Max               = std::numeric_limits<f32>::max(),
     typename BoundsPolicy = AssertBoundsPolicy,
-    typename LowerPolicy = InclusiveBoundsPolicy,
-    typename UpperPolicy = InclusiveBoundsPolicy>
+    typename LowerPolicy  = InclusiveBoundsPolicy,
+    typename UpperPolicy  = InclusiveBoundsPolicy>
 using BoundedF32 = Bounded<f32, Min, Max, BoundsPolicy, LowerPolicy, UpperPolicy>;
 
 /// @brief An f32 that may not be negative, but has no upper bound.

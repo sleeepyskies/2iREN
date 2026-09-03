@@ -31,14 +31,16 @@ auto Camera::pitch() const noexcept -> Degrees { return m_pitch; }
 
 auto Camera::fov() const noexcept -> Fov { return m_fov; }
 
-auto Camera::projection_view(const NonZeroPositiveF32 aspect_ratio) const noexcept -> Mat4x4f {
+auto Camera::aspect() const noexcept -> NonZeroPositiveF32 { return m_aspect; }
+
+auto Camera::projection_view() const noexcept -> Mat4x4f {
     const auto perspective =
-        Mat4x4f::perspective(m_fov.get().to_radians(), aspect_ratio, m_nearplane, m_farplane);
+        Mat4x4f::perspective(m_fov.get().to_radians(), m_aspect, m_nearplane, m_farplane);
 
     // TODO: hack cause im lazy AKJHFSJK
-    const f32 tx = -Vec3f::dot(m_right, m_position - Point3f{});
-    const f32 ty = -Vec3f::dot(m_up, m_position - Point3f{});
-    const f32 tz = Vec3f::dot(m_front, m_position - Point3f{});
+    const auto tx = -Vec3f::dot(m_right, m_position - Point3f{});
+    const auto ty = -Vec3f::dot(m_up, m_position - Point3f{});
+    const auto tz = Vec3f::dot(m_front, m_position - Point3f{});
 
     // clang-format off
     const auto view = Mat4x4f{{
@@ -52,6 +54,13 @@ auto Camera::projection_view(const NonZeroPositiveF32 aspect_ratio) const noexce
     return perspective * view;
 }
 
+auto Camera::lookat(const Point3f at) noexcept -> void {
+    const auto dir = Vec3f::normalize(at - m_position);
+    m_pitch        = Degrees{std::asin(dir.y)};
+    m_yaw          = Degrees{std::atan2(dir.x, dir.z)};
+    update_vectors();
+}
+
 auto Camera::set_position(const Point3f position) noexcept -> void { m_position = position; }
 
 auto Camera::set_yaw(const Yaw yaw) noexcept -> void {
@@ -63,6 +72,8 @@ auto Camera::set_pitch(const Degrees pitch) noexcept -> void {
     m_pitch = pitch;
     update_vectors();
 }
+
+auto Camera::set_aspect(const NonZeroPositiveF32 aspect) noexcept -> void { m_aspect = aspect; }
 
 auto Camera::update_vectors() noexcept -> void {
     const auto yaw   = m_yaw.get().to_radians();

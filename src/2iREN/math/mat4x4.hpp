@@ -171,12 +171,12 @@ struct Mat4x4 {
 
     [[nodiscard]]
     static constexpr auto perspective(
-        const Radians radians,
+        const Radians fov,
         const NonZeroPositiveF32 aspect_ratio,
         const NonZeroPositiveF32 nearplane,
         const NonZeroPositiveF32 farplane
     ) noexcept -> Mat4x4 {
-        const auto halftan = static_cast<Type>(std::tan(radians.value / 2));
+        const auto halftan = static_cast<Type>(std::tan(fov.value / 2));
         const auto aspect  = static_cast<Type>(aspect_ratio.get());
         const auto near    = static_cast<Type>(nearplane.get());
         const auto far     = static_cast<Type>(farplane.get());
@@ -197,7 +197,7 @@ struct Mat4x4 {
     static constexpr auto translate(const Mat4x4& matrix, const Vec3<T>& amount) noexcept
         -> Mat4x4 {
         // clang-format off
-        const Mat4x4 translation{Elements{
+        const Mat4x4 translation{{
             Type{1}, Type{0}, Type{0}, Type{0},
             Type{0}, Type{1}, Type{0}, Type{0},
             Type{0}, Type{0}, Type{1}, Type{0},

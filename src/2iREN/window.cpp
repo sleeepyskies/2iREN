@@ -5,6 +5,7 @@
 #include "2iREN/context.hpp"
 #include "2iREN/core/assert.hpp"
 #include "2iREN/input/mappings.hpp"
+#include "2iREN/math/bounded.hpp"
 #include "2iREN/math/extent.hpp"
 #include "2iREN/math/vec2.hpp"
 #include "2iREN/utility/log.hpp"
@@ -99,6 +100,9 @@ Window::~Window() {
 auto Window::handle() const noexcept -> GLFWwindow* { return m_handle; }
 auto Window::width() const noexcept -> u32 { return extent().x; }
 auto Window::height() const noexcept -> u32 { return extent().y; }
+auto Window::aspect() const noexcept -> NonZeroPositiveF32 {
+    return static_cast<f32>(width()) / static_cast<f32>(height());
+}
 auto Window::extent() const noexcept -> Extent2u { return m_extent.get(); }
 auto Window::position() const noexcept -> Vec2i { return m_position.get(); }
 auto Window::title() const noexcept -> std::string { return m_title.get(); }

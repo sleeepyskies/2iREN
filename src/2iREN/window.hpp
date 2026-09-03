@@ -8,6 +8,7 @@
 #include "2iREN/base.hpp"
 #include "2iREN/concurrency/mutex.hpp"
 #include "2iREN/input/codes.hpp"
+#include "2iREN/math/bounded.hpp"
 #include "2iREN/math/extent.hpp"
 #include "2iREN/math/vec2.hpp"
 
@@ -78,6 +79,8 @@ public:
     [[nodiscard]] auto width() const noexcept -> u32;
     /** @brief Returns the current height of the window. */
     [[nodiscard]] auto height() const noexcept -> u32;
+    /** @brief Returns the aspect ratio of this window. */
+    [[nodiscard]] auto aspect() const noexcept -> NonZeroPositiveF32;
     /** @brief Returns the current extent of the window. */
     [[nodiscard]] auto extent() const noexcept -> Extent2u;
     /** @brief Returns the current position of the window. */

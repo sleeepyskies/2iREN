@@ -42,6 +42,19 @@ To build the library.
 just test
 ```
 
+## Project Components
+
+2iREN has has various modules (logical modules, not c++ modules) that make the framework.
+
+* `asset`:
+* `concurrency`:
+* `core`:
+* `graphics`:
+* `input`:
+* `math`:
+* `scene`:
+* `utility`:
+
 ## Examples
 
 2iREN has multiple examples to showcase what can be done using the framework, as

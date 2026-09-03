@@ -35,16 +35,22 @@ public:
     auto yaw() const noexcept -> Yaw;
     auto pitch() const noexcept -> Degrees;
     auto fov() const noexcept -> Fov;
-    auto projection_view(const NonZeroPositiveF32 aspect_ratio) const noexcept -> Mat4x4f;
+    auto aspect() const noexcept -> NonZeroPositiveF32;
+
+    auto projection_view() const noexcept -> Mat4x4f;
+
+    auto lookat(Point3f at) noexcept -> void;
 
     auto set_position(Point3f position) noexcept -> void;
     auto set_yaw(Yaw yaw) noexcept -> void;
     auto set_pitch(Degrees pitch) noexcept -> void;
+    auto set_aspect(NonZeroPositiveF32 aspect) noexcept -> void;
 
 private:
     auto update_vectors() noexcept -> void;
 
 private:
+    // Transform m_transform;
     Point3f m_position;
     Vec3f m_front;
     Vec3f m_up;
@@ -56,6 +62,7 @@ private:
     f32 m_nearplane;
     f32 m_farplane;
     Fov m_fov;
+    NonZeroPositiveF32 m_aspect;
 };
 
 class CameraController {

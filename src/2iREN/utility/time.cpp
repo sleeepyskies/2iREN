@@ -33,6 +33,6 @@ auto elapsed() -> Duration { return Duration{g_framestart - g_start}; }
 
 auto delta() -> Duration { return Duration{g_framestart - g_lastframe}; }
 
-auto frame_count() -> u32 { return g_framecount; }
+auto current_frame() -> u32 { return g_framecount; }
 
 } // namespace siren::time

@@ -44,6 +44,6 @@ auto delta() -> Duration;
 
 /// @brief Retuns the current frame number.
 [[nodiscard]]
-auto frame_count() -> u32;
+auto current_frame() -> u32;
 
 } // namespace siren::time
