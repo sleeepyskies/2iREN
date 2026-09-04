@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <limits>
 #include <type_traits>
 
@@ -114,22 +115,28 @@ public:
     inline static constexpr T MIN = Min;
     inline static constexpr T MAX = Max;
 
-    constexpr Bounded() : Bounded(T{}) {}
-    constexpr Bounded(T value) : m_value(value) { check_bounds(); }
+    constexpr Bounded() : Bounded(T{}) { }
 
-    [[nodiscard]]
-    constexpr auto get() noexcept -> const T& {
-        return m_value;
+    constexpr Bounded(T value) : m_value(value) {
+        check_bounds();
     }
 
+    template <typename Self>
     [[nodiscard]]
-    constexpr auto get() const noexcept -> const T& {
-        return m_value;
+    constexpr auto get(this Self&& self) noexcept {
+        return std::forward<Self>(self).m_value;
     }
 
     constexpr auto set(const T& value) -> void {
         m_value = value;
         check_bounds();
+    }
+
+    template <typename S, S OtherMin, S OtherMax>
+        requires(CanConvertTo<std::remove_cvref_t<S>, Type>)
+    [[nodiscard]]
+    constexpr auto operator<=>(const Bounded<S, OtherMax, OtherMin>& other) const noexcept -> auto {
+        other.m_value <=> m_value;
     }
 
 private:
