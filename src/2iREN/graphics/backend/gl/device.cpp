@@ -873,6 +873,19 @@ auto GlDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
     return buffer;
 }
 
+auto GlDevice::begin_conditional_rendering(const QueryHandle query) const -> void {
+    const auto apihandle = m_state.query_table.fetch(query);
+    m_render_thread.spawn([apihandle = apihandle] {
+        glBeginConditionalRender(apihandle, GL_QUERY_WAIT);
+    });
+}
+
+auto GlDevice::end_conditional_rendering() const -> void {
+    m_render_thread.spawn([] {
+        glEndConditionalRender();
+    });
+}
+
 auto GlDevice::limits() const -> const Limits& { return m_limits; }
 
 auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }

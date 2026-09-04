@@ -213,6 +213,9 @@ public:
     auto blit_image(ImageHandle source, ImageHandle destination) const -> void override;
     auto read_image(const ImageHandle image) const -> std::vector<u8> override;
 
+    auto begin_conditional_rendering(QueryHandle query) const -> void override;
+    auto end_conditional_rendering() const -> void override;
+
     [[nodiscard]] auto limits() const -> const Limits& override;
     [[nodiscard]] auto statistics() const -> Statistics override;
     [[nodiscard]] auto render_thread() const -> const RenderThread& override;

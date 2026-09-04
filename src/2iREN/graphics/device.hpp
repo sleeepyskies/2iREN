@@ -248,7 +248,7 @@ public:
     virtual auto blit_image(ImageHandle source, ImageHandle destination) const -> void = 0;
     /** @brief Reads the image data into a buffer and returns it. @warning May stall the thread
      * until task is complete. */
-    virtual auto read_image(const ImageHandle image) const -> std::vector<u8> = 0;
+    [[nodiscard]] virtual auto read_image(const ImageHandle image) const -> std::vector<u8> = 0;
 
     /**
      * @brief Retrieves the information stored inside a query object. May be blocking on some
@@ -256,6 +256,9 @@ public:
      * QueryKind.
      */
     [[nodiscard]] virtual auto query(QueryHandle handle) const -> u64 = 0;
+
+    virtual auto begin_conditional_rendering(QueryHandle query) const -> void  = 0;
+    virtual auto end_conditional_rendering() const -> void  = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> const Limits& = 0;

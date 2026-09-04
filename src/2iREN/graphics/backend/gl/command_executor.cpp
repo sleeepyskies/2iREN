@@ -293,8 +293,6 @@ auto GlCommandExecutor::execute_pass(
         }
     }
 
-    // restore default render settings
-
     // execute commands in the pass
     for (const auto& cmd : commands) {
         switch (cmd.type) {
