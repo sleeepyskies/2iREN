@@ -51,7 +51,9 @@ public:
      * @brief Retrieves the singleton instance of this ThreadPool.
      * @warning Crashes if ThreadPool::init() has not been called yet.
      */
-    static auto get() -> ThreadPool& { return *s_instance; }
+    static auto get() -> ThreadPool& {
+        return *s_instance;
+    }
 
     /** @brief Initializes the global singleton instance. */
     static auto init(

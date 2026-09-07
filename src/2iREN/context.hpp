@@ -51,9 +51,7 @@ public:
      */
     static auto create(const ContextDescriptor& descriptor) -> Context;
 
-    /**
-     * @brief Destroys the context and releases all owned resources.
-     */
+    /// @brief Destroys the context and releases all owned resources.
     ~Context();
 
     Context(const Context&)            = delete;
@@ -61,15 +59,10 @@ public:
     Context(Context&&)                 = delete;
     Context& operator=(Context&&)      = delete;
 
-    /**
-     * @brief Creates a graphics device.
-     */
-    [[nodiscard]] auto create_device(const DeviceDescriptor& descriptor) const
-        -> std::unique_ptr<Device>;
+    /// @brief Creates a graphics device.
+    [[nodiscard]] auto create_device() const -> std::unique_ptr<Device>;
 
-    /**
-     * @brief Creates a new window based on the provided descriptor.
-     */
+    /// @brief Creates a new window based on the provided descriptor.
     [[nodiscard]] auto create_window(const WindowDescriptor& descriptor) const -> Window;
 
 private:

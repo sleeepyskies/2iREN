@@ -3,7 +3,7 @@
 #include <stb/stb_image.h>
 
 #include "2iREN/concurrency/thread_pool.hpp"
-#include "2iREN/graphics/backend/gl/device.hpp"
+#include "2iREN/graphics/backend/opengl/device.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/platform.hpp"
@@ -16,25 +16,25 @@
 
 namespace siren {
 static auto select_gl_backend() -> void {
-    log::info("OpenGL backend chosen.");
+    log::info("opengl backend chosen.");
     stbi_set_flip_vertically_on_load(true); // true only for
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }
 
-static auto create_gl_device(const Window& window) -> std::unique_ptr<Device> {
-    log::info("Creating an OpenGlDevice.");
-    return std::make_unique<GlDevice>(window.handle());
+static auto create_gl_device() -> std::unique_ptr<Device> {
+    log::info("creating an OpenGL device.");
+    return std::make_unique<GlDevice>();
 }
 
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
     glfwSetErrorCallback([](i32 err, const char* desc) {
-        PANIC("GLFW Error encountered. Code: {}, description: {}", err, desc);
+        PANIC("GLFW error encountered. code: {}, description: {}", err, desc);
     });
 
-    ASSERT(glfwInit(), "Could not initialize GLFW.");
+    ASSERT(glfwInit(), "could not initialize GLFW.");
 
     time::initialize();
 
@@ -85,10 +85,10 @@ Context::~Context() {
     }
 }
 
-auto Context::create_device(const DeviceDescriptor& descriptor) const -> std::unique_ptr<Device> {
+auto Context::create_device() const -> std::unique_ptr<Device> {
     switch (m_descriptor.backend) {
         case Backend::OpenGL: {
-            return create_gl_device(descriptor.window);
+            return create_gl_device();
         }
         default: UNREACHABLE();
     }

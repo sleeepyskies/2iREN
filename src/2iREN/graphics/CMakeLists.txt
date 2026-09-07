@@ -12,4 +12,4 @@ target_sources(2iREN PRIVATE
     swapchain.cpp
 )
 
-add_subdirectory(backend/gl)
+add_subdirectory(backend/opengl)

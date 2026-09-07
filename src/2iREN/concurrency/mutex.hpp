@@ -3,6 +3,7 @@
 #include <expected>
 #include <functional>
 #include <mutex>
+#include <utility>
 
 #include "error.hpp"
 #include "guard.hpp"
@@ -36,7 +37,7 @@ public:
     /** @brief Constructs T using its default constructor. */
     Mutex()
         requires(std::is_default_constructible_v<T>)
-        : m_data() {}
+        : m_data() { }
 
     /**
      * @brief Constructs T in-place using provided arguments.
@@ -44,13 +45,13 @@ public:
      */
     template <typename... Args>
         requires(!std::is_same_v<std::remove_cvref_t<Args>, Mutex> && ...)
-    explicit Mutex(Args... args) : m_data(std::forward<Args>(args)...) {}
+    explicit Mutex(Args... args) : m_data(std::forward<Args>(args)...) { }
 
     /** @brief Moves an existing T into the protected container. */
-    explicit Mutex(T&& t) : m_data(std::move(t)) {}
+    explicit Mutex(T&& t) : m_data(std::move(t)) { }
 
     /** @brief Copies an existing T into the protected container. */
-    explicit Mutex(const T& t) : m_data(t) {}
+    explicit Mutex(const T& t) : m_data(t) { }
 
     Mutex(const Mutex&)             = delete;
     Mutex(Mutex&&)                  = delete;
@@ -118,7 +119,9 @@ public:
      * @brief Returns a copy of the inner value of the mutex.
      * @warning May stall the thread if the mutex is locked for writing when called.
      */
-    [[nodiscard]] auto get() const noexcept -> T { return *lock(); }
+    [[nodiscard]] auto get() const noexcept -> T {
+        return *lock();
+    }
 
     /**
      * @brief Locks the resource and returns and consumes the inner value.
@@ -158,7 +161,9 @@ public:
      * @return A @ref UniqueGuard providing access to the data.
      * @note This is a blocking operation.
      */
-    [[nodiscard]] auto lock() const -> Lock { return Lock{m_mutex}; }
+    [[nodiscard]] auto lock() const -> Lock {
+        return Lock{m_mutex};
+    }
 
     /**
      * @brief Attempts to acquire exclusive access without blocking.

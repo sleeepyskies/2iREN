@@ -86,7 +86,7 @@ Window::Window(const WindowDescriptor& descriptor) {
 
     log::info("Window created successfully: {}x{}", descriptor.width, descriptor.height);
     glfwDefaultWindowHints();
-    glfwMakeContextCurrent(nullptr);
+    glfwMakeContextCurrent(m_handle);
 }
 
 Window::~Window() {
@@ -97,15 +97,27 @@ Window::~Window() {
     glfwTerminate();
 }
 
-auto Window::handle() const noexcept -> GLFWwindow* { return m_handle; }
-auto Window::width() const noexcept -> u32 { return extent().x; }
-auto Window::height() const noexcept -> u32 { return extent().y; }
+auto Window::handle() const noexcept -> GLFWwindow* {
+    return m_handle;
+}
+auto Window::width() const noexcept -> u32 {
+    return extent().x;
+}
+auto Window::height() const noexcept -> u32 {
+    return extent().y;
+}
 auto Window::aspect() const noexcept -> NonZeroPositiveF32 {
     return static_cast<f32>(width()) / static_cast<f32>(height());
 }
-auto Window::extent() const noexcept -> Extent2u { return m_extent.get(); }
-auto Window::position() const noexcept -> Vec2i { return m_position.get(); }
-auto Window::title() const noexcept -> std::string { return m_title.get(); }
+auto Window::extent() const noexcept -> Extent2u {
+    return m_extent.get();
+}
+auto Window::position() const noexcept -> Vec2i {
+    return m_position.get();
+}
+auto Window::title() const noexcept -> std::string {
+    return m_title.get();
+}
 auto Window::is_minimized() const noexcept -> bool {
     return m_window_mode.load() == WindowMode::Minimized;
 }
@@ -118,7 +130,9 @@ auto Window::is_fullscreen() const noexcept -> bool {
 auto Window::should_close() const noexcept -> bool {
     return m_handle == nullptr || glfwWindowShouldClose(m_handle);
 }
-auto Window::cursor_mode() const noexcept -> CursorMode { return m_cursor_mode; }
+auto Window::cursor_mode() const noexcept -> CursorMode {
+    return m_cursor_mode;
+}
 
 auto Window::set_title(const std::string& title) const -> void {
     m_requests.lock()->emplace_back([this, title] {

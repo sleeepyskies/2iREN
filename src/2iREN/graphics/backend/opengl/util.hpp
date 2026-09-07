@@ -1,7 +1,3 @@
-/**
- * @file util.hpp
- * @brief Utility functions for converting 2iREN values to OpenGL values.
- */
 #pragma once
 
 #include <glad/gl.h>
@@ -14,7 +10,7 @@
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 
-namespace siren::gl {
+namespace siren::opengl {
 /**
  * @brief Converts a 2iREN @ref ImageFilterMode to a standard OpenGL filter constant.
  * @param mode The filter mode.
@@ -444,4 +440,4 @@ namespace siren::gl {
         default: UNREACHABLE();
     }
 }
-} // namespace siren::gl
+} // namespace siren::opengl

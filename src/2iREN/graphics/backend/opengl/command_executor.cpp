@@ -4,8 +4,8 @@
 #include <glad/gl.h>
 
 #include "2iREN/base.hpp"
+#include "2iREN/graphics/backend/opengl/util.hpp"
 #include "2iREN/math/color.hpp"
-#include "util.hpp"
 
 namespace siren {
 // ============================================================================
@@ -35,7 +35,7 @@ static constexpr auto extract_cmds(
 // == MARK: Execution Loops
 // ============================================================================
 
-GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) {}
+GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) { }
 
 auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge) -> void {
     for (const auto& cmd : resource_command_pacakge.commands) {
@@ -76,7 +76,9 @@ auto GlCommandExecutor::execute(RenderCommandBuffer&& render_command_package) ->
     }
 }
 
-auto GlCommandExecutor::statistics() const -> const Statistics& { return m_statistics; }
+auto GlCommandExecutor::statistics() const -> const Statistics& {
+    return m_statistics;
+}
 
 // ============================================================================
 // == MARK: Resource Commands
@@ -98,7 +100,7 @@ auto GlCommandExecutor::upload_image(
                 0,
                 0,
                 static_cast<GLsizei>(desc.extent.x),
-                gl::img_format_to_gl_layout(desc.format),
+                opengl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
             );
@@ -113,7 +115,7 @@ auto GlCommandExecutor::upload_image(
                 0,
                 static_cast<GLsizei>(desc.extent.x),
                 static_cast<GLsizei>(desc.extent.y),
-                gl::img_format_to_gl_layout(desc.format),
+                opengl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
             );
@@ -130,7 +132,7 @@ auto GlCommandExecutor::upload_image(
                 static_cast<GLsizei>(desc.extent.x),
                 static_cast<GLsizei>(desc.extent.y),
                 static_cast<GLsizei>(desc.extent.z),
-                gl::img_format_to_gl_layout(desc.format),
+                opengl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
             );
@@ -147,7 +149,7 @@ auto GlCommandExecutor::upload_image(
                 static_cast<GLsizei>(desc.extent.x),
                 static_cast<GLsizei>(desc.extent.y),
                 1,
-                gl::img_format_to_gl_layout(desc.format),
+                opengl::img_format_to_gl_layout(desc.format),
                 GL_UNSIGNED_BYTE,
                 data_slice.data()
             );
@@ -226,7 +228,7 @@ auto GlCommandExecutor::clear_image(const ClearImage& cmd) const -> void {
     const auto format = m_state.image_table.details(cmd.image_handle).descriptor.format;
     if (std::holds_alternative<Rgba>(cmd.value)) {
         glClearTexImage(
-            img, 0, gl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(cmd.value).r
+            img, 0, opengl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(cmd.value).r
         );
     } else if (std::holds_alternative<u32>(cmd.value)) {
         glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(cmd.value));
@@ -398,18 +400,18 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     if (desc.alpha_mode == AlphaMode::Blend) {
         // todo: does this state blend across binds?
         glBlendFuncSeparate(
-            gl::blend_factor_to_gl(desc.color_blend.source_factor),
-            gl::blend_factor_to_gl(desc.color_blend.dest_factor),
-            gl::blend_factor_to_gl(desc.alpha_blend.source_factor),
-            gl::blend_factor_to_gl(desc.alpha_blend.dest_factor)
+            opengl::blend_factor_to_gl(desc.color_blend.source_factor),
+            opengl::blend_factor_to_gl(desc.color_blend.dest_factor),
+            opengl::blend_factor_to_gl(desc.alpha_blend.source_factor),
+            opengl::blend_factor_to_gl(desc.alpha_blend.dest_factor)
         );
         glBlendEquationSeparate(
-            gl::blend_function_to_gl(desc.color_blend.function),
-            gl::blend_function_to_gl(desc.alpha_blend.function)
+            opengl::blend_function_to_gl(desc.color_blend.function),
+            opengl::blend_function_to_gl(desc.alpha_blend.function)
         );
     }
 
-    glDepthFunc(gl::depth_func_to_gl(desc.depth_function));
+    glDepthFunc(opengl::depth_func_to_gl(desc.depth_function));
 
     if (desc.back_face_culling) {
         glEnable(GL_CULL_FACE);
@@ -546,21 +548,21 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
         0,
         true,
         0,
-        gl::access_kind_to_gl(bind_storage_image.access),
-        gl::img_format_to_gl_internal(desc.format)
+        opengl::access_kind_to_gl(bind_storage_image.access),
+        opengl::img_format_to_gl_internal(desc.format)
     );
 }
 
 auto GlCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void {
     const auto kind      = m_state.query_table.details(begin_query.query).descriptor.kind;
     const auto apihandle = m_state.query_table.fetch(begin_query.query);
-    const auto apikind   = gl::query_kind_to_gl(kind);
+    const auto apikind   = opengl::query_kind_to_gl(kind);
     glBeginQuery(apikind, apihandle);
 }
 
 auto GlCommandExecutor::end_query(const EndQuery& end_query) const -> void {
     const auto kind    = m_state.query_table.details(end_query.query).descriptor.kind;
-    const auto apikind = gl::query_kind_to_gl(kind);
+    const auto apikind = opengl::query_kind_to_gl(kind);
     glEndQuery(apikind);
 }
 
@@ -569,7 +571,7 @@ auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void
     m_statistics.count_draw_calls++;
     const auto& pl_desc =
         m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
-    const auto mode = gl::topology_to_gl(pl_desc.topology);
+    const auto mode = opengl::topology_to_gl(pl_desc.topology);
 
     glDrawArrays(
         mode, static_cast<GLsizei>(draw_arrays.start), static_cast<GLsizei>(draw_arrays.count)
@@ -581,8 +583,8 @@ auto GlCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> v
     m_statistics.count_draw_calls++;
     const auto& pl_desc =
         m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline).descriptor;
-    const auto mode = gl::topology_to_gl(pl_desc.topology);
-    const auto type = gl::index_format_to_gl(m_tracked_state.active_ibo.index_format);
+    const auto mode = opengl::topology_to_gl(pl_desc.topology);
+    const auto type = opengl::index_format_to_gl(m_tracked_state.active_ibo.index_format);
 
     // because OpenGL is OpenGL, we pass in the first index as a void*. Its then
     // reinterpreted as a number.

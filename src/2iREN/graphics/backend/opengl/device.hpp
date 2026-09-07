@@ -1,10 +1,12 @@
 #pragma once
 
-#include <future>
+#include <GLFW/glfw3.h>
+
 #include <glad/gl.h>
+
 #include <unordered_map>
 
-#include "2iREN/graphics/backend/gl/render_thread.hpp"
+#include "2iREN/concurrency/mutex.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
@@ -156,7 +158,7 @@ struct RenderResourceState {
 
 class GlDevice final : public Device {
 public:
-    explicit GlDevice(GLFWwindow* window);
+    explicit GlDevice();
     ~GlDevice() override;
 
     auto wait_idle() const noexcept -> void override;
@@ -220,7 +222,6 @@ public:
 
     [[nodiscard]] auto limits() const -> const Limits& override;
     [[nodiscard]] auto statistics() const -> Statistics override;
-    [[nodiscard]] auto render_thread() const -> const RenderThread& override;
 
 private:
     /**
@@ -238,9 +239,6 @@ private:
         GraphicsPipeline,
         Query,
     };
-
-    /** @brief The main worker thread for all rendering work. */
-    RenderThread m_render_thread;
 
     /** @brief Describes a Delete that has been requested of a GPU object. */
     struct DeleteRequest {
