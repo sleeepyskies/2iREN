@@ -1,6 +1,5 @@
 #pragma once
 
-#include <concepts>
 #include <limits>
 #include <type_traits>
 
@@ -68,7 +67,9 @@ struct ExclusiveBoundsPolicy {
     static constexpr std::string_view RParen = ")";
 };
 
-/// @brief Some type that is bounded by an inclusive min and max.
+/// @brief Some type that is bounded by a minimum and a maximum. May either
+/// assert or clamp when bounds are not respected. Furthermore, bounds may
+/// be inclusive or exclusive.
 template <
     IsComparable T,
     T Min,
@@ -99,8 +100,11 @@ template <i32 Min = std::numeric_limits<i32>::min(), i32 Max = std::numeric_limi
 using BoundedI32 = Bounded<i32, Min, Max>;
 
 /// @brief A u32 that is bounded by an inclusive min and max.
-template <u32 Min = std::numeric_limits<u32>::min(), u32 Max = std::numeric_limits<u32>::max()>
-using BoundedU32 = Bounded<u32, Min, Max>;
+template <
+    u32 Min               = std::numeric_limits<u32>::min(),
+    u32 Max               = std::numeric_limits<u32>::max(),
+    typename BoundsPolicy = AssertBoundsPolicy>
+using BoundedU32 = Bounded<u32, Min, Max, BoundsPolicy>;
 
 template <
     IsComparable T,
@@ -133,10 +137,17 @@ public:
     }
 
     template <typename S, S OtherMin, S OtherMax>
-        requires(CanConvertTo<std::remove_cvref_t<S>, Type>)
+        requires(CanConvert<std::remove_cvref_t<S>, Type>)
     [[nodiscard]]
     constexpr auto operator<=>(const Bounded<S, OtherMax, OtherMin>& other) const noexcept -> auto {
         other.m_value <=> m_value;
+    }
+
+    template <typename S>
+        requires(CanConvert<Type, std::remove_cvref_t<S>>)
+    [[nodiscard]]
+    constexpr operator S() const noexcept {
+        return get();
     }
 
 private:
@@ -146,5 +157,15 @@ private:
 
     T m_value;
 };
+
+/// @brief Returns the result of subtracting right from left.get().
+/// @note Does not construct a new Bounded.
+template <typename T, typename S, T TMin, T TMax, typename BoundsPolicy>
+    requires(CanConvert<S, typename Bounded<T, TMin, TMax>::Type>)
+[[nodiscard]]
+constexpr auto operator-(const Bounded<T, TMin, TMax, BoundsPolicy> left, const S right)
+    -> Bounded<T, TMin, TMax>::Type {
+    return left - right;
+}
 
 } // namespace siren

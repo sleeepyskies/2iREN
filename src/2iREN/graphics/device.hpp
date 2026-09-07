@@ -1,8 +1,8 @@
 #pragma once
 
+#include <future>
 #include "2iREN/graphics/backend/gl/render_thread.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/graphics/query.hpp"
 #include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/resource_command.hpp"
 #include "2iREN/math/vec3.hpp"
@@ -255,7 +255,14 @@ public:
      * implementations. The return value must be interpreted by the caller depending on the
      * QueryKind.
      */
-    [[nodiscard]] virtual auto query(QueryHandle handle) const -> u64 = 0;
+    [[nodiscard]]
+    virtual auto query_result(QueryHandle handle) const -> u64 = 0;
+
+    /// @brief Begins a conditonally rendered scope. Any draw calls between
+    /// this and end_conditional_render may be omitted based on the query object.
+    virtual auto begin_conditional_render(const QueryHandle query) const -> void = 0;
+    /// @brief Ends a conditonally rendered scope.
+    virtual auto end_conditional_render() const -> void = 0;
 
     /** @brief Returns the hardware limits of the current backend. */
     [[nodiscard]] virtual auto limits() const -> const Limits& = 0;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <glad/gl.h>
 #include <unordered_map>
 
@@ -101,7 +102,7 @@ class FramebufferCache {
 public:
     explicit FramebufferCache(
         const RenderResourceTable<GLuint, Image, GlImageDetails>& image_table
-    ) : m_image_table{image_table} {};
+    ) : m_image_table{image_table} { };
 
     [[nodiscard]] auto get_create_for(const RenderTarget& target) -> GLuint;
 
@@ -205,7 +206,11 @@ public:
     [[nodiscard]] auto query_descriptor(QueryHandle handle) const
         -> const QueryDescriptor& override;
 
-    auto query(QueryHandle handle) const -> u64 override;
+    auto query_result(QueryHandle handle) const -> u64 override;
+
+    auto begin_conditional_render(const QueryHandle query) const -> void override;
+    auto end_conditional_render() const -> void override;
+
     [[nodiscard]] auto acquire_next_swapchain_target(SwapchainHandle handle) const
         -> ImageHandle override;
     auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) const

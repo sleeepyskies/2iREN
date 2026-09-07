@@ -41,8 +41,10 @@ public:
         }
     }
 
-    IndexFormat(const Value v) : value(v) {}
-    constexpr operator Value() const { return value; }
+    IndexFormat(const Value v) : value(v) { }
+    constexpr operator Value() const {
+        return value;
+    }
 };
 
 /**

@@ -72,6 +72,6 @@ concept HasDefaultConstructor = std::is_default_constructible_v<T>;
 
 /// @brief Ensures that @tparam From can be converted to @tparam To.
 template <typename From, typename To>
-concept CanConvertTo = std::convertible_to<From, To>;
+concept CanConvert = std::convertible_to<From, To>;
 
 } // namespace siren

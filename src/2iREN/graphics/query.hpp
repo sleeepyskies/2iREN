@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/resource.hpp"
 
@@ -15,12 +17,15 @@ struct QueryKind {
         TimeElapsed,
     } value;
 
-    QueryKind() : value(None) {}
-    constexpr QueryKind(const Value value) noexcept : value(value) {}
-    constexpr operator Value() const { return value; }
+    QueryKind() : value(None) { }
+    constexpr QueryKind(const Value value) noexcept : value(value) { }
+    constexpr operator Value() const {
+        return value;
+    }
 };
 
 struct QueryDescriptor {
+    std::optional<std::string_view> label = std::nullopt;
     QueryKind kind;
 };
 
@@ -33,7 +38,13 @@ public:
     Query(Query&& other) noexcept;
     Query& operator=(Query&& other) noexcept;
 
-    /** @brief Returns the descriptor of this @ref Query. */
-    [[nodiscard]] auto descriptor() const -> const QueryDescriptor&;
+    /// @brief Returns the descriptor of this @ref Query.
+    [[nodiscard]]
+    auto descriptor() const -> const QueryDescriptor&;
+
+    [[nodiscard]]
+    auto result() const -> u64 {
+        return m_device->query_result(handle());
+    }
 };
 } // namespace siren

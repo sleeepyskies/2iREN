@@ -1,5 +1,7 @@
 #include "device.hpp"
 
+#include <glad/gl.h>
+
 #include "2iREN/graphics/resource_command.hpp"
 #include "command_executor.hpp"
 #include "render_thread.hpp"
@@ -181,9 +183,13 @@ GlDevice::GlDevice(GLFWwindow* window) :
     m_render_thread.spawn([this] { m_limits = fetch_limits(); });
 }
 
-GlDevice::~GlDevice() { wait_idle(); }
+GlDevice::~GlDevice() {
+    wait_idle();
+}
 
-auto GlDevice::wait_idle() const noexcept -> void { m_render_thread.wait_until_idle(); }
+auto GlDevice::wait_idle() const noexcept -> void {
+    m_render_thread.wait_until_idle();
+}
 
 auto GlDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
     ASSERT(descriptor.size > 0, "Cannot legally allocate empty buffer (sorry).");
@@ -751,7 +757,7 @@ auto GlDevice::query_descriptor(const QueryHandle handle) const -> const QueryDe
     return m_state.query_table.details(handle).descriptor;
 }
 
-auto GlDevice::query(const QueryHandle handle) const -> u64 {
+auto GlDevice::query_result(const QueryHandle handle) const -> u64 {
     const auto apihandle = m_state.query_table.fetch(handle);
     u64 result           = 0;
     m_render_thread.spawn([&result, apihandle] {
@@ -759,6 +765,17 @@ auto GlDevice::query(const QueryHandle handle) const -> u64 {
     });
     wait_idle();
     return result;
+}
+
+auto GlDevice::begin_conditional_render(const QueryHandle query) const -> void {
+    const auto apihandle = m_state.query_table.fetch(query);
+    m_render_thread.spawn([apihandle = apihandle] {
+        glBeginConditionalRender(apihandle, GL_QUERY_WAIT);
+    });
+}
+
+auto GlDevice::end_conditional_render() const -> void {
+    m_render_thread.spawn([] { glEndConditionalRender(); });
 }
 
 auto GlDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const -> ImageHandle {
@@ -873,8 +890,14 @@ auto GlDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
     return buffer;
 }
 
-auto GlDevice::limits() const -> const Limits& { return m_limits; }
+auto GlDevice::limits() const -> const Limits& {
+    return m_limits;
+}
 
-auto GlDevice::statistics() const -> Statistics { return m_statistics.consume(); }
-auto GlDevice::render_thread() const -> const RenderThread& { return m_render_thread; }
+auto GlDevice::statistics() const -> Statistics {
+    return m_statistics.consume();
+}
+auto GlDevice::render_thread() const -> const RenderThread& {
+    return m_render_thread;
+}
 } // namespace siren

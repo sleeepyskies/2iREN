@@ -3,7 +3,7 @@
 #include "2iREN/graphics/device.hpp"
 
 namespace siren {
-Query::Query(Device* device, const QueryHandle handle) : Base(device, handle) {}
+Query::Query(Device* device, const QueryHandle handle) : Base(device, handle) { }
 
 Query::~Query() {
     if (m_device && m_handle.is_valid()) {
@@ -11,7 +11,7 @@ Query::~Query() {
     }
 }
 
-Query::Query(Query&& other) noexcept : Base(std::move(other)) {}
+Query::Query(Query&& other) noexcept : Base(std::move(other)) { }
 
 Query& Query::operator=(Query&& other) noexcept {
     if (this != &other) {
@@ -29,4 +29,3 @@ auto Query::descriptor() const -> const QueryDescriptor& {
     return m_device->query_descriptor(m_handle);
 }
 } // namespace siren
-

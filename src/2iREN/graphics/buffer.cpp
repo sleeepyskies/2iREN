@@ -4,7 +4,7 @@
 
 namespace siren {
 
-Buffer::Buffer(Device* device, const BufferHandle handle) : Base(device, handle) {}
+Buffer::Buffer(Device* device, const BufferHandle handle) : Base(device, handle) { }
 
 Buffer::~Buffer() {
     if (m_device && m_handle.is_valid()) {
@@ -12,7 +12,7 @@ Buffer::~Buffer() {
     }
 }
 
-Buffer::Buffer(Buffer&& other) noexcept : Base(std::move(other)) {}
+Buffer::Buffer(Buffer&& other) noexcept : Base(std::move(other)) { }
 
 Buffer& Buffer::operator=(Buffer&& other) noexcept {
     if (this != &other) {
