@@ -108,7 +108,7 @@ auto ShaderLoader::load(LoadContext&& ctx, const std::optional<ConfigType>) cons
             return invalid_schema("Could not parse any valid shader stages.");
         }
 
-        auto shader = ctx.device().create_shader({.label = shader_name, .source = map});
+        auto shader = ctx.device().make_shader({.label = shader_name, .source = map});
 
         ctx.finish(std::make_unique<ShaderAsset>(std::move(shader), std::move(map)));
         return {};

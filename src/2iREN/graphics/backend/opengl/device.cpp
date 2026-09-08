@@ -1,8 +1,13 @@
 #include "device.hpp"
 
+#include <cstring>
+#include <glad/gl.h>
+#include <optional>
+
 #include "2iREN/graphics/backend/opengl/command_executor.hpp"
 #include "2iREN/graphics/backend/opengl/util.hpp"
-#include "2iREN/graphics/resource_command.hpp"
+#include "2iREN/graphics/device.hpp"
+#include "2iREN/graphics/render_command.hpp"
 
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
@@ -17,13 +22,14 @@
 #include "2iREN/window/window.hpp"
 
 namespace siren {
-// todo: add error logging
 
 constexpr GLuint GL_DEFAULT_FRAMEBUFFER = 0;
 
 using namespace siren;
 
-static auto fetch_limits() -> Limits {
+namespace {
+
+auto fetch_limits() -> Limits {
     Limits limits{};
 
     GLint value = 0;
@@ -90,13 +96,15 @@ static auto fetch_limits() -> Limits {
 }
 
 /// helper to create an optional label of form "prefix-suffix"
-static auto make_label(const std::optional<std::string>& prefix, const std::string_view suffix)
+auto make_label(const std::optional<std::string>& prefix, const std::string_view suffix)
     -> std::optional<std::string> {
     if (prefix) {
         return *prefix + "-" + std::string(suffix);
     }
     return std::nullopt;
 }
+
+} // namespace
 
 auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
     // first search cache
@@ -131,9 +139,7 @@ auto FramebufferCache::Hasher::operator()(const Key& key) const -> usize {
     return hash;
 }
 
-auto FramebufferCache::create_framebuffer(const RenderTarget& target) -> GLuint {
-    // note that this is all happening inside the render thread, so we can do as many gl calls as we
-    // want directly :D
+auto FramebufferCache::create_framebuffer(const RenderTarget& target) const -> GLuint {
     GLuint framebuffer;
     glCreateFramebuffers(1, &framebuffer);
 
@@ -186,7 +192,10 @@ auto OpenGLDevice::wait_idle() const noexcept -> void {
     glFinish();
 }
 
-auto OpenGLDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
+auto OpenGLDevice::make_buffer(
+    const BufferDescriptor& descriptor,
+    std::optional<ByteBufferView> initial
+) -> Buffer {
     ASSERT(descriptor.size > 0, "cannot legally allocate empty buffer (sorry).");
 
     const auto buffer_handle = m_state.buffer_table.reserve();
@@ -211,8 +220,12 @@ auto OpenGLDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
 
     // if data was passed, directly upload it
     const u8* data = nullptr;
-    if (descriptor.data.has_value()) {
-        data = descriptor.data.value().data();
+    if (initial) {
+        ASSERT(
+            initial->size() <= descriptor.size,
+            "allocated buffer must be large enough to store the initial data."
+        );
+        data = initial->data();
     }
     glNamedBufferStorage(buf, static_cast<GLsizeiptr>(descriptor.size), data, flags);
 
@@ -233,20 +246,17 @@ auto OpenGLDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
         buffer_handle, buf, GlBufferDetails{.descriptor = descriptor, .buffer_ptr = mapped_buffer}
     );
 
-    log::trace("created {}", buffer_handle);
+    log::trace("{} created.", buffer_handle);
     return Buffer{this, buffer_handle};
 }
 
 auto OpenGLDevice::destroy_buffer(const BufferHandle handle) -> void {
-    const auto api_handle = m_state.buffer_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::Buffer});
-    }
-    m_state.buffer_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    const auto api_handle = m_state.buffer_table.fetch_release(handle);
+    glDeleteBuffers(1, &api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_image(const ImageDescriptor& descriptor) -> Image {
+auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
     ASSERT(
         descriptor.extent.x > 0 && descriptor.extent.y > 0 && descriptor.extent.z > 0,
         "Cannot create an empty image."
@@ -310,20 +320,17 @@ auto OpenGLDevice::create_image(const ImageDescriptor& descriptor) -> Image {
     // assign the proxy handle to the real handle
     this->m_state.image_table.link(image_handle, img, GlImageDetails{.descriptor = descriptor});
 
-    log::trace("Created {}", image_handle);
+    log::trace("{} created.", image_handle);
     return Image{this, image_handle};
 }
 
 auto OpenGLDevice::destroy_image(const ImageHandle handle) -> void {
-    const auto api_handle = m_state.image_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::Image});
-    }
-    m_state.image_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    const auto api_handle = m_state.image_table.fetch_release(handle);
+    glDeleteTextures(1, &api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
+auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
     const auto sampler_handle = m_state.sampler_table.reserve();
 
     GLuint sampler;
@@ -375,20 +382,17 @@ auto OpenGLDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sample
         sampler_handle, sampler, GlSamplerDetails{.descriptor = descriptor}
     );
 
-    log::trace("Created {}", sampler_handle);
+    log::trace("{} created.", sampler_handle);
     return Sampler{this, sampler_handle};
 }
 
 auto OpenGLDevice::destroy_sampler(const SamplerHandle handle) -> void {
-    const auto api_handle = m_state.sampler_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::Sampler});
-    }
-    m_state.sampler_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    const auto api_handle = m_state.sampler_table.fetch_release(handle);
+    glDeleteSamplers(1, &api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
+auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     ASSERT(
         descriptor.source.contains(ShaderStage::Vertex),
         "Cannot create a Shader without a Vertex Shader"
@@ -497,20 +501,17 @@ auto OpenGLDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
         shader_handle, program, GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
     );
 
-    log::trace("created {}", shader_handle);
+    log::trace("{} created.", shader_handle);
     return Shader{this, shader_handle};
 }
 
 auto OpenGLDevice::destroy_shader(const ShaderHandle handle) -> void {
-    const auto api_handle = m_state.shader_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::Shader});
-    }
-    m_state.shader_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    const auto api_handle = m_state.shader_table.fetch_release(handle);
+    glDeleteProgram(api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
+auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
     -> Swapchain {
     // so OpenGL doesn't expose any concept of a swapchain, so the opengl swapchain in 2iREN
     // is just an offscreen image. on Device::present() we just blit this image to window.
@@ -518,7 +519,7 @@ auto OpenGLDevice::create_swapchain(const Window& window, const SwapchainDescrip
     const auto swapchain_handle = m_state.swapchain_table.reserve();
     const auto windowfb_extent  = window.framebuffer_extent();
 
-    auto image = create_image({
+    auto image = make_image({
         .label =
             make_label(descriptor.label, "Swapchain Backbuffer").value_or("Swapchain Backbuffer"),
         .format        = ImageFormat::RGBA8,
@@ -548,16 +549,16 @@ auto OpenGLDevice::create_swapchain(const Window& window, const SwapchainDescrip
 
     glfwSwapInterval(descriptor.vsync);
 
-    log::trace("created {}", swapchain_handle);
+    log::trace("{} created.", swapchain_handle);
     return Swapchain{this, swapchain_handle};
 }
 
 auto OpenGLDevice::destroy_swapchain(const SwapchainHandle handle) -> void {
-    m_state.swapchain_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    std::ignore = m_state.swapchain_table.fetch_release(handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
     -> GraphicsPipeline {
     const auto pipeline_handle = m_state.graphics_pipeline_table.reserve();
 
@@ -607,96 +608,40 @@ auto OpenGLDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& de
         pipeline_handle, vertex_array, GlGraphicsPipelineDetails{.descriptor = descriptor}
     );
 
-    log::trace("Created {}", pipeline_handle);
+    log::trace("{} created.", pipeline_handle);
     return GraphicsPipeline{this, pipeline_handle};
 }
 
 auto OpenGLDevice::destroy_graphics_pipeline(const GraphicsPipelineHandle handle) -> void {
-    const auto api_handle = m_state.graphics_pipeline_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::GraphicsPipeline});
-    }
-    m_state.graphics_pipeline_table.release(handle);
-    log::trace("Queued {} for deletion", handle);
+    const auto api_handle = m_state.graphics_pipeline_table.fetch_release(handle);
+    glDeleteVertexArrays(1, &api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::create_query(const QueryDescriptor& descriptor) -> Query {
+auto OpenGLDevice::make_query(const QueryDescriptor& descriptor) -> Query {
     const auto handle = m_state.query_table.reserve();
     GLuint query;
     glGenQueries(1, &query);
     m_state.query_table.link(handle, query, GlQueryDetails{.descriptor = descriptor});
-    log::trace("created {}", handle);
+    log::trace("{} created.", handle);
     return Query{this, handle};
 }
 
 auto OpenGLDevice::destroy_query(const QueryHandle handle) -> void {
-    const auto api_handle = m_state.query_table.fetch(handle);
-    if (api_handle != 0) {
-        m_delete_queue.push_back({api_handle, ResourceType::Query});
-    }
-    m_state.query_table.release(handle);
-    log::trace("Queued {} for cleanup", handle);
+    const auto api_handle = m_state.query_table.fetch_release(handle);
+    glDeleteQueries(1, &api_handle);
+    log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::flush_delete_queue() -> void {
-    if (m_delete_queue.empty()) {
-        return;
-    }
-
-    for (const auto& [handle, type] : m_delete_queue) {
-        switch (type) {
-            case ResourceType::Buffer: {
-                glDeleteBuffers(1, &handle);
-                break;
-            }
-            case ResourceType::Image: {
-                glDeleteTextures(1, &handle);
-                break;
-            }
-            case ResourceType::Sampler: {
-                glDeleteSamplers(1, &handle);
-                break;
-            }
-            case ResourceType::Framebuffer: {
-                glDeleteFramebuffers(1, &handle);
-                break;
-            }
-            case ResourceType::Shader: {
-                glDeleteProgram(handle);
-                break;
-            }
-            case ResourceType::GraphicsPipeline: {
-                glDeleteVertexArrays(1, &handle);
-                break;
-            }
-            case ResourceType::Query: {
-                glDeleteQueries(1, &handle);
-                break;
-            }
-        }
-    }
-
-    m_delete_queue.clear();
+auto OpenGLDevice::render_pass_recorder(const RenderPassDescriptor& descriptor) const noexcept
+    -> RenderPassRecorder {
+    return RenderPassRecorder{descriptor};
 }
 
-auto OpenGLDevice::record_resource_commands() const -> ResourceCommandRecorder {
-    return ResourceCommandRecorder{};
-}
-
-auto OpenGLDevice::record_render_commands() const -> RenderCommandRecorder {
-    return RenderCommandRecorder{};
-}
-
-auto OpenGLDevice::submit(ResourceCommandBuffer&& command_buffer) const -> void {
-    GlCommandExecutor executor{this->m_state};
-    executor.execute(std::move(command_buffer));
-    m_statistics.set(m_statistics.get() + executor.statistics());
-}
-
-auto OpenGLDevice::submit(RenderCommandBuffer&& command_buffer) const -> void {
-    GlCommandExecutor executor{this->m_state};
-    executor.execute(std::move(command_buffer));
-    m_statistics.set(m_statistics.get() + executor.statistics());
+auto OpenGLDevice::submit(RenderPass&& pass) const -> void {
+    auto executor = OpenGLCommandExecutor{this->m_state};
+    executor.execute(std::move(pass));
+    m_statistics += executor.statistics();
 }
 
 auto OpenGLDevice::buffer_descriptor(const BufferHandle handle) const -> const BufferDescriptor& {
@@ -746,6 +691,157 @@ auto OpenGLDevice::end_conditional_render() const -> void {
     glEndConditionalRender();
 }
 
+auto OpenGLDevice::upload_to_image(
+    const ImageHandle image,
+    ByteBufferView data,
+    const usize layer
+) const -> void {
+    // just upload it all in one go, this should be fine even for cube maps
+    const auto gl_handle = m_state.image_table.fetch(image);
+    const auto& desc     = m_state.image_table.details(image).descriptor;
+
+    switch (desc.dimension) {
+        case ImageDimension::D1: {
+            glTextureSubImage1D(
+                gl_handle,
+                0,
+                0,
+                static_cast<GLsizei>(desc.extent.x),
+                opengl::img_format_to_gl_layout(desc.format),
+                GL_UNSIGNED_BYTE,
+                data.data()
+            );
+            break;
+        }
+
+        case ImageDimension::D2: {
+            glTextureSubImage2D(
+                gl_handle,
+                0,
+                0,
+                0,
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
+                opengl::img_format_to_gl_layout(desc.format),
+                GL_UNSIGNED_BYTE,
+                data.data()
+            );
+            break;
+        }
+
+        case ImageDimension::D3: {
+            glTextureSubImage3D(
+                gl_handle,
+                0,
+                0,
+                0,
+                0,
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
+                static_cast<GLsizei>(desc.extent.z),
+                opengl::img_format_to_gl_layout(desc.format),
+                GL_UNSIGNED_BYTE,
+                data.data()
+            );
+            break;
+        }
+
+        case ImageDimension::Cube: {
+            glTextureSubImage3D(
+                gl_handle,
+                0,
+                0,
+                0,
+                static_cast<i32>(layer),
+                static_cast<GLsizei>(desc.extent.x),
+                static_cast<GLsizei>(desc.extent.y),
+                1,
+                opengl::img_format_to_gl_layout(desc.format),
+                GL_UNSIGNED_BYTE,
+                data.data()
+            );
+        }
+    }
+
+    // generate mip map levels
+    if (desc.mipmap_levels > 0) {
+        glGenerateTextureMipmap(gl_handle);
+    }
+}
+
+auto OpenGLDevice::upload_to_buffer(
+    const BufferHandle buffer,
+    ByteBufferView data,
+    const usize offset
+) const -> void {
+    const auto gl_handle = m_state.buffer_table.fetch(buffer);
+    const auto& desc     = m_state.buffer_table.details(buffer).descriptor;
+
+    switch (desc.usage) {
+        case BufferUsage::Static: {
+            // create a temp staging buffer to copy data to the dest buffer
+            GLuint staging_buffer;
+            glCreateBuffers(1, &staging_buffer);
+            glNamedBufferStorage(
+                staging_buffer, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), 0
+            );
+
+            // perform transfer
+            glCopyNamedBufferSubData(
+                staging_buffer,
+                gl_handle,
+                0,
+                static_cast<GLintptr>(offset),
+                static_cast<GLsizeiptr>(data.size_bytes())
+            );
+
+            // clean up staging buffer.
+            glDeleteBuffers(1, &staging_buffer);
+            break;
+        }
+        case BufferUsage::Dynamic: {
+            glNamedBufferSubData(
+                gl_handle,
+                static_cast<GLintptr>(offset),
+                static_cast<GLsizeiptr>(data.size_bytes()),
+                data.data()
+            );
+            break;
+        }
+        case BufferUsage::Stream: {
+            const auto [ptr, size] = m_state.buffer_table.details(buffer).buffer_ptr;
+            ASSERT(ptr != nullptr, "stream buffer mapped pointer is null!");
+            ASSERT(
+                size - offset >= data.size_bytes(),
+                "attempted to overwrite a streamed mapped buffer!"
+            );
+            std::memcpy(static_cast<u8*>(ptr) + offset, data.data(), data.size_bytes());
+            break;
+        }
+        default:
+            ASSERT(
+                false,
+                "invalid BufferUsage encountered. cannot perform execute_buffer_upload on the "
+                "opengl backend"
+            );
+    }
+}
+
+auto OpenGLDevice::clear_image(const ImageHandle image, const ClearValue clearvalue) const -> void {
+    const auto img    = m_state.image_table.fetch(image);
+    const auto format = m_state.image_table.details(image).descriptor.format;
+
+    if (std::holds_alternative<Rgba>(clearvalue)) {
+        glClearTexImage(
+            img, 0, opengl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(clearvalue).r
+        );
+    } else if (std::holds_alternative<u32>(clearvalue)) {
+        glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(clearvalue));
+    } else {
+        PANIC("unknown data type passed to Device::clear_image()");
+    }
+}
+
 auto OpenGLDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const
     -> ImageHandle {
     return m_state.swapchain_table.details(handle).target->image.handle();
@@ -779,7 +875,7 @@ auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overl
     glfwSwapBuffers(window);
 }
 
-auto OpenGLDevice::blit_image(const ImageHandle source, const ImageHandle destination) const
+auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle destination) const
     -> void {
     // opengl doesn't have image blitting, so we get_create() cached fbos for images and then blit
     // between the fbos.
@@ -830,7 +926,7 @@ auto OpenGLDevice::read_image(const ImageHandle image) const -> std::vector<u8> 
 
     ASSERT(
         desc.format == ImageFormat::RGBA8 || desc.format == ImageFormat::sRGBA8,
-        "Only RGBA8 images can be read from."
+        "only RGBA8 images can be read from right now."
     );
 
     const auto buffer_size = static_cast<usize>(desc.extent.x)
@@ -853,6 +949,6 @@ auto OpenGLDevice::limits() const -> const Limits& {
 }
 
 auto OpenGLDevice::statistics() const -> Statistics {
-    return m_statistics.consume();
+    return m_statistics;
 }
 } // namespace siren

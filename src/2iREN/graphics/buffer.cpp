@@ -30,10 +30,8 @@ auto Buffer::descriptor() const noexcept -> const BufferDescriptor& {
     return m_device->buffer_descriptor(m_handle);
 }
 
-auto Buffer::upload(const ByteBuffer& data, const u32 offset) const noexcept -> void {
-    m_device->resource_submit([this, &data, offset](ResourceCommandRecorder& cmds) -> void {
-        cmds.upload_to_buffer(m_handle, data, offset);
-    });
+auto Buffer::upload(const ByteBufferView data, const u32 offset) const noexcept -> void {
+    m_device->upload_to_buffer(m_handle, data, offset);
 }
 
 } // namespace siren

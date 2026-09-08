@@ -3,6 +3,7 @@
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/layout.hpp"
+#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/window/window.hpp"
 
@@ -28,7 +29,7 @@ int main() {
     const auto device = ctx.make_device();
     AssetServer server{*device};
 
-    const auto swapchain = device->create_swapchain(
+    const auto swapchain = device->make_swapchain(
         window,
         {
             .label = std::nullopt,
@@ -36,12 +37,14 @@ int main() {
         }
     );
 
-    const auto buffer = device->create_buffer({
-        .label = "Sample Buffer",
-        .data  = vertices.data(),
-        .size  = vertices.size_bytes(),
-        .usage = BufferUsage::Static,
-    });
+    const auto buffer = device->make_buffer(
+        {
+            .label = "Sample Buffer",
+            .size  = vertices.size_bytes(),
+            .usage = BufferUsage::Static,
+        },
+        vertices.view()
+    );
     const auto layout = LayoutBuilder::create()
                             .add(Attribute::Position, 3, DataType::Float32)
                             .add(Attribute::Color, 4, DataType::Float32)
@@ -52,7 +55,7 @@ int main() {
     server.wait_until_loaded(shaderh);
     auto* shader_asset = server.get<ShaderAsset>(shaderh);
 
-    const auto pipeline = device->create_graphics_pipeline({
+    const auto pipeline = device->make_graphics_pipeline({
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader_asset->shader.handle(),
@@ -80,16 +83,13 @@ int main() {
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_submit([&](RenderCommandRecorder& cmds) -> void {
-            cmds.render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
-                pass.bind_graphics_pipeline(pipeline.handle());
-                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_fullscreen();
-            });
+        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
+            pass.bind_graphics_pipeline(pipeline.handle());
+            pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+            pass.draw_fullscreen();
         });
 
         device->present(swapchain.handle());
-        device->flush_delete_queue();
     }
 
     return 0;

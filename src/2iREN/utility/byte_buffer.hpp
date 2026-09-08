@@ -1,39 +1,48 @@
 #pragma once
 
+#include <initializer_list>
 #include <type_traits>
 #include <vector>
 
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
-#include "2iREN/utility/concepts.hpp"
 
 namespace siren {
 
-/// @class ByteBuffer
-/// @brief Utility class for uploading various data types to a packed binary buffer.
-/// Basically a helper class wrapped around a std::vector<u8> helping to avoid dealing
-/// with byte alignment problems and difficulties.
+/// @brief A container used for creating blobs of binary data.
+/// Data can be uploaded and interpreted using templated types.
+/// However, after upload it is up to the caller to make sure
+/// the data is interpreted correctly, as the buffer will not
+/// remember or check this.
+class ByteBuffer;
+
+/// @brief A non owning view into a @ref ByteBuffer.
+using ByteBufferView = std::span<const u8>;
+
 class ByteBuffer {
 public:
     /// @brief Constructs an empty ByteBuffer.
     ByteBuffer() = default;
 
-    /// @brief Constructs a ByteBuffer from a vector of trivially copyable elements.
-    /// @tparam T Type of the items to insert into the ByteBuffer.
-    /// @param data Input data to be serialized into bytes.
-    template <IsCopyable T>
-    explicit ByteBuffer(const std::vector<T>& data) {
+    template <typename T>
+    static constexpr inline auto make(std::initializer_list<T> items) {
+        return ByteBuffer{items};
+    }
+
+    /// @brief Constructs a ByteBuffer a span of elements and writes them into the buffer.
+    template <typename T>
+    explicit ByteBuffer(const std::span<T>& data) {
         for (const auto& item : data) {
-            append<T>(item);
+            write<T>(item);
         }
     }
 
     /// @brief Constructs a ByteBuffer from an initializer list.
     /// @tparam T Type of the items to insert into the ByteBuffer.
     /// @param items Items to append to the buffer.
-    template <IsCopyable T>
+    template <typename T>
     explicit ByteBuffer(const std::initializer_list<T> items) {
-        append<T>(items);
+        write<T>(items);
     }
 
     ByteBuffer(const ByteBuffer& other)            = default;
@@ -47,18 +56,35 @@ public:
         return m_data.size();
     }
 
-    /// @brief Returns number of elements of type T stored in the buffer.
-    /// @warning Assumes buffer is evenly divisible by sizeof(T).
+    /// @brief Returns the buffer size for T.
     template <typename T>
     [[nodiscard]]
     auto size_as() const noexcept -> usize {
-        return size_bytes() / sizeof(T);
+        return m_data.size() / sizeof(T);
     }
 
-    /// @brief Checks if buffer is empty.
+    /// @brief Returns buffer capacity in bytes.
     [[nodiscard]]
-    auto empty() const noexcept -> bool {
-        return m_data.empty();
+    auto capacity_bytes() const noexcept -> usize {
+        return m_data.capacity();
+    }
+
+    /// @brief Returns buffer capacity for T.
+    template <typename T>
+    [[nodiscard]]
+    auto capacity_as() const noexcept -> usize {
+        return m_data.capacity() / sizeof(T);
+    }
+
+    /// @brief Resizes the buffer in bytes.
+    auto resize_bytes(const usize size_bytes) -> void {
+        m_data.resize(size_bytes);
+    }
+
+    /// @brief Resizes the buffer for T.
+    template <typename T>
+    auto resize_as(const usize size_t) -> void {
+        m_data.resize(size_t* sizeof(T));
     }
 
     /// @brief Reserves memory in bytes.
@@ -72,54 +98,44 @@ public:
         reserve_bytes(size * sizeof(T));
     }
 
+    /// @brief Checks if buffer is empty.
+    [[nodiscard]]
+    auto empty() const noexcept -> bool {
+        return m_data.empty();
+    }
+
     /// @brief Clears the buffer contents.
     auto clear() -> void {
         m_data.clear();
     }
 
-    /// @brief Appends an object as raw bytes.
-    /// @tparam T The type of the item to serialize, must be trivially copyable.
-    /// @param item The item to serialize.
-    template <IsCopyable T>
-    auto append(const T& item) -> void {
+    /// @brief Writes the binary representation of the item into the buffer.
+    template <typename T>
+    auto write(const T& item) -> void {
         const auto* bytes = reinterpret_cast<const u8*>(&item);
         m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
     }
 
-    /// @brief Appends an object as raw bytes.
-    /// @tparam T The type of the item to serialize, must be trivially copyable.
-    /// @param item The item to serialize.
-    /// @param align_as To what byte size to align the item as. Must be >= sizeof(T).
-    template <IsCopyable T>
-    auto append(const T& item, const usize align_as) -> void {
-        ASSERT(align_as >= sizeof(T));
-        const auto* bytes = reinterpret_cast<const u8*>(&item);
-        m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
-        const auto padding = align_as - sizeof(T);
-        m_data.resize(m_data.size() + padding, u8{0});
-    }
-
-    /// @brief Appends multiple objects to the buffer.
-    /// @tparam T The type of the items to serialize, must be trivially copyable.
-    /// @param items The items to serialize.
-    template <IsCopyable T>
-    auto append(const std::initializer_list<T> items) -> void {
+    /// @brief Writes the items into the buffer.
+    template <typename T>
+    auto write(const std::initializer_list<T> items) -> void {
         for (const auto& item : items) {
-            append(item);
+            write(item);
         }
     }
 
-    /// @brief Returns the underlying vector storage.
-    template <typename Self>
-    [[nodiscard]]
-    decltype(auto) data(this Self&& self) {
-        return (std::forward<Self>(self).m_data);
+    /// @brief Writes the items into the buffer.
+    template <typename T>
+    auto write(const std::span<T> items) -> void {
+        for (const auto& item : items) {
+            write(item);
+        }
     }
 
     /// @brief Returns a pointer to the underlying storage.
     template <typename Self>
     [[nodiscard]]
-    auto raw(this Self&& self) {
+    auto data(this Self&& self) {
         return std::forward<Self>(self).m_data.data();
     }
 
@@ -133,7 +149,13 @@ public:
         std::forward<Self>(self).template assert_alignment<T>();
         using Value =
             std::conditional_t<std::is_const_v<std::remove_reference_t<Self>>, const T, T>;
-        return reinterpret_cast<Value*>(std::forward<Self>(self).raw());
+        return reinterpret_cast<Value*>(std::forward<Self>(self).data());
+    }
+
+    /// @brief Returns a non owning view into this buffer.
+    [[nodiscard]]
+    auto view() const noexcept -> ByteBufferView {
+        return m_data; // should auto convert for us :D
     }
 
 private:
@@ -146,7 +168,8 @@ private:
 
     template <typename T>
     auto assert_alignment() const -> void {
-        ASSERT(reinterpret_cast<uintptr_t>(raw()) % alignof(T) == 0);
+        ASSERT(reinterpret_cast<uintptr_t>(data()) % alignof(T) == 0);
     }
 };
+
 } // namespace siren

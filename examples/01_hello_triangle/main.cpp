@@ -61,7 +61,7 @@ auto main() -> i32 {
     });
     auto window          = ctx.make_window({.title = "Example 01"});
     const auto device    = ctx.make_device();
-    const auto swapchain = device->create_swapchain(
+    const auto swapchain = device->make_swapchain(
         window,
         {
             .label = std::nullopt,
@@ -69,19 +69,21 @@ auto main() -> i32 {
         }
     );
 
-    const auto buffer = device->create_buffer({
-        .label = std::nullopt,
-        .data  = vertices.data(),
-        .size  = vertices.size_bytes(),
-        .usage = BufferUsage::Static,
-    });
+    const auto buffer = device->make_buffer(
+        {
+            .label = std::nullopt,
+            .size  = vertices.size_bytes(),
+            .usage = BufferUsage::Static,
+        },
+        vertices.view()
+    );
     const auto layout = LayoutBuilder::create()
                             .add(Attribute::Position, 3, DataType::Float32)
                             .add(Attribute::Color, 4, DataType::Float32)
                             .finish();
 
-    const auto shader   = device->create_shader({.label = std::nullopt, .source = shaders});
-    const auto pipeline = device->create_graphics_pipeline({
+    const auto shader   = device->make_shader({.label = std::nullopt, .source = shaders});
+    const auto pipeline = device->make_graphics_pipeline({
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader.handle(),
@@ -93,7 +95,7 @@ auto main() -> i32 {
         .depth_write       = true,
     });
 
-    const auto color = device->create_image({
+    const auto color = device->make_image({
         .format        = ImageFormat::RGBA8,
         .extent        = window.framebuffer_extent().to_extent3(),
         .dimension     = ImageDimension::D2,
@@ -120,9 +122,8 @@ auto main() -> i32 {
             pass.draw_fullscreen();
         });
 
-        device->blit_image(target.colors[0].image, swapchain.next_image());
+        device->blit_to_image(target.colors[0].image, swapchain.next_image());
         swapchain.present();
-        device->flush_delete_queue();
     }
 
     return 0;

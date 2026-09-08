@@ -7,6 +7,7 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -144,16 +145,16 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     }
     const usize data_size = width * height * channels;
 
-    auto image    = ctx.device().create_image({
+    auto image = ctx.device().make_image({
         .label         = iname,
         .format        = format,
         .extent        = extent,
         .dimension     = ImageDimension::D2,
         .mipmap_levels = mipmap_levels,
     });
-    auto resource = ctx.device().record_resource_commands();
-    resource.upload_to_image(image.handle(), std::span(data, data_size));
-    ctx.device().submit(resource.finish());
+
+    auto bytebuffer = ByteBuffer{std::span(data, data_size)};
+    ctx.device().upload_to_image(image.handle(), bytebuffer.view(), 0);
 
     stbi_image_free(data);
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config->sampler)));
@@ -168,7 +169,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
     const auto map_name = std::format("{}_CubeMap", tname);
 
     i32 width = 0, height = 0, channels = 0, size = 0;
-    std::vector<std::pair<std::string, std::vector<u8>>> faces = {
+    std::vector<std::pair<std::string, ByteBuffer>> faces = {
         {std::string(keys::PX), {}},
         {std::string(keys::NX), {}},
         {std::string(keys::PY), {}},
@@ -207,7 +208,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
                 log::warn("Could not load image data, reason: {}", stbi_failure_reason());
             }
 
-            data_buffer = std::vector<u8>(data, data + (size * size * 4));
+            data_buffer = ByteBuffer{std::vector<u8>(data, data + (size * size * 4))};
 
             stbi_image_free(data);
         }
@@ -217,7 +218,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
         return file_not_found(path.string());
     }
 
-    auto image = ctx.device().create_image({
+    auto image = ctx.device().make_image({
         .label         = map_name,
         .format        = ImageFormat::RGBA8,
         .extent        = Extent3u{size, size, 6},
@@ -225,12 +226,10 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
         .mipmap_levels = 1,
     });
 
-    ctx.device().resource_submit([&](ResourceCommandRecorder& resource) {
-        for (u32 i = 0; i < faces.size(); i++) {
-            auto& [key, databuffer] = faces[i];
-            resource.upload_to_image(image.handle(), std::span(databuffer), i);
-        }
-    });
+    for (u32 i = 0; i < faces.size(); i++) {
+        auto& [key, databuffer] = faces[i];
+        ctx.device().upload_to_image(image.handle(), databuffer.view(), i);
+    }
 
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config.sampler)));
 

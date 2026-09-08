@@ -179,7 +179,7 @@ public:
         -> void {
         auto inner = m_inner.write();
         ASSERT(
-            is_valid_id(proxy_handle, *inner), "Passed an invalid ProxyHandleType: {}", proxy_handle
+            is_valid_id(proxy_handle, *inner), "passed an invalid ProxyHandleType: {}", proxy_handle
         );
         auto& table_entry      = inner->table[proxy_handle.index()];
         table_entry.api_handle = api_handle;
@@ -191,12 +191,19 @@ public:
         auto inner = m_inner.write();
         ASSERT(
             is_valid_id(proxy_handle, *inner),
-            "Cannot free an invalid ProxyHandleType: {}",
+            "cannot free an invalid ProxyHandleType: {}",
             proxy_handle
         );
         TableEntry& table_entry = inner->table[proxy_handle.index()];
         inner->free_list.emplace_back(proxy_handle.index());
         table_entry.kill();
+    }
+
+    /// @brief Frees and returns the proxy handle.
+    auto fetch_release(const HandleType proxy) -> ApiHandleType {
+        auto handle = fetch(proxy);
+        release(proxy);
+        return handle;
     }
 
     /** @brief Gets the api handle associated with this proxy handle iff valid. */

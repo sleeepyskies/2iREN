@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
@@ -55,14 +53,6 @@ public:
 struct BufferDescriptor {
     /** @brief An optional label. Mainly useful for debugging. */
     std::optional<std::string> label = std::nullopt;
-    /**
-     * @brief Optional initial data. If present, performs a direct upload.
-     * @note This is dropped by the @ref Buffer once owned by it. Therefore,
-     * it is best to never access this via a @ref Buffer
-     * @todo remove this? idk
-     * @todo should this field actually be a @ref ByteBuffer instead?
-     */
-    std::optional<std::vector<u8>> data = std::nullopt;
     /** @brief The initial size of the buffer in bytes. */
     usize size;
     /** @brief The intended use of the buffer. */
@@ -84,15 +74,10 @@ public:
     Buffer& operator=(Buffer&& other) noexcept;
 
     /** @brief Returns the descriptor of this Buffer. */
-    [[nodiscard]] auto descriptor() const noexcept -> const BufferDescriptor&;
+    [[nodiscard]]
+    auto descriptor() const noexcept -> const BufferDescriptor&;
 
     /** @brief Utility function to upload data to this Buffer. */
-    auto upload(const ByteBuffer& data, const u32 offset = 0) const noexcept -> void;
-
-    /** @brief Utility function to upload data to this Buffer. */
-    template <typename T>
-    auto upload(const T& data) const noexcept -> void {
-        upload(ByteBuffer{data}, 0);
-    }
+    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
 };
 } // namespace siren

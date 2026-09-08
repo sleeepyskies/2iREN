@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 
 #include "2iREN/graphics/command_executor.hpp"
-#include "2iREN/graphics/device.hpp"
+#include "2iREN/graphics/statistics.hpp"
 
 namespace siren {
 
@@ -22,48 +22,20 @@ struct TrackedState {
     };
 };
 
-/**
- * @class GlCommandExecutor
- * @brief The OpenGL specific @ref CommandExecutor.
- */
-class GlCommandExecutor final : public CommandExecutor {
+/// @brief The OpenGL specific @ref CommandExecutor.
+class OpenGLCommandExecutor final : public CommandExecutor {
 public:
-    explicit GlCommandExecutor(const RenderResourceState& state);
-    ~GlCommandExecutor() override = default;
+    explicit OpenGLCommandExecutor(const RenderResourceState& state);
 
-    /**
-     * @brief Executes the provided @ref ResourceCommand's
-     * @param resource_command_pacakge The commands to execute.
-     * @note This function should only be called from within a RenderThread::spawn lambda!!!!
-     */
-    auto execute(ResourceCommandBuffer&& resource_command_pacakge) -> void override;
+    auto execute(RenderPass&& pass) -> void override;
 
-    /**
-     * @brief Executes the provided @ref RenderCommands's
-     * @param render_command_package The commands to execute.
-     * @note This function should only be called from within a RenderThread::spawn lambda!!!!
-     */
-    auto execute(RenderCommandBuffer&& render_command_package) -> void override;
-
-    [[nodiscard]] auto statistics() const -> const Statistics& override;
+    [[nodiscard]]
+    auto statistics() const -> const Statistics& override;
 
 private:
     const RenderResourceState& m_state;
     mutable TrackedState m_tracked_state;
     mutable Statistics m_statistics{};
-
-    /** @brief Handles @ref UploadImage. */
-    auto upload_image(const UploadImage& cmd, std::span<const u8> data_slice) const -> void;
-    /** @brief Handles @ref UploadBuffer. */
-    auto upload_buffer(const UploadBuffer& cmd, std::span<const u8> data_slice) const -> void;
-    /** @brief Handles @ref ClearImage. */
-    auto clear_image(const ClearImage& cmd) const -> void;
-
-    /** @brief Executes a single @ref RenderPass. */
-    auto execute_pass(
-        const RenderPassDescriptor& descriptor,
-        std::span<const RenderCommand> commands
-    ) const -> void;
 
     /** @brief Handles @ref BindGraphicsPipeline. */
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;

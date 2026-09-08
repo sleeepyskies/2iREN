@@ -6,7 +6,9 @@
 
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/defer.hpp"
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/filesystem.hpp"
 
 /// For docs on GLTF see:
@@ -26,7 +28,9 @@ struct NameIDGenerator {
         }
         return fallback + "_" + std::to_string(count++);
     }
-    auto next() -> std::string { return next(nullptr); }
+    auto next() -> std::string {
+        return next(nullptr);
+    }
 };
 
 namespace siren {
@@ -154,7 +158,7 @@ static auto parse_sampler(const cgltf_sampler* sampler, Device& device) -> Sampl
         // the following are not provided by gltf spec:
         // r_wrap, lod_min, lod_max, border_color, compare_mode, compare_fn
     }
-    return device.create_sampler(std::move(desc));
+    return device.make_sampler(std::move(desc));
 }
 
 static auto load_textures(const cgltf_data* data, LoadContext& ctx)
@@ -204,11 +208,12 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             const auto size = texture.image->buffer_view->size;
 
             i32 width, height, channels;
-            std::unique_ptr<u8, void (*)(void*)> img_data(
-                stbi_load_from_memory(bytes, (int)size, &width, &height, &channels, STBI_default),
-                stbi_image_free
-            );
-            if (!img_data) {
+
+            auto image_data =
+                stbi_load_from_memory(bytes, size, &width, &height, &channels, STBI_default);
+            DEFER(stbi_image_free(image_data));
+
+            if (!image_data) {
                 return std::unexpected(AssetErrorCode::AssetCorrupted);
             }
             const usize img_data_size = width * height * channels;
@@ -226,19 +231,21 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             const u32 mipmap_levels = 1 + static_cast<u32>(std::floor(std::log2(max_dim)));
 
             // todo: add name?
-            auto img      = ctx.device().create_image({
+            auto img = ctx.device().make_image({
                 .label         = std::nullopt,
                 .format        = format,
                 .extent        = extent,
                 .dimension     = ImageDimension::D2,
                 .mipmap_levels = mipmap_levels,
             });
-            auto resource = ctx.device().record_resource_commands();
-            resource.upload_to_image(img.handle(), std::span(img_data.get(), img_data_size));
-            ctx.device().submit(resource.finish());
+
+            auto bytebuffer = ByteBuffer{std::span(image_data, img_data_size)};
+            ctx.device().upload_to_image(img.handle(), bytebuffer.view(), 0);
+
             handle = ctx.add_labeled_asset<Texture>(
                 name, std::make_unique<Texture>(name, std::move(img), std::move(sampler))
             );
+
         } else {
             return std::unexpected(AssetErrorCode::AssetCorrupted);
         }
@@ -579,25 +586,26 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
 
     // have to resize not just reserve since a c-style api wants direct buffer access
     ByteBuffer buffer;
-    buffer.data().resize(index_count * sizeof(u32));
+    buffer.resize_bytes(index_count * sizeof(u32));
 
     const usize unpacked_count =
-        cgltf_accessor_unpack_indices(indices, buffer.raw(), sizeof(u32), index_count);
+        cgltf_accessor_unpack_indices(indices, buffer.data(), sizeof(u32), index_count);
     ASSERT(
         index_count == unpacked_count,
-        "Number of parsed indices did not match original accessor index count."
+        "number of parsed indices did not match original accessor index count."
     );
 
     static usize bufferid = 0;
 
     return IndexBuffer{
-        .buffer = device.create_buffer({
-            .label = std::format("Index Buffer {}", bufferid),
-            .data  = buffer.data(), // todo: this does a copy lol, maybe we should accept a
-                                    // ByteBuffer instead?
-            .size  = buffer.size_bytes(),
-            .usage = BufferUsage::Static,
-        }),
+        .buffer = device.make_buffer(
+            {
+                .label = std::format("Index Buffer {}", bufferid),
+                .size  = buffer.size_bytes(),
+                .usage = BufferUsage::Static,
+            },
+            buffer.view()
+        ),
         .count  = index_count,
         .format = IndexFormat::UInt32,
     };
@@ -680,42 +688,44 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     for (usize i = 0; i < count; i++) {
         std::array<f32, 4> position = {0.f, 0.f, 0.f, 1.f};
         cgltf_accessor_read_float(positions, i, (cgltf_float*)position.data(), 3);
-        buffer.append(position);
+        buffer.write(position);
 
         std::array<f32, 4> normal = {0.f, 1.f, 0.f, 0.f};
         if (normals) {
             cgltf_accessor_read_float(normals, i, (cgltf_float*)normal.data(), 3);
         }
-        buffer.append(normal);
+        buffer.write(normal);
 
         std::array<f32, 4> color = {1.f, 1.f, 1.f, 1.f};
         if (colors) {
             cgltf_accessor_read_float(colors, i, (cgltf_float*)color.data(), 4);
         }
-        buffer.append(color);
+        buffer.write(color);
 
         std::array<f32, 2> texture = {0.f, 0.f};
         if (textures) {
             cgltf_accessor_read_float(textures, i, (cgltf_float*)texture.data(), 2);
         }
-        buffer.append(texture);
+        buffer.write(texture);
 
         std::array<f32, 4> tangent = {1.f, 0.f, 0.f, 1.f};
         if (tangents) {
             cgltf_accessor_read_float(tangents, i, (cgltf_float*)tangent.data(), 3);
         }
-        buffer.append(tangent);
+        buffer.write(tangent);
     }
 
     static usize bufferid = 0;
 
     return VertexBuffer{
-        .buffer = device.create_buffer({
-            .label = std::format("Vertex Buffer {}", bufferid++),
-            .data  = buffer.data(), // todo: also does a copy here fuck
-            .size  = buffer.size_bytes(),
-            .usage = BufferUsage::Static,
-        }),
+        .buffer = device.make_buffer(
+            {
+                .label = std::format("Vertex Buffer {}", bufferid++),
+                .size  = buffer.size_bytes(),
+                .usage = BufferUsage::Static,
+            },
+            buffer.view()
+        ),
         .layout = layout,
     };
 }
@@ -888,7 +898,9 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
 
     // @formatter:off
     struct cgltf_delete {
-        auto operator()(cgltf_data* data) const -> void { cgltf_free(data); }
+        auto operator()(cgltf_data* data) const -> void {
+            cgltf_free(data);
+        }
     };
     using cgltf_ptr = std::unique_ptr<cgltf_data, cgltf_delete>;
     // @formatter:on

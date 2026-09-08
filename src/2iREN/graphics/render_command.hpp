@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <unordered_map>
 
 #include "2iREN/core/base.hpp"
@@ -241,35 +240,17 @@ struct RenderCommand {
     }
 };
 
-/**
- * @brief Struct used to initialize and begin a new render pass.
- */
+/// @brief Struct used to initialize and begin a new render pass.
 struct RenderPassDescriptor {
-    /**
-     *  @brief An optional label.
-     *  @note Not used in the OpenGL backend.
-     */
+    /// @brief An optional label.
     std::optional<std::string> label = std::nullopt;
-    /** @brief The @ref RenderTarget to draw to. */
+    /// @brief The @ref RenderTarget to draw to.
     RenderTarget target;
 };
 
-/**
- * @brief Metadata about a render pass. Describes the range of
- * commands within a command buffer.
- */
 struct RenderPass {
-    /** @brief The descriptor of the pass. */
     RenderPassDescriptor descriptor;
-    /** @brief The start command index. */
-    usize start;
-    /** @brief The number of commands. */
-    usize count;
-};
-
-struct RenderPassResult {
     std::vector<RenderCommand> commands;
-    RenderPassDescriptor descriptor;
 };
 
 class RenderPassRecorder {
@@ -280,8 +261,7 @@ public:
      * @param size_hint Defines the initial size of the inner command buffer.
      * Use if it is known roughly how many commands will be submitted.
      */
-    explicit RenderPassRecorder(RenderPassDescriptor&& descriptor, const usize size_hint = 1024);
-    ~RenderPassRecorder() = default;
+    explicit RenderPassRecorder(const RenderPassDescriptor& descriptor, usize size_hint = 1024);
 
     /**
      * @brief Binds a @ref GraphicsPipeline to the current render pass.
@@ -408,65 +388,20 @@ public:
      */
     auto draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void;
 
-    /** @brief Consumes the RenderPassRecorder. Result should be passed into @ref
-     * RenderCommandRecorder. */
-    auto finish() -> RenderPassResult;
+    /// @brief Consumes the RenderPassRecorder. Result should be passed into
+    /// @ref RenderCommandRecorder.
+    auto finish() -> RenderPass;
 
 private:
-    /** @brief Descriptor of the pass. */
     RenderPassDescriptor m_descriptor;
-    /** @brief The accumulated commands. */
     std::vector<RenderCommand> m_commands;
-    /** @brief The bound pipeline. */
     GraphicsPipelineHandle m_active_pipeline = NullHandle;
-    /** @brief The tracked vertex buffers. */
-    /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_vertex_buffers;
-    /** @brief The tracked uniform buffers. */
-    /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_uniform_buffers;
-    /** @brief The tracked shader storage buffers. */
-    /** @todo replace with an array? */
     std::unordered_map<u32, BufferHandle> m_active_shader_storage_buffers;
-    /** @brief The tracked sampled images. */
     std::unordered_map<u32, ImageHandle> m_sampled_images;
-    /** @brief The tracked storage images. */
     std::unordered_map<u32, ImageHandle> m_storage_images;
-    /** @brief The bound index buffer (we need to check index type too hence the struct). */
     std::optional<BindIndexBuffer> m_active_index_buffer;
 };
 
-struct RenderCommandBuffer {
-    /** @brief All recorded commands. */
-    std::vector<RenderCommand> commands;
-    /** @brief Descriptions of which commands belong to which pass. */
-    std::vector<RenderPass> render_passes;
-};
-
-class RenderCommandRecorder {
-public:
-    RenderCommandRecorder()  = default;
-    ~RenderCommandRecorder() = default;
-
-    /** @brief Begins a render pass. */
-    [[nodiscard]] auto begin_render_pass(RenderPassDescriptor&& descriptor) const noexcept
-        -> RenderPassRecorder;
-    /** @brief Consumes the result of a @ref RenderPassRecorder. */
-    auto consume_render_pass(const RenderPassResult& commands) noexcept -> void;
-
-    template <typename Function>
-        requires(std::is_invocable_v<Function, RenderPassRecorder&>)
-    auto render_pass(RenderPassDescriptor&& descriptor, Function&& func) noexcept -> void {
-        auto pass = begin_render_pass(std::move(descriptor));
-        std::invoke(func, pass);
-        consume_render_pass(pass.finish());
-    }
-
-    /** @brief Consumes the internal data of the RenderCommandBuffer ready for execution. */
-    [[nodiscard]] auto finish() noexcept -> RenderCommandBuffer;
-
-private:
-    std::vector<RenderCommand> m_commands;
-    std::vector<RenderPass> m_render_passes;
-};
 } // namespace siren

@@ -6,248 +6,18 @@
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/opengl/device.hpp"
 #include "2iREN/graphics/backend/opengl/util.hpp"
+#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/math/color.hpp"
 
 namespace siren {
-// ============================================================================
-// == MARK: Utilities
-// ============================================================================
 
-static constexpr auto get_buffer_slice(
-    const std::vector<u8>& buffer,
-    const usize offset,
-    const usize size
-) -> std::span<const u8> {
-    return std::span(buffer.data() + offset, size);
-}
+OpenGLCommandExecutor::OpenGLCommandExecutor(const RenderResourceState& state) : m_state(state) { }
 
-static constexpr auto extract_cmds(
-    const RenderPass& pass,
-    const std::vector<RenderCommand>& commands
-) -> std::span<const RenderCommand> {
-    ASSERT(pass.start < commands.size(), "RenderPass has an invalid start index.");
-    ASSERT(
-        pass.start + pass.count <= commands.size(), "RenderPass has more commands than available"
-    );
-    return {commands.data() + pass.start, pass.count};
-}
-
-// ============================================================================
-// == MARK: Execution Loops
-// ============================================================================
-
-GlCommandExecutor::GlCommandExecutor(const RenderResourceState& state) : m_state(state) { }
-
-auto GlCommandExecutor::execute(ResourceCommandBuffer&& resource_command_pacakge) -> void {
-    for (const auto& cmd : resource_command_pacakge.commands) {
-        switch (cmd.type) {
-            case ResourceCommandType::UploadImage: {
-                const auto& params = cmd.as<UploadImage>();
-                upload_image(
-                    std::move(cmd.command.upload_image),
-                    get_buffer_slice(
-                        resource_command_pacakge.blob, params.data_offset, params.data_size
-                    )
-                );
-                break;
-            }
-            case ResourceCommandType::UploadBuffer: {
-                const auto& params = cmd.as<UploadBuffer>();
-                upload_buffer(
-                    std::move(cmd.command.upload_buffer),
-                    get_buffer_slice(
-                        resource_command_pacakge.blob, params.blob_offset, params.data_size
-                    )
-                );
-                break;
-            }
-            case ResourceCommandType::ClearImage: {
-                const auto& params = cmd.as<ClearImage>();
-                clear_image(params);
-                break;
-            }
-            default: PANIC("Invalid ResourceCommandType encountered");
-        }
-    }
-}
-
-auto GlCommandExecutor::execute(RenderCommandBuffer&& render_command_package) -> void {
-    for (const auto& pass : render_command_package.render_passes) {
-        execute_pass(pass.descriptor, extract_cmds(pass, render_command_package.commands));
-    }
-}
-
-auto GlCommandExecutor::statistics() const -> const Statistics& {
-    return m_statistics;
-}
-
-// ============================================================================
-// == MARK: Resource Commands
-// ============================================================================
-
-auto GlCommandExecutor::upload_image(
-    const UploadImage& cmd,
-    const std::span<const u8> data_slice
-) const -> void {
-    m_statistics.count_upload_image++;
-    // just upload it all in one go, this should be fine even for cube maps
-    const auto gl_handle = m_state.image_table.fetch(cmd.image_handle);
-    const auto& desc     = m_state.image_table.details(cmd.image_handle).descriptor;
-
-    switch (desc.dimension) {
-        case ImageDimension::D1: {
-            glTextureSubImage1D(
-                gl_handle,
-                0,
-                0,
-                static_cast<GLsizei>(desc.extent.x),
-                opengl::img_format_to_gl_layout(desc.format),
-                GL_UNSIGNED_BYTE,
-                data_slice.data()
-            );
-            break;
-        }
-
-        case ImageDimension::D2: {
-            glTextureSubImage2D(
-                gl_handle,
-                0,
-                0,
-                0,
-                static_cast<GLsizei>(desc.extent.x),
-                static_cast<GLsizei>(desc.extent.y),
-                opengl::img_format_to_gl_layout(desc.format),
-                GL_UNSIGNED_BYTE,
-                data_slice.data()
-            );
-            break;
-        }
-
-        case ImageDimension::D3: {
-            glTextureSubImage3D(
-                gl_handle,
-                0,
-                0,
-                0,
-                0,
-                static_cast<GLsizei>(desc.extent.x),
-                static_cast<GLsizei>(desc.extent.y),
-                static_cast<GLsizei>(desc.extent.z),
-                opengl::img_format_to_gl_layout(desc.format),
-                GL_UNSIGNED_BYTE,
-                data_slice.data()
-            );
-            break;
-        }
-
-        case ImageDimension::Cube: {
-            glTextureSubImage3D(
-                gl_handle,
-                0,
-                0,
-                0,
-                cmd.layer,
-                static_cast<GLsizei>(desc.extent.x),
-                static_cast<GLsizei>(desc.extent.y),
-                1,
-                opengl::img_format_to_gl_layout(desc.format),
-                GL_UNSIGNED_BYTE,
-                data_slice.data()
-            );
-        }
-    }
-
-    // generate mip map levels
-    if (desc.mipmap_levels > 0) {
-        glGenerateTextureMipmap(gl_handle);
-    }
-}
-
-auto GlCommandExecutor::upload_buffer(
-    const UploadBuffer& cmd,
-    const std::span<const u8> data_slice
-) const -> void {
-    m_statistics.count_upload_buffer++;
-
-    const auto gl_handle = m_state.buffer_table.fetch(cmd.buffer_handle);
-    const auto& desc     = m_state.buffer_table.details(cmd.buffer_handle).descriptor;
-
-    switch (desc.usage) {
-        case BufferUsage::Static: {
-            // create a temp staging buffer to copy data to the dest buffer
-            GLuint staging_buffer;
-            glCreateBuffers(1, &staging_buffer);
-            glNamedBufferStorage(
-                staging_buffer, static_cast<GLsizeiptr>(data_slice.size()), data_slice.data(), 0
-            );
-
-            // perform transfer
-            glCopyNamedBufferSubData(
-                staging_buffer,
-                gl_handle,
-                0,
-                static_cast<GLintptr>(cmd.dest_offset),
-                static_cast<GLsizeiptr>(data_slice.size())
-            );
-
-            // clean up staging buffer.
-            glDeleteBuffers(1, &staging_buffer);
-            break;
-        }
-        case BufferUsage::Dynamic: {
-            glNamedBufferSubData(
-                gl_handle,
-                static_cast<GLintptr>(cmd.dest_offset),
-                static_cast<GLsizeiptr>(data_slice.size()),
-                data_slice.data()
-            );
-            break;
-        }
-        case BufferUsage::Stream: {
-            const auto [ptr, size] = m_state.buffer_table.details(cmd.buffer_handle).buffer_ptr;
-            ASSERT(ptr != nullptr, "Stream Buffer mapped pointer is null!");
-            ASSERT(
-                size - cmd.dest_offset >= data_slice.size(),
-                "Attempted to overwrite a Streamed mapped buffer!"
-            );
-            std::memcpy(
-                static_cast<u8*>(ptr) + cmd.dest_offset, data_slice.data(), data_slice.size()
-            );
-            break;
-        }
-        default:
-            ASSERT(
-                false,
-                "Invalid BufferUsage encountered. Cannot perform execute_buffer_upload on the "
-                "OpenGL Backend"
-            );
-    }
-}
-
-auto GlCommandExecutor::clear_image(const ClearImage& cmd) const -> void {
-    const auto img    = m_state.image_table.fetch(cmd.image_handle);
-    const auto format = m_state.image_table.details(cmd.image_handle).descriptor.format;
-    if (std::holds_alternative<Rgba>(cmd.value)) {
-        glClearTexImage(
-            img, 0, opengl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(cmd.value).r
-        );
-    } else if (std::holds_alternative<u32>(cmd.value)) {
-        glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(cmd.value));
-    } else {
-        PANIC("Unknown data type passed to ClearImage");
-    }
-}
-
-// ============================================================================
-// == MARK: Render Commands
-// ============================================================================
-
-/// @todo: do we need to reset all state at the start of this function?
-auto GlCommandExecutor::execute_pass(
-    const RenderPassDescriptor& descriptor,
-    const std::span<const RenderCommand> commands
-) const -> void {
+auto OpenGLCommandExecutor::execute(RenderPass&& pass) -> void {
     m_statistics.count_render_passes++;
+
+    auto& descriptor = pass.descriptor;
+    auto& commands   = pass.commands;
 
     // we can perform a render pass with no attachments
     if (descriptor.target.colors.size() > 0 || descriptor.target.depth_stencil != std::nullopt) {
@@ -361,7 +131,15 @@ auto GlCommandExecutor::execute_pass(
     glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
-auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {
+auto OpenGLCommandExecutor::statistics() const -> const Statistics& {
+    return m_statistics;
+}
+
+// ============================================================================
+// == MARK: Render Commands
+// ============================================================================
+
+auto OpenGLCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void {
     m_statistics.count_bind_graphics_pipeline++;
 
     auto& pipeline_table = m_state.graphics_pipeline_table;
@@ -437,7 +215,7 @@ auto GlCommandExecutor::bind_graphics_pipeline(const BindGraphicsPipeline& bind)
     // pass it in with each draw call.
 }
 
-auto GlCommandExecutor::set_viewport(
+auto OpenGLCommandExecutor::set_viewport(
     const SetViewport& set_viewport,
     const RenderTarget& target
 ) const -> void {
@@ -460,7 +238,7 @@ auto GlCommandExecutor::set_viewport(
     );
 }
 
-auto GlCommandExecutor::bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const
+auto OpenGLCommandExecutor::bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const
     -> void {
     m_statistics.count_bind_vertex_buffer++;
     const auto vbo = m_state.buffer_table.fetch(bind_vertex_buffer.vertex_buffer);
@@ -475,21 +253,22 @@ auto GlCommandExecutor::bind_vertex_buffer(const BindVertexBuffer& bind_vertex_b
     );
 }
 
-auto GlCommandExecutor::bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const -> void {
+auto OpenGLCommandExecutor::bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const
+    -> void {
     m_statistics.count_bind_index_buffer++;
     const auto ibo             = m_state.buffer_table.fetch(bind_index_buffer.index_buffer);
     m_tracked_state.active_ibo = bind_index_buffer;
     glVertexArrayElementBuffer(m_tracked_state.active_vao, ibo);
 }
 
-auto GlCommandExecutor::bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const
+auto OpenGLCommandExecutor::bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const
     -> void {
     m_statistics.count_bind_uniform_buffer++;
     const auto ubo = m_state.buffer_table.fetch(bind_uniform_buffer.uniform_buffer);
     glBindBufferBase(GL_UNIFORM_BUFFER, bind_uniform_buffer.slot, ubo);
 }
 
-auto GlCommandExecutor::bind_uniform_buffer_range(
+auto OpenGLCommandExecutor::bind_uniform_buffer_range(
     const BindUniformBufferRange& bind_uniform_buffer_range
 ) const -> void {
     m_statistics.count_bind_uniform_buffer++;
@@ -503,7 +282,7 @@ auto GlCommandExecutor::bind_uniform_buffer_range(
     );
 }
 
-auto GlCommandExecutor::bind_shader_storage_buffer(
+auto OpenGLCommandExecutor::bind_shader_storage_buffer(
     const BindShaderStorageBuffer& bind_shader_storage_buffer
 ) const -> void {
     m_statistics.count_bind_shader_storage_buffer++;
@@ -511,7 +290,7 @@ auto GlCommandExecutor::bind_shader_storage_buffer(
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bind_shader_storage_buffer.slot, ubo);
 }
 
-auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const
+auto OpenGLCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_image) const
     -> void {
     m_statistics.count_bind_sampled_image++;
     const auto img   = m_state.image_table.fetch(bind_sampled_image.image);
@@ -538,7 +317,7 @@ auto GlCommandExecutor::bind_sampled_image(const BindSampledImage& bind_sampled_
     }
 }
 
-auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_image) const
+auto OpenGLCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_image) const
     -> void {
     m_statistics.count_bind_storage_image++;
     const auto img   = m_state.image_table.fetch(bind_storage_image.image);
@@ -554,20 +333,20 @@ auto GlCommandExecutor::bind_storage_image(const BindStorageImage& bind_storage_
     );
 }
 
-auto GlCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void {
+auto OpenGLCommandExecutor::begin_query(const BeginQuery& begin_query) const -> void {
     const auto kind      = m_state.query_table.details(begin_query.query).descriptor.kind;
     const auto apihandle = m_state.query_table.fetch(begin_query.query);
     const auto apikind   = opengl::query_kind_to_gl(kind);
     glBeginQuery(apikind, apihandle);
 }
 
-auto GlCommandExecutor::end_query(const EndQuery& end_query) const -> void {
+auto OpenGLCommandExecutor::end_query(const EndQuery& end_query) const -> void {
     const auto kind    = m_state.query_table.details(end_query.query).descriptor.kind;
     const auto apikind = opengl::query_kind_to_gl(kind);
     glEndQuery(apikind);
 }
 
-auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
+auto OpenGLCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void {
     m_statistics.count_draw_arrays++;
     m_statistics.count_draw_calls++;
     const auto& pl_desc =
@@ -579,7 +358,7 @@ auto GlCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const -> void
     );
 }
 
-auto GlCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> void {
+auto OpenGLCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const -> void {
     m_statistics.count_draw_indexed++;
     m_statistics.count_draw_calls++;
     const auto& pl_desc =

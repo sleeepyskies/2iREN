@@ -1,6 +1,7 @@
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
@@ -50,7 +51,7 @@ const std::unordered_map<ShaderStage, ShaderData> shaders = {
     {ShaderStage::Vertex, vertex_shader},
     {ShaderStage::Fragment, fragment_shader},
 };
-const ByteBuffer vertices{
+const auto vertices = ByteBuffer{
     Vertex{-0.5f, -0.5f, 0.5f},
     Vertex{0.5f, -0.5f, 0.5f},
     Vertex{0.5f, 0.5f, 0.5f},
@@ -60,20 +61,16 @@ const ByteBuffer vertices{
     Vertex{0.5f, 0.5f, -0.5f},
     Vertex{-0.5f, 0.5f, -0.5f},
 };
-const ByteBuffer indices = [] {
-    ByteBuffer buf;
+const auto indices = ByteBuffer::make<u32>({
     // clang-format off
-    buf.append<u32>({
-        0, 1, 2, 2, 3, 0, // front
-        1, 5, 6, 6, 2, 1, // right
-        7, 6, 5, 5, 4, 7, // back
-        4, 0, 3, 3, 7, 4, // left
-        4, 5, 1, 1, 0, 4, // bottom
-        3, 2, 6, 6, 7, 3  // top
-    });
+    0, 1, 2, 2, 3, 0, // front
+    1, 5, 6, 6, 2, 1, // right
+    7, 6, 5, 5, 4, 7, // back
+    4, 0, 3, 3, 7, 4, // left
+    4, 5, 1, 1, 0, 4, // bottom
+    3, 2, 6, 6, 7, 3  // top
     // clang-format on
-    return buf;
-}();
+});
 
 int main() {
     // init siren
@@ -84,7 +81,7 @@ int main() {
     auto window    = ctx.make_window({.title = "Example 02"});
 
     const auto device    = ctx.make_device();
-    const auto swapchain = device->create_swapchain(
+    const auto swapchain = device->make_swapchain(
         window,
         {
             .label = std::nullopt,
@@ -92,32 +89,35 @@ int main() {
         }
     );
 
-    const auto vertex_buffer  = device->create_buffer({
-        .label = "cube_buffer",
-        .data  = vertices.data(),
-        .size  = vertices.size_bytes(),
-        .usage = BufferUsage::Static,
-    });
-    const auto index_buffer   = device->create_buffer({
-        .label = "cube_indices",
-        .data  = indices.data(),
-        .size  = indices.size_bytes(),
-        .usage = BufferUsage::Static,
-    });
-    const auto uniform_buffer = device->create_buffer({
+    const auto vertex_buffer = device->make_buffer(
+        {
+            .label = "cube_buffer",
+            .size  = vertices.size_bytes(),
+            .usage = BufferUsage::Static,
+        },
+        vertices.view()
+    );
+    const auto index_buffer = device->make_buffer(
+        {
+            .label = "cube_indices",
+            .size  = indices.size_bytes(),
+            .usage = BufferUsage::Static,
+        },
+        indices.view()
+    );
+    const auto uniform_buffer = device->make_buffer({
         .label = "uniform_buffer",
-        .data  = std::nullopt,
         .size  = sizeof(UboData),
         .usage = BufferUsage::Dynamic,
     });
     const auto layout =
         LayoutBuilder::create().add(Attribute::Position, 3, DataType::Float32).finish();
 
-    const auto shader   = device->create_shader({
+    const auto shader   = device->make_shader({
         .label  = std::nullopt,
         .source = shaders,
     });
-    const auto pipeline = device->create_graphics_pipeline({
+    const auto pipeline = device->make_graphics_pipeline({
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader.handle(),
@@ -129,7 +129,7 @@ int main() {
         .depth_write       = true,
     });
 
-    const auto color = device->create_image({
+    const auto color = device->make_image({
         .format        = ImageFormat::RGBA8,
         .extent        = window.extent().to_extent3(),
         .dimension     = ImageDimension::D2,
@@ -148,7 +148,7 @@ int main() {
     };
 
     u32 count = 0;
-    log::info("Starting main loop");
+    log::info("starting main loop");
     while (!window.should_close()) {
         window.poll_events();
 
@@ -161,9 +161,7 @@ int main() {
         const UboData ubodata{proj * view * model};
         ByteBuffer ubo{ubodata};
 
-        device->resource_submit([&](ResourceCommandRecorder& cmds) -> void {
-            cmds.upload_to_buffer(uniform_buffer.handle(), ubo, 0);
-        });
+        uniform_buffer.upload(ubo.view(), 0);
 
         device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
             pass.bind_graphics_pipeline(pipeline.handle());
@@ -173,10 +171,9 @@ int main() {
             pass.draw_indexed(indices.size_as<u32>(), 0);
         });
 
-        device->blit_image(target.colors[0].image, swapchain.next_image());
+        device->blit_to_image(target.colors[0].image, swapchain.next_image());
 
         device->present(swapchain.handle());
-        device->flush_delete_queue();
         count++;
     }
 
