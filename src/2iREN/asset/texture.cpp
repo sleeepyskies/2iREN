@@ -208,7 +208,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
                 log::warn("Could not load image data, reason: {}", stbi_failure_reason());
             }
 
-            data_buffer = ByteBuffer{std::vector<u8>(data, data + (size * size * 4))};
+            data_buffer = ByteBuffer{std::span<const u8>(data, data + (size * size * 4))};
 
             stbi_image_free(data);
         }
