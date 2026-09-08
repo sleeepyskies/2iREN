@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/log.hpp"
 
 namespace siren::gl {

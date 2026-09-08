@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/hashed_string.hpp"
 
 namespace siren {

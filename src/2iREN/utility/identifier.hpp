@@ -3,7 +3,7 @@
 #include <format>
 #include <limits>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/type_info.hpp"
 
 namespace siren {
@@ -52,7 +52,7 @@ protected:
 
     constexpr Identifier() noexcept = default;
     constexpr Identifier(const IndexType idx, const GenerationType gen, const Meta meta) noexcept :
-        m_id(pack(idx, gen, meta)) {}
+        m_id(pack(idx, gen, meta)) { }
 
 public:
     Identifier(const Identifier&)            = default;
@@ -61,7 +61,9 @@ public:
     Identifier& operator=(Identifier&&)      = default;
 
     /** @brief Returns the full packed value of this id. */
-    [[nodiscard]] constexpr auto packed() const noexcept -> IdType { return m_id; }
+    [[nodiscard]] constexpr auto packed() const noexcept -> IdType {
+        return m_id;
+    }
 
     /** @brief Returns the index of this id. */
     [[nodiscard]] constexpr auto index() const noexcept -> IndexType {
@@ -77,15 +79,23 @@ public:
     }
 
     /** @brief Simple factory method to return an invalid Identifier. */
-    [[nodiscard]] constexpr static auto invalid() noexcept -> Identifier { return T{}; }
+    [[nodiscard]] constexpr static auto invalid() noexcept -> Identifier {
+        return T{};
+    }
 
     /** @brief Checks if the handle is valid aka has a non 0 inner value. */
-    [[nodiscard]] constexpr auto is_valid() const noexcept -> bool { return m_id != INVALID_ID; }
+    [[nodiscard]] constexpr auto is_valid() const noexcept -> bool {
+        return m_id != INVALID_ID;
+    }
     /** @brief Kills the handle. */
-    constexpr auto invalidate() noexcept -> void { m_id = INVALID_ID; }
+    constexpr auto invalidate() noexcept -> void {
+        m_id = INVALID_ID;
+    }
 
     /** @brief Returns a hash value for the identifier. Simply uses the full 64-bit integer. */
-    [[nodiscard]] constexpr auto hash() const noexcept -> usize { return packed(); }
+    [[nodiscard]] constexpr auto hash() const noexcept -> usize {
+        return packed();
+    }
 
     /** @brief Equality comparison based on the inner 64-bit value. */
     [[nodiscard]] friend bool operator==(const Identifier&, const Identifier&) = default;

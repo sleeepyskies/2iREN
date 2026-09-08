@@ -3,7 +3,8 @@
 #include <cstring>
 #include <glad/gl.h>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
+#include "2iREN/graphics/backend/opengl/device.hpp"
 #include "2iREN/graphics/backend/opengl/util.hpp"
 #include "2iREN/math/color.hpp"
 

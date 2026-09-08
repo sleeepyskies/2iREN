@@ -1,9 +1,13 @@
 #pragma once
 
+#include <glad/gl.h>
+
 #include "2iREN/graphics/command_executor.hpp"
 #include "2iREN/graphics/device.hpp"
 
 namespace siren {
+
+struct RenderResourceState;
 
 /**
  * @brief Struct for the OpenGL backend tracking any
@@ -12,7 +16,10 @@ namespace siren {
 struct TrackedState {
     GLuint active_vao                      = 0;
     GraphicsPipelineHandle active_pipeline = NullHandle;
-    BindIndexBuffer active_ibo = {.index_buffer = BufferHandle::invalid(), .index_format = IndexFormat::UInt32};
+    BindIndexBuffer active_ibo             = {
+        .index_buffer = BufferHandle::invalid(),
+        .index_format = IndexFormat::UInt32
+    };
 };
 
 /**
@@ -53,7 +60,10 @@ private:
     auto clear_image(const ClearImage& cmd) const -> void;
 
     /** @brief Executes a single @ref RenderPass. */
-    auto execute_pass(const RenderPassDescriptor& descriptor, std::span<const RenderCommand> commands) const -> void;
+    auto execute_pass(
+        const RenderPassDescriptor& descriptor,
+        std::span<const RenderCommand> commands
+    ) const -> void;
 
     /** @brief Handles @ref BindGraphicsPipeline. */
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;
@@ -67,9 +77,11 @@ private:
     /** @brief Handles @ref BindUniformBuffer. */
     auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void;
     /** @brief Handles @ref BindUniformBufferRange. */
-    auto bind_uniform_buffer_range(const BindUniformBufferRange& bind_uniform_buffer_range) const -> void;
+    auto bind_uniform_buffer_range(const BindUniformBufferRange& bind_uniform_buffer_range) const
+        -> void;
     /** @brief Handles @ref BindShaderStorageBuffer. */
-    auto bind_shader_storage_buffer(const BindShaderStorageBuffer& bind_shader_storage_buffer) const -> void;
+    auto bind_shader_storage_buffer(const BindShaderStorageBuffer& bind_shader_storage_buffer) const
+        -> void;
 
     /** @brief Handles @ref BindSampledImage. */
     auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void;

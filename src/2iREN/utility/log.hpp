@@ -17,15 +17,14 @@
 /// log structured messages to the console.
 namespace siren::log {
 
-/**
- * @struct Level
- * @brief Represents the severity level of a log message.
- */
+/// @brief Represents the severity level of a log message.
 struct Level {
     enum Value { Trace = 0, Debug, Info, Warn, Error, None } value;
 
-    constexpr Level(const Value v) : value(v) {}
-    [[nodiscard]] constexpr auto Value() const { return value; }
+    constexpr Level(const Value v) : value(v) { }
+    [[nodiscard]] constexpr auto Value() const {
+        return value;
+    }
 
     [[nodiscard]]
     constexpr auto to_string() const -> std::string_view {
@@ -41,8 +40,7 @@ struct Level {
     }
 
     [[nodiscard]]
-    static auto from_string(const std::string_view str)
-        -> std::optional<Level> {
+    static auto from_string(const std::string_view str) -> std::optional<Level> {
         if (string::equals_ignore_case(str, "trace"))
             return Trace;
         if (string::equals_ignore_case(str, "debug"))
@@ -80,16 +78,8 @@ constexpr auto strip_path(const std::string_view path) -> std::string_view {
  * @brief Inits the siren logger with the provided level.
  * @param lvl The desired log level.
  */
-inline auto init(const Level lvl) -> void { impl::level = lvl; }
-
-/**
- * @brief Inits the siren logger with the provided level.
- * @param lvl The desired log level as a string.
- */
-inline auto init(const std::string_view lvl) -> void {
-    const auto level = Level::from_string(lvl);
-    ASSERT(level.has_value(), "Passed invalid level to siren::log::init()");
-    init(level.value());
+inline auto initialize(const Level lvl) -> void {
+    impl::level = lvl;
 }
 
 /**
@@ -112,13 +102,11 @@ inline void log(
     }
 
     const auto usermsg = std::vformat(fmt, args);
-    const auto now     = std::chrono::time_point_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now()
-    );
-    const auto threadid              = std::this_thread::get_id();
-    const std::string locationstring = std::format(
-        "{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column()
-    );
+    const auto now =
+        std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
+    const auto threadid = std::this_thread::get_id();
+    const std::string locationstring =
+        std::format("{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column());
 
     const auto msg = std::format(
         "[{:%F %T}] \033[{}m[{:<5}]\033[0m [thread:{:<15}] [{:<45}] {}",
@@ -142,19 +130,13 @@ struct LogMessage {
     consteval LogMessage(
         const T& s,
         const std::source_location loc = std::source_location::current()
-    ) : fmt(s), sl(loc) {}
+    ) : fmt(s), sl(loc) { }
 };
 
-#define LOG_FUNCTION(fn_name, level_val, color_code)                           \
-    template <typename... Args>                                                \
-    auto fn_name(                                                              \
-        std::type_identity_t<LogMessage<Args...>> msg, Args&&... args          \
-    ) -> void {                                                                \
-        log(level_val,                                                         \
-            color_code,                                                        \
-            msg.sl,                                                            \
-            msg.fmt.get(),                                                     \
-            std::make_format_args(args...));                                   \
+#define LOG_FUNCTION(fn_name, level_val, color_code)                                               \
+    template <typename... Args>                                                                    \
+    auto fn_name(std::type_identity_t<LogMessage<Args...>> msg, Args&&... args) -> void {          \
+        log(level_val, color_code, msg.sl, msg.fmt.get(), std::make_format_args(args...));         \
     }
 
 /**

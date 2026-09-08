@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "hashed_string.hpp"
+#include "2iREN/utility/hashed_string.hpp"
 
 #if defined __clang__ || defined __GNUC__
 #define SIREN_PRETTY_FUNCTION __PRETTY_FUNCTION__

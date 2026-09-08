@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "2iREN/base.hpp"
 #include "2iREN/concurrency/mutex.hpp"
+#include "2iREN/core/base.hpp"
 
 /**
  * @brief Collection of utility methods for interacting with a virtual filesystem.

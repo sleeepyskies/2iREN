@@ -3,9 +3,9 @@
 #include <utility>
 #include <vector>
 
-#include "2iREN/base.hpp"
 #include "2iREN/concurrency/rw_lock.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/identifier.hpp"
 
 namespace siren {
@@ -34,9 +34,11 @@ struct ResourceHandle : Identifier<ResourceHandle<Tag>> {
      * @param idx The index of the resource in storage.
      * @param gen The generation of the ResourceHandle for this storage slot.
      */
-    ResourceHandle(const IndexType idx, const GenerationType gen) noexcept : Base(idx, gen, 0) {}
+    ResourceHandle(const IndexType idx, const GenerationType gen) noexcept : Base(idx, gen, 0) { }
 
-    static constexpr auto invalid() noexcept -> ResourceHandle { return ResourceHandle{}; }
+    static constexpr auto invalid() noexcept -> ResourceHandle {
+        return ResourceHandle{};
+    }
 
     /** @brief Stringifies the ResourceHandle. */
     [[nodiscard]] constexpr auto to_string() const noexcept -> std::string {
@@ -67,15 +69,15 @@ public:
 
     using HandleType = ResourceHandle<Resource>;
 
-    RenderResource() : m_device(nullptr) {}
-    RenderResource(Device* device, HandleType handle) : m_device(device), m_handle(handle) {}
+    RenderResource() : m_device(nullptr) { }
+    RenderResource(Device* device, HandleType handle) : m_device(device), m_handle(handle) { }
     ~RenderResource() = default;
 
     RenderResource(const RenderResource&)            = delete;
     RenderResource& operator=(const RenderResource&) = delete;
     RenderResource(RenderResource&& other) noexcept :
         m_device(std::exchange(other.m_device, nullptr)),
-        m_handle(std::exchange(other.m_handle, {})) {}
+        m_handle(std::exchange(other.m_handle, {})) { }
     RenderResource& operator=(RenderResource&& other) noexcept {
         if (this != &other) {
             m_device = std::exchange(other.m_device, nullptr);
@@ -85,7 +87,9 @@ public:
     }
 
     /** @brief Returns the underlying native handle for this resource. */
-    [[nodiscard]] auto handle() const noexcept -> HandleType { return m_handle; }
+    [[nodiscard]] auto handle() const noexcept -> HandleType {
+        return m_handle;
+    }
 
     /** @brief Stringifies the resource. */
     [[nodiscard]] auto to_string() const noexcept -> std::string {
@@ -98,7 +102,7 @@ protected:
 };
 
 namespace detail {
-struct Nothing {};
+struct Nothing { };
 } // namespace detail
 
 /**

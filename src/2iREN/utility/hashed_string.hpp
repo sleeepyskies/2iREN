@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string_view>
-#include "2iREN/base.hpp"
+
+#include "2iREN/core/base.hpp"
 
 // Magic numbers used for 64-bit FNV-1a hashing.
 constexpr auto PRIME  = 1099511628211ull;
@@ -33,7 +34,7 @@ public:
         }
     }
 
-    constexpr HashedString() noexcept : m_hash(0), m_data() {}
+    constexpr HashedString() noexcept : m_hash(0), m_data() { }
 
     HashedString(const HashedString&)            = default;
     HashedString(HashedString&&)                 = default;

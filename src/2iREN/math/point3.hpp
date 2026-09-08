@@ -1,6 +1,6 @@
 #pragma once
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/math/vec3.hpp"
 
 namespace siren {
@@ -18,9 +18,9 @@ struct Point3 {
     using Type = std::remove_cvref_t<T>;
     T x, y, z;
 
-    constexpr Point3() : Point3(T{}) {}
-    constexpr Point3(T xyz) : x(xyz), y(xyz), z(xyz) {}
-    constexpr Point3(T x, T y, T z) : x(x), y(y), z(z) {}
+    constexpr Point3() : Point3(T{}) { }
+    constexpr Point3(T xyz) : x(xyz), y(xyz), z(xyz) { }
+    constexpr Point3(T x, T y, T z) : x(x), y(y), z(z) { }
 
     [[nodiscard]]
     static constexpr inline auto ORIGIN() noexcept -> Point3 {

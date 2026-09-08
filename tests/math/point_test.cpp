@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#include "2iREN/math/point.hpp"
+#include "2iREN/math/point3.hpp"
 
 TEST_SUITE("Point3") {
     TEST_CASE("default construction creates the origin") {

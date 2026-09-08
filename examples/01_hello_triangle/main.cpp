@@ -1,4 +1,4 @@
-#include "2iREN/context.hpp"
+#include "2iREN/core/context.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/render_command.hpp"
@@ -7,7 +7,7 @@
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/log.hpp"
-#include "2iREN/window.hpp"
+#include "2iREN/window/window.hpp"
 
 using namespace siren;
 
@@ -55,20 +55,19 @@ const ByteBuffer vertices{
 };
 
 auto main() -> i32 {
-    auto ctx    = Context::create({
-        .debug   = true,
-        .level   = log::Level::Trace,
-        .backend = Backend::Auto,
+    auto ctx             = Context::make({
+        .debug = true,
+        .level = log::Level::Trace,
     });
-    auto window = ctx.create_window({.title = "Example 01"});
-
-    const auto device    = ctx.create_device();
-    const auto swapchain = device->create_swapchain({
-        .label  = std::nullopt,
-        .vsync  = true,
-        .extent = window.extent(),
-        .window = &window,
-    });
+    auto window          = ctx.make_window({.title = "Example 01"});
+    const auto device    = ctx.make_device();
+    const auto swapchain = device->create_swapchain(
+        window,
+        {
+            .label = std::nullopt,
+            .vsync = true,
+        }
+    );
 
     const auto buffer = device->create_buffer({
         .label = std::nullopt,
@@ -96,7 +95,7 @@ auto main() -> i32 {
 
     const auto color = device->create_image({
         .format        = ImageFormat::RGBA8,
-        .extent        = Extent3u{window.width(), window.height(), 1},
+        .extent        = window.framebuffer_extent().to_extent3(),
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
     });

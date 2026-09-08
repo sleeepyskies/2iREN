@@ -6,12 +6,11 @@ target_compile_definitions(2iREN PRIVATE GLFW_INCLUDE_NONE)
 
 target_link_libraries(
         2iREN
-        PUBLIC
-            glfw
 
         PRIVATE
             Threads::Threads
             yaml-cpp::yaml-cpp
+            glfw
 )
 
 if(SIREN_LINUX OR SIREN_WINDOWS)

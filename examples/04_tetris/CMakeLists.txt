@@ -1,10 +1,10 @@
 add_executable(
-        load_gltf
+        tetris
         main.cpp
 )
 
 target_link_libraries(
-        load_gltf
+        tetris
         PRIVATE
         2iREN::2iREN
 )

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <format>
-#include <string>
 #include <numbers>
+#include <string>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 
 namespace siren {
 
@@ -12,7 +12,7 @@ struct Radians;
 struct Degrees;
 
 struct Radians {
-    constexpr explicit Radians(const f64 value) : value(value) {}
+    constexpr explicit Radians(const f64 value) : value(value) { }
 
     [[nodiscard]]
     constexpr auto to_degrees() const -> Degrees;
@@ -27,7 +27,7 @@ struct Radians {
 };
 
 struct Degrees {
-    constexpr explicit Degrees(const f64 value) : value(value) {}
+    constexpr explicit Degrees(const f64 value) : value(value) { }
 
     [[nodiscard]]
     constexpr auto to_radians() const -> Radians;

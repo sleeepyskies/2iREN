@@ -4,8 +4,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "2iREN/base.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/type_info.hpp"
 
 namespace siren {
@@ -23,17 +23,17 @@ struct Vec2 {
     using Type = std::remove_cvref_t<T>;
     Type x, y;
 
-    constexpr Vec2() : Vec2(Type{}) {}
-    constexpr explicit Vec2(const Type xy) : x(xy), y(xy) {}
-    constexpr explicit Vec2(const Type x, const Type y) : x(x), y(y) {}
+    constexpr Vec2() : Vec2(Type{}) { }
+    constexpr explicit Vec2(const Type xy) : x(xy), y(xy) { }
+    constexpr explicit Vec2(const Type x, const Type y) : x(x), y(y) { }
 
     template <typename S>
         requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
-    constexpr explicit Vec2(const S xy) : Vec2(static_cast<Type>(xy)) {}
+    constexpr explicit Vec2(const S xy) : Vec2(static_cast<Type>(xy)) { }
     template <typename S>
         requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
     constexpr explicit Vec2(const S x, const S y) :
-        Vec2(static_cast<Type>(x), static_cast<Type>(y)) {}
+        Vec2(static_cast<Type>(x), static_cast<Type>(y)) { }
 
     [[nodiscard]]
     static constexpr auto make(const Type* ptr) -> Vec2 {

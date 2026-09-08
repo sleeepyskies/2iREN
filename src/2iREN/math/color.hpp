@@ -2,7 +2,7 @@
 
 #include <format>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 
 namespace siren {
 
@@ -11,15 +11,15 @@ struct Rgba {
     f32 r, g, b, a;
 
     /** @brief Constructs a pure black color. */
-    constexpr Rgba() noexcept : r(0), g(0), b(0), a(1) {}
+    constexpr Rgba() noexcept : r(0), g(0), b(0), a(1) { }
     /** @brief Constructs a new RGBA with the provided value for each channel. */
-    constexpr explicit Rgba(const f32 rgb) noexcept : r(rgb), g(rgb), b(rgb), a(1.f) {}
+    constexpr explicit Rgba(const f32 rgb) noexcept : r(rgb), g(rgb), b(rgb), a(1.f) { }
     /** @brief Constructs a new RGBA with the provided value for each color channel and using the
      * given alpha. */
-    constexpr Rgba(const f32 rgb, const f32 alpha) noexcept : r(rgb), g(rgb), b(rgb), a(alpha) {}
+    constexpr Rgba(const f32 rgb, const f32 alpha) noexcept : r(rgb), g(rgb), b(rgb), a(alpha) { }
     /** @brief Constructs a new RGBA color provided the given values. */
     constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept :
-        r(r), g(g), b(b), a(a) {}
+        r(r), g(g), b(b), a(a) { }
 
     [[nodiscard]]
     auto operator==(const Rgba&) const noexcept -> bool = default;

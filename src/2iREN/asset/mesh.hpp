@@ -4,7 +4,7 @@
 
 #include "2iREN/asset/asset_handle.hpp"
 #include "2iREN/asset/material.hpp"
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 
 // todo: do we want to store buffer data CPU side as well?
@@ -43,7 +43,7 @@ struct Surface : Asset {
         VertexBuffer&& vertex_buffer
     ) :
         name(name), material(material), index_buffer(std::move(index_buffer)),
-        vertex_buffer(std::move(vertex_buffer)) {}
+        vertex_buffer(std::move(vertex_buffer)) { }
 
     /** @brief The name of the surface. */
     std::string name;

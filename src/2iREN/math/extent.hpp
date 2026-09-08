@@ -3,7 +3,7 @@
 #include <format>
 #include <type_traits>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/type_info.hpp"
 
 namespace siren {
@@ -29,17 +29,17 @@ struct Extent2 {
 
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr Extent2() : Extent2(S{}) {}
+    constexpr Extent2() : Extent2(S{}) { }
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr explicit Extent2(const S val) : x(val), y(val) {}
+    constexpr explicit Extent2(const S val) : x(val), y(val) { }
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr explicit Extent2(const S x, const S y) : x(x), y(y) {}
+    constexpr explicit Extent2(const S x, const S y) : x(x), y(y) { }
 
-    constexpr Extent2() : Extent2(Type{}) {}
-    constexpr explicit Extent2(const Type val) : x(val), y(val) {}
-    constexpr explicit Extent2(const Type x, const Type y) : x(x), y(y) {}
+    constexpr Extent2() : Extent2(Type{}) { }
+    constexpr explicit Extent2(const Type val) : x(val), y(val) { }
+    constexpr explicit Extent2(const Type x, const Type y) : x(x), y(y) { }
 
     [[nodiscard]]
     constexpr auto operator==(const Extent2&) const noexcept -> bool = default;
@@ -60,17 +60,17 @@ struct Extent3 {
 
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr Extent3() : Extent3(S{}) {}
+    constexpr Extent3() : Extent3(S{}) { }
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr explicit Extent3(const S val) : x(val), y(val), z(val) {}
+    constexpr explicit Extent3(const S val) : x(val), y(val), z(val) { }
     template <typename S>
         requires(std::is_constructible_v<S, T>)
-    constexpr explicit Extent3(const S x, const S y, const S z) : x(x), y(y), z(z) {}
+    constexpr explicit Extent3(const S x, const S y, const S z) : x(x), y(y), z(z) { }
 
-    constexpr Extent3() : Extent3(Type{}) {}
-    constexpr explicit Extent3(const Type val) : x(val), y(val), z(val) {}
-    constexpr explicit Extent3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) {}
+    constexpr Extent3() : Extent3(Type{}) { }
+    constexpr explicit Extent3(const Type val) : x(val), y(val), z(val) { }
+    constexpr explicit Extent3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) { }
 
     [[nodiscard]]
     constexpr auto operator==(const Extent3&) const noexcept -> bool = default;

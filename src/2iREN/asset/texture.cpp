@@ -1,25 +1,27 @@
 #include "texture.hpp"
 
 #include <algorithm>
-#include <ranges>
 #include <stb/stb_image.h>
 #include <yaml-cpp/yaml.h>
 
 #include "2iREN/asset/asset_server.hpp"
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
-#include "2iREN/math/extent.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/log.hpp"
 
 namespace siren {
+
 namespace filetypes {
+
 static const std::vector<std::string> SRGB = {"png", "jpg", "jpeg"};
 static const std::vector<std::string> HDR  = {"exr", "hdr"};
+
 } // namespace filetypes
 
 // basically just string constants to avoid typos etc
 namespace keys {
+
 constexpr std::string_view NAME = "name";
 
 constexpr std::string NX = "nx";
@@ -28,6 +30,7 @@ constexpr std::string NZ = "nz";
 constexpr std::string PX = "px";
 constexpr std::string PY = "py";
 constexpr std::string PZ = "pz";
+
 } // namespace keys
 
 // todo: this only loads 2d images
@@ -38,7 +41,7 @@ static auto fetch_optional(const YAML::Node& node, const std::string_view key)
 }
 
 static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
-    log::warn("Invalid Schema found: {}", msg);
+    log::warn("invalid schema found: {}", msg);
     return std::unexpected(AssetErrorCode::InvalidSchema);
 }
 
@@ -48,17 +51,17 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 }
 
 [[nodiscard]] static auto no_config() -> AssetLoadError {
-    log::warn("No config was provided, cannot proceed with loading texture.");
+    log::warn("no config was provided, cannot proceed with loading texture.");
     return std::unexpected(AssetErrorCode::NoConfig);
 }
 
 [[nodiscard]] static auto file_not_found(const AssetPath& path) -> AssetLoadError {
-    log::warn("File could not be found at: {}", path);
+    log::warn("file could not be found at: {}", path);
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
 [[nodiscard]] static auto file_not_found(const std::string_view path) -> AssetLoadError {
-    log::warn("File not found at path: {}", path);
+    log::warn("file not found at path: {}", path);
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
@@ -66,7 +69,7 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     const std::string_view path,
     const std::string_view msg = ""
 ) -> AssetLoadError {
-    log::warn("Invalid YAML syntax in cubmap file: {}. Message: {}", path, msg);
+    log::warn("invalid yaml syntax in cubmap file: {}. message: {}", path, msg);
     return std::unexpected(AssetErrorCode::InvalidFormat);
 }
 
@@ -79,16 +82,16 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     }
 
     if (std::ranges::contains(filetypes::SRGB, ext)) {
-        log::trace("Guessing extension {} image has format LinearColor8.", ext);
+        log::trace("guessing extension {} image has format linearcolor8.", ext);
         return ImageFormat::RGBA8;
     }
 
     if (std::ranges::contains(filetypes::HDR, ext)) {
-        log::trace("Guessing extension {} image has format Hdr16.", ext);
+        log::trace("guessing extension {} image has format hdr16.", ext);
         return ImageFormat::RGB16f;
     }
 
-    log::trace("Could nopt guess image format.");
+    log::trace("could not guess image format.");
     return ImageFormat::Unknown;
 }
 
@@ -137,7 +140,7 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const u32 mipmap_levels =
         config->generate_mipmap_levels ? calc_mipmap_levels(width, height) : 1;
     if (!data) {
-        log::warn("Could not load, reason: {}", stbi_failure_reason());
+        log::warn("could not load, reason: {}", stbi_failure_reason());
     }
     const usize data_size = width * height * channels;
 
@@ -224,10 +227,8 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
 
     ctx.device().resource_submit([&](ResourceCommandRecorder& resource) {
         for (u32 i = 0; i < faces.size(); i++) {
-            auto& [key, databuffer ]= faces[i];
-            resource.upload_to_image(
-                image.handle(), std::span(databuffer), i
-            );
+            auto& [key, databuffer] = faces[i];
+            resource.upload_to_image(image.handle(), std::span(databuffer), i);
         }
     });
 

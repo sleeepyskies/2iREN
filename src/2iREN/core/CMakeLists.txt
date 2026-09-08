@@ -1,3 +1,3 @@
 target_sources(2iREN PRIVATE
-
+    context.cpp
 )

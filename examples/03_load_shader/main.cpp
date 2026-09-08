@@ -1,10 +1,10 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/shader.hpp"
-#include "2iREN/context.hpp"
+#include "2iREN/core/context.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/swapchain.hpp"
-#include "2iREN/window.hpp"
+#include "2iREN/window/window.hpp"
 
 using namespace siren;
 
@@ -20,14 +20,20 @@ const ByteBuffer vertices{
 };
 
 int main() {
-    const auto ctx =
-        Context::create({.debug = true, .level = log::Level::Trace, .backend = Backend::Auto});
-    auto window       = ctx.create_window({.title = "Example 03"});
-    const auto device = ctx.create_device();
+    const auto ctx    = Context::make({
+        .debug = true,
+        .level = log::Level::Trace,
+    });
+    auto window       = ctx.make_window({.title = "Example 03"});
+    const auto device = ctx.make_device();
     AssetServer server{*device};
 
     const auto swapchain = device->create_swapchain(
-        {.label = std::nullopt, .vsync = true, .extent = window.extent(), .window = &window}
+        window,
+        {
+            .label = std::nullopt,
+            .vsync = true,
+        }
     );
 
     const auto buffer = device->create_buffer({

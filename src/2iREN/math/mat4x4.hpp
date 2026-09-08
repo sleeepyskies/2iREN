@@ -6,7 +6,7 @@
 #include <span>
 #include <type_traits>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/math/angle.hpp"
 #include "2iREN/math/bounded.hpp"
 #include "2iREN/math/vec3.hpp"
@@ -40,7 +40,7 @@ struct Mat4x4 {
 
     Elements elements;
 
-    constexpr explicit Mat4x4() : Mat4x4(IDENTITY()) {}
+    constexpr explicit Mat4x4() : Mat4x4(IDENTITY()) { }
     constexpr explicit Mat4x4(Type value) :
         elements(
             {value,
@@ -59,8 +59,8 @@ struct Mat4x4 {
              value,
              value,
              value}
-        ) {}
-    constexpr explicit Mat4x4(const Elements& elements) : elements(elements) {}
+        ) { }
+    constexpr explicit Mat4x4(const Elements& elements) : elements(elements) { }
     constexpr explicit Mat4x4(const Column c0, const Column c1, const Column c2, const Column c3) :
         elements(
             {c0[0],
@@ -79,7 +79,7 @@ struct Mat4x4 {
              c3[1],
              c3[2],
              c3[3]}
-        ) {}
+        ) { }
 
     [[nodiscard]]
     static constexpr auto make(const Type* ptr) -> Mat4x4 {

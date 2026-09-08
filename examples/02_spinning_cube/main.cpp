@@ -1,4 +1,4 @@
-#include "2iREN/context.hpp"
+#include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/layout.hpp"
@@ -8,7 +8,7 @@
 #include "2iREN/math/extent.hpp"
 #include "2iREN/math/mat4x4.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
-#include "2iREN/window.hpp"
+#include "2iREN/window/window.hpp"
 
 using namespace siren;
 
@@ -77,17 +77,20 @@ const ByteBuffer indices = [] {
 
 int main() {
     // init siren
-    const auto ctx =
-        Context::create({.debug = true, .level = log::Level::Trace, .backend = Backend::Auto});
-    auto window = ctx.create_window({.title = "Example 02"});
-
-    const auto device    = ctx.create_device();
-    const auto swapchain = device->create_swapchain({
-        .label  = std::nullopt,
-        .vsync  = true,
-        .extent = window.extent(),
-        .window = &window,
+    const auto ctx = Context::make({
+        .debug = true,
+        .level = log::Level::Trace,
     });
+    auto window    = ctx.make_window({.title = "Example 02"});
+
+    const auto device    = ctx.make_device();
+    const auto swapchain = device->create_swapchain(
+        window,
+        {
+            .label = std::nullopt,
+            .vsync = true,
+        }
+    );
 
     const auto vertex_buffer  = device->create_buffer({
         .label = "cube_buffer",
@@ -153,9 +156,8 @@ int main() {
             Mat4x4f::IDENTITY(), Degrees{count * 0.1f}.to_radians(), Vec3f{0.5f, 1.0f, 0.0f}
         );
         const auto view = Mat4x4f::translate(Mat4x4f::IDENTITY(), Vec3f{0.0f, 0.0f, -2.0f});
-        const auto proj = Mat4x4f::perspective(
-            Degrees{45}.to_radians(), (f32)window.width() / (f32)window.height(), 0.1f, 10.f
-        );
+        const auto proj =
+            Mat4x4f::perspective(Degrees{45}.to_radians(), window.aspect(), 0.1f, 10.f);
         const UboData ubodata{proj * view * model};
         ByteBuffer ubo{ubodata};
 

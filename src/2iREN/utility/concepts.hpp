@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 
 namespace siren {
 

@@ -2,12 +2,7 @@
 
 #include <cmath>
 
-#include "2iREN/base.hpp"
-#include "2iREN/input/input.hpp"
-#include "2iREN/math/angle.hpp"
-#include "2iREN/math/bounded.hpp"
-#include "2iREN/math/point.hpp"
-#include "2iREN/math/vec3.hpp"
+#include "2iREN/window/input.hpp"
 
 namespace siren {
 
@@ -18,17 +13,33 @@ Camera::Camera(const CameraDescriptor& descriptor) :
     update_vectors();
 }
 
-auto Camera::position() const noexcept -> Point3f { return m_position; }
+auto Camera::position() const noexcept -> Point3f {
+    return m_position;
+}
 
-auto Camera::front() const noexcept -> Vec3f { return m_front; }
-auto Camera::right() const noexcept -> Vec3f { return m_right; }
-auto Camera::up() const noexcept -> Vec3f { return m_up; }
+auto Camera::front() const noexcept -> Vec3f {
+    return m_front;
+}
+auto Camera::right() const noexcept -> Vec3f {
+    return m_right;
+}
+auto Camera::up() const noexcept -> Vec3f {
+    return m_up;
+}
 
-auto Camera::yaw() const noexcept -> Degrees { return m_yaw; }
-auto Camera::pitch() const noexcept -> Pitch { return m_pitch; }
+auto Camera::yaw() const noexcept -> Degrees {
+    return m_yaw;
+}
+auto Camera::pitch() const noexcept -> Pitch {
+    return m_pitch;
+}
 
-auto Camera::fov() const noexcept -> Fov { return m_fov; }
-auto Camera::aspect() const noexcept -> NonZeroPositiveF32 { return m_aspect; }
+auto Camera::fov() const noexcept -> Fov {
+    return m_fov;
+}
+auto Camera::aspect() const noexcept -> NonZeroPositiveF32 {
+    return m_aspect;
+}
 
 auto Camera::projection_view() const noexcept -> Mat4x4f {
     const auto perspective =
@@ -59,7 +70,9 @@ auto Camera::lookat(const Point3f at) noexcept -> void {
     update_vectors();
 }
 
-auto Camera::set_position(const Point3f position) noexcept -> void { m_position = position; }
+auto Camera::set_position(const Point3f position) noexcept -> void {
+    m_position = position;
+}
 
 auto Camera::set_yaw(const Degrees yaw) noexcept -> void {
     m_yaw = yaw;
@@ -71,7 +84,9 @@ auto Camera::set_pitch(const Pitch pitch) noexcept -> void {
     update_vectors();
 }
 
-auto Camera::set_aspect(const NonZeroPositiveF32 aspect) noexcept -> void { m_aspect = aspect; }
+auto Camera::set_aspect(const NonZeroPositiveF32 aspect) noexcept -> void {
+    m_aspect = aspect;
+}
 
 auto Camera::update_vectors() noexcept -> void {
     const auto yaw   = m_yaw.to_radians();
@@ -89,7 +104,7 @@ auto Camera::update_vectors() noexcept -> void {
 }
 
 CameraController::CameraController(const PositiveF32 speed, const PositiveF32 sensitivity) :
-    m_speed(speed), m_sensitivity(sensitivity) {}
+    m_speed(speed), m_sensitivity(sensitivity) { }
 
 auto CameraController::process_movement(Camera& camera, KeyInput& keys, const f32 delta) const
     -> void {
@@ -128,19 +143,18 @@ auto CameraController::process_movement(Camera& camera, KeyInput& keys, const f3
 }
 
 auto CameraController::process_look(Camera& camera, siren::Input& input) const -> void {
-    auto& mousemovement = input.movement();
-    auto& mousebuttons  = input.mouse();
+    auto& mouse = input.mouse();
 
-    if (mousebuttons.just_pressed(Mouse::Left)) {
+    if (mouse.just_pressed(Mouse::Left)) {
         input.set_cursor_mode(CursorMode::Locked);
     }
 
-    if (mousebuttons.just_released(Mouse::Left)) {
+    if (mouse.just_released(Mouse::Left)) {
         input.set_cursor_mode(CursorMode::Visible);
     }
 
-    if (mousebuttons.pressed(Mouse::Left)) {
-        const auto offset = mousemovement.mouse_delta();
+    if (mouse.pressed(Mouse::Left)) {
+        const auto offset = mouse.mouse_delta();
         camera.set_yaw(Degrees{camera.yaw().value + offset.x * m_sensitivity.get()});
         camera.set_pitch(Degrees{camera.pitch().get().value - offset.y * m_sensitivity.get()});
     }

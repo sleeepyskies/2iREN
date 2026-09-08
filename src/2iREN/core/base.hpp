@@ -9,15 +9,6 @@ namespace siren {
 /** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
 #define UNIMPLEMENTED() PANIC("Not implemented")
 
-/**
- * @brief The backend to initialize 2iREN with.
- */
-enum class Backend {
-    Auto,
-    OpenGL,
-    Metal,
-};
-
 /** @brief An unsigned 8-bit integer, aka a byte */
 using u8 = std::uint8_t;
 /** @brief An unsigned 16-bit integer */
@@ -49,7 +40,9 @@ using usize = std::size_t;
  * @param end The exclusive end point of the range.
  * @return A range from [0, end).
  */
-constexpr auto range(const usize end) { return std::views::iota(0u, end); }
+constexpr auto range(const usize end) {
+    return std::views::iota(0u, end);
+}
 
 /**
  * @brief Creates an iterable range.
@@ -57,7 +50,9 @@ constexpr auto range(const usize end) { return std::views::iota(0u, end); }
  * @param end The exclusive end point of the range.
  * @return A range from [start, end).
  */
-constexpr auto range(const usize start, const usize end) { return std::views::iota(start, end); }
+constexpr auto range(const usize start, const usize end) {
+    return std::views::iota(start, end);
+}
 
 /**
  * Aligns the provided size parameter according to the alignment parameter.

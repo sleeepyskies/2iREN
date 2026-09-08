@@ -3,7 +3,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/render_target.hpp"
@@ -339,7 +339,10 @@ public:
      * @param size The size of the sub range to bind.
      */
     auto bind_uniform_buffer_range(
-        const BufferHandle buffer, const u32 slot, const usize offset, const usize size
+        const BufferHandle buffer,
+        const u32 slot,
+        const usize offset,
+        const usize size
     ) noexcept -> void;
 
     /**
@@ -356,7 +359,9 @@ public:
      * @param slot The slot to bind to.
      */
     auto bind_sampled_image(
-        const ImageHandle image, const SamplerHandle sampler, const u32 slot
+        const ImageHandle image,
+        const SamplerHandle sampler,
+        const u32 slot
     ) noexcept -> void;
 
     /**
@@ -366,7 +371,9 @@ public:
      * @param slot The slot to bind to.
      */
     auto bind_storage_image(
-        const ImageHandle image, const AccessKind access, const u32 slot
+        const ImageHandle image,
+        const AccessKind access,
+        const u32 slot
     ) noexcept -> void;
 
     /**

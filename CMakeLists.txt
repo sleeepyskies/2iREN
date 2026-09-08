@@ -28,14 +28,9 @@ add_subdirectory(src/2iREN/concurrency)
 add_subdirectory(src/2iREN/core)
 add_subdirectory(src/2iREN/graphics)
 add_subdirectory(src/2iREN/impl)
-add_subdirectory(src/2iREN/input)
+add_subdirectory(src/2iREN/window)
 add_subdirectory(src/2iREN/scene)
 add_subdirectory(src/2iREN/utility)
-
-target_sources(2iREN PRIVATE
-    src/2iREN/context.cpp
-    src/2iREN/window.cpp
-)
 
 target_include_directories(2iREN PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -80,7 +75,7 @@ if(SIREN_BUILD_EXAMPLES)
     add_subdirectory(examples/01_hello_triangle)
     add_subdirectory(examples/02_spinning_cube)
     add_subdirectory(examples/03_load_shader)
-    add_subdirectory(examples/04_load_gltf)
+    add_subdirectory(examples/04_tetris)
 endif()
 
 if(SIREN_BUILD_TESTS)

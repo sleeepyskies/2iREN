@@ -3,8 +3,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "2iREN/base.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/concepts.hpp"
 
 // TODO: this is not done, need to add op overloads and check values

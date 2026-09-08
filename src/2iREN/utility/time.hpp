@@ -1,8 +1,8 @@
 #pragma once
 
-#include "2iREN/base.hpp"
-
 #include <chrono>
+
+#include "2iREN/core/base.hpp"
 
 /// @brief A collection of time related utilities.
 namespace siren::time {

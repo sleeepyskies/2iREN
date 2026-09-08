@@ -1,12 +1,12 @@
 #pragma once
 
-#include "2iREN/base.hpp"
-#include "2iREN/input/input.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/math/angle.hpp"
 #include "2iREN/math/bounded.hpp"
 #include "2iREN/math/mat4x4.hpp"
-#include "2iREN/math/point.hpp"
+#include "2iREN/math/point3.hpp"
 #include "2iREN/math/vec3.hpp"
+#include "2iREN/window/input.hpp"
 
 namespace siren {
 

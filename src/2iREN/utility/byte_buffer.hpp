@@ -3,8 +3,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "2iREN/base.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/concepts.hpp"
 
 namespace siren {
@@ -62,7 +62,9 @@ public:
     }
 
     /// @brief Reserves memory in bytes.
-    auto reserve_bytes(const usize size) noexcept -> void { m_data.reserve(size); }
+    auto reserve_bytes(const usize size) noexcept -> void {
+        m_data.reserve(size);
+    }
 
     /// @brief Reserves memory for N elements of type T.
     template <typename T>
@@ -71,7 +73,9 @@ public:
     }
 
     /// @brief Clears the buffer contents.
-    auto clear() -> void { m_data.clear(); }
+    auto clear() -> void {
+        m_data.clear();
+    }
 
     /// @brief Appends an object as raw bytes.
     /// @tparam T The type of the item to serialize, must be trivially copyable.

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 
 namespace siren {
 /**
@@ -37,8 +37,10 @@ struct DataType {
         Float64,
     } value;
 
-    constexpr DataType(const Value v) : value(v) {}
-    constexpr operator Value() const { return value; }
+    constexpr DataType(const Value v) : value(v) { }
+    constexpr operator Value() const {
+        return value;
+    }
 
     /** @brief Returns the size of this DataType instance in bytes. */
     [[nodiscard]] constexpr auto size() const -> usize;

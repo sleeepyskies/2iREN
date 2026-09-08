@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "2iREN/concurrency/mutex.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
@@ -156,10 +157,10 @@ struct RenderResourceState {
     mutable FramebufferCache framebuffer_cache{image_table};
 };
 
-class GlDevice final : public Device {
+class OpenGLDevice final : public Device {
 public:
-    explicit GlDevice();
-    ~GlDevice() override;
+    explicit OpenGLDevice();
+    ~OpenGLDevice() override;
 
     auto wait_idle() const noexcept -> void override;
 
@@ -175,7 +176,7 @@ public:
     [[nodiscard]] auto create_shader(const ShaderDescriptor& descriptor) -> Shader override;
     auto destroy_shader(ShaderHandle handle) -> void override;
 
-    [[nodiscard]] auto create_swapchain(const SwapchainDescriptor& descriptor)
+    [[nodiscard]] auto create_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain override;
     auto destroy_swapchain(SwapchainHandle handle) -> void override;
 

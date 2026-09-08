@@ -6,8 +6,8 @@
 #include <string>
 #include <type_traits>
 
-#include "2iREN/base.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/utility/type_info.hpp"
 
 namespace siren {
@@ -26,18 +26,18 @@ struct Vec3 {
     using Type = std::remove_cvref_t<T>;
     Type x, y, z;
 
-    constexpr Vec3() : Vec3(Type{}) {}
-    constexpr explicit Vec3(const Type xyz) : x(xyz), y(xyz), z(xyz) {}
-    constexpr Vec3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) {}
+    constexpr Vec3() : Vec3(Type{}) { }
+    constexpr explicit Vec3(const Type xyz) : x(xyz), y(xyz), z(xyz) { }
+    constexpr Vec3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) { }
 
     template <typename S>
         requires(std::is_convertible_v<S, Type>)
-    constexpr explicit Vec3(const S xyz) : Vec3(static_cast<Type>(xyz)) {}
+    constexpr explicit Vec3(const S xyz) : Vec3(static_cast<Type>(xyz)) { }
 
     template <typename S>
         requires(std::is_convertible_v<S, Type>)
     constexpr Vec3(const S x, const S y, const S z) :
-        Vec3(static_cast<Type>(x), static_cast<Type>(y), static_cast<Type>(z)) {}
+        Vec3(static_cast<Type>(x), static_cast<Type>(y), static_cast<Type>(z)) { }
 
     [[nodiscard]]
     static constexpr auto make(const Type* ptr) -> Vec3 {

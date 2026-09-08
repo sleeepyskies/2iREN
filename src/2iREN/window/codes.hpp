@@ -1,25 +1,8 @@
 #pragma once
 
 namespace siren {
-/** @brief Represents the state of modifier keys during a key press. */
-struct Modifiers {
-    /** @brief Either the left or right shift key. */
-    bool shift : 1;
-    /** @brief Either the left or control key. */
-    bool control : 1;
-    /** @brief Either the left or alt key. */
-    bool alt : 1;
-    /** @brief Either the windows ket or command key. */
-    bool super : 1;
-    /** @brief Caps lock is toggled on. */
-    bool caps_lock : 1;
-    /** @brief Num lock is toggled on. */
-    bool num_lock : 1;
-};
 
-/**
- * @brief All keyboard buttons.
- */
+/// @brief All keyboard buttons.
 enum class Key {
     // Basic
     Space = 0,
@@ -143,30 +126,22 @@ enum class Key {
     F25,
 
     KeyLast,
-    Max // Used for array sizing
+    Max,
 };
 
-/**
- * @brief Mouse buttons.
- */
+/// @brief Mouse buttons.
 enum class Mouse {
     Left = 0,
     Right,
     Middle,
-    Max, // Do not use
+    Max,
 };
 
-/**
- * @brief Cursor behaviour types.
- */
+/// @brief Cursor behaviour types.
 enum class CursorMode {
-    /** @brief Indicates some invalid state. May occur when querying too soon etc. */
     Invalid = 0,
-    /** @brief Regular visible cursor. */
     Visible,
-    /** @brief Regular visible cursor. */
     Invisible,
-    /** @brief Cursor is invisible and cannot leave the window and is centered each frame. */
     Locked,
 };
 

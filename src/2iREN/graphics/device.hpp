@@ -150,8 +150,10 @@ public:
     virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void = 0;
 
     /** @brief Creates and returns a new @ref Swapchain given a @ref SwapchainDescriptor. */
-    [[nodiscard]] virtual auto create_swapchain(const SwapchainDescriptor& descriptor)
-        -> Swapchain = 0;
+    [[nodiscard]] virtual auto create_swapchain(
+        const Window& window,
+        const SwapchainDescriptor& descriptor
+    ) -> Swapchain = 0;
     /** @brief Queues the given @ref Swapchain for deletion. */
     virtual auto destroy_swapchain(SwapchainHandle handle) -> void = 0;
 

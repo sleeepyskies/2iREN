@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
 

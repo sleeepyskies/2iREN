@@ -10,14 +10,16 @@ template <typename T>
 concept HasToString = requires(T t) {
     { t.to_string() } -> std::convertible_to<std::string_view>;
 } || requires(T t) {
-    { t.to_string() } -> std::convertible_to<std::string_view>;
+    { to_string(t) } -> std::convertible_to<std::string_view>;
 };
 
 } // namespace siren
 
 template <siren::HasToString T>
 struct std::formatter<T> {
-    constexpr auto parse(format_parse_context& ctx) const { return ctx.begin(); }
+    constexpr auto parse(format_parse_context& ctx) const {
+        return ctx.begin();
+    }
 
     template <typename FormatContext>
     auto format(const T& t, FormatContext& ctx) const {

@@ -7,7 +7,7 @@
 #include "2iREN/asset/fwd.hpp"
 #include "2iREN/asset/material.hpp"
 #include "2iREN/asset/mesh.hpp"
-#include "2iREN/base.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/math/mat4x4.hpp"
 
 namespace siren {
@@ -31,8 +31,10 @@ struct GltfNode : Asset {
 /** @brief A collection of nodes. Similar to a prefab. */
 struct GltfScene : Asset {
     GltfScene(
-        const std::string& name, const usize index, std::vector<StrongHandle<GltfNode>>&& root_nodes
-    ) : name(name), index(index), root_nodes(std::move(root_nodes)) {}
+        const std::string& name,
+        const usize index,
+        std::vector<StrongHandle<GltfNode>>&& root_nodes
+    ) : name(name), index(index), root_nodes(std::move(root_nodes)) { }
 
     /** @brief The name of the scene. */
     std::string name;
@@ -52,7 +54,7 @@ struct Gltf : Asset {
         std::vector<StrongHandle<GltfNode>>&& nodes
     ) :
         scenes(std::move(scenes)), default_scene(std::move(default_scene)),
-        meshes(std::move(meshes)), materials(std::move(materials)), nodes(std::move(nodes)) {}
+        meshes(std::move(meshes)), materials(std::move(materials)), nodes(std::move(nodes)) { }
 
     /** @brief All scenes loaded from the gltf. */
     std::vector<StrongHandle<GltfScene>> scenes;
@@ -83,7 +85,9 @@ struct LoaderTraits<Gltf> {
 class GltfLoader final : public AssetLoader<Gltf> {
 public:
     auto load(LoadContext&& ctx, std::optional<ConfigType> config) const -> AssetLoadError override;
-    auto extensions() const -> std::vector<std::string_view> override { return {"glb", "gltf"}; }
+    auto extensions() const -> std::vector<std::string_view> override {
+        return {"glb", "gltf"};
+    }
 };
 
 } // namespace siren

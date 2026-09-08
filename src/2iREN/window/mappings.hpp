@@ -2,9 +2,9 @@
 
 #include <GLFW/glfw3.h>
 
-#include "2iREN/base.hpp"
 #include "2iREN/core/assert.hpp"
-#include "codes.hpp"
+#include "2iREN/core/base.hpp"
+#include "2iREN/window/codes.hpp"
 
 namespace siren {
 
