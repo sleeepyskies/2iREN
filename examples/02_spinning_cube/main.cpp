@@ -79,9 +79,9 @@ int main() {
     // init siren
     const auto ctx =
         Context::create({.debug = true, .level = log::Level::Trace, .backend = Backend::Auto});
-    auto window = ctx.create_window({});
+    auto window = ctx.create_window({.title = "Example 02"});
 
-    const auto device    = ctx.create_device({.window = window});
+    const auto device    = ctx.create_device();
     const auto swapchain = device->create_swapchain({
         .label  = std::nullopt,
         .vsync  = true,

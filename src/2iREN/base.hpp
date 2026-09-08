@@ -3,15 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
-#include <stdfloat>
 
 namespace siren {
-
-#ifndef SIREN_SINGLE_THREADED
-#define SIREN_SINGLE_THREADED 0
-#endif
-
-inline constexpr bool SINGLE_THREADED = SIREN_SINGLE_THREADED;
 
 /** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
 #define UNIMPLEMENTED() PANIC("Not implemented")
@@ -20,10 +13,9 @@ inline constexpr bool SINGLE_THREADED = SIREN_SINGLE_THREADED;
  * @brief The backend to initialize 2iREN with.
  */
 enum class Backend {
-    /** @brief Let 2iREN handle selecting the best rendering API. */
     Auto,
-    /** @brief Use OpenGL 4.6. */
     OpenGL,
+    Metal,
 };
 
 /** @brief An unsigned 8-bit integer, aka a byte */

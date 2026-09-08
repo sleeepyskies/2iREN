@@ -13,3 +13,4 @@ target_sources(2iREN PRIVATE
 )
 
 add_subdirectory(backend/opengl)
+add_subdirectory(backend/metal)

@@ -1,32 +1,25 @@
 #include "context.hpp"
 
+#include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
 #include "2iREN/concurrency/thread_pool.hpp"
-#include "2iREN/graphics/backend/opengl/device.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/filesystem.hpp"
-#include "2iREN/utility/platform.hpp"
 #include "2iREN/utility/time.hpp"
 #include "2iREN/window.hpp"
+
+#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+#include "2iREN/graphics/backend/opengl/device.hpp"
+#elifdef SIREN_MACOS
+#include "2iREN/graphics/backend/metal/device.hpp"
+#endif
 
 #ifndef SIREN_ENGINE_ROOT
 #define SIREN_ENGINE_ROOT "."
 #endif
 
 namespace siren {
-static auto select_gl_backend() -> void {
-    log::info("opengl backend chosen.");
-    stbi_set_flip_vertically_on_load(true); // true only for
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-
-static auto create_gl_device() -> std::unique_ptr<Device> {
-    log::info("creating an OpenGL device.");
-    return std::make_unique<GlDevice>();
-}
 
 Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor) {
     log::init(descriptor.level);
@@ -38,35 +31,35 @@ Context::Context(const ContextDescriptor& descriptor) : m_descriptor(descriptor)
 
     time::initialize();
 
-    // select backend
+    // handle glfw setup
     switch (descriptor.backend) {
         case Backend::Auto: {
             log::info("Autoselecting a backend.");
-            if constexpr (platform::current == platform::Windows) {
-                m_descriptor.backend = Backend::OpenGL;
-                select_gl_backend();
-                break;
-            } else if constexpr (platform::current == platform::Linux) {
-                m_descriptor.backend = Backend::OpenGL;
-                select_gl_backend();
-                break;
-            } else {
-                PANIC("Unsupported platform");
-            }
+            #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            m_descriptor.backend = Backend::OpenGL;
+            #elifdef SIREN_MACOS
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+            #endif
         }
         case Backend::OpenGL: {
-            select_gl_backend();
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            break;
+        }
+        case Backend::Metal: {
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
             break;
         }
     }
 
-    // init async stuffs
     ThreadPool::init();
 
-    // init asset server
-
-    // init virtual filesystem
-    const auto engine_root = Path{SIREN_ENGINE_ROOT};
+    // mount 2iREN to virtual filesystem
+    const auto engine_root = Path{std::string{SIREN_ENGINE_ROOT}};
     FileSystem::mount("engine", engine_root);
 }
 
@@ -80,17 +73,26 @@ auto Context::create(const ContextDescriptor& descriptor) -> Context {
 }
 
 Context::~Context() {
-    if constexpr (!SINGLE_THREADED) {
-        ThreadPool::shutdown();
-    }
+    ThreadPool::shutdown();
 }
 
 auto Context::create_device() const -> std::unique_ptr<Device> {
     switch (m_descriptor.backend) {
         case Backend::OpenGL: {
-            return create_gl_device();
+            #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+            return std::make_unique<OpenGLDevice>();
+            #elifdef SIREN_MACOS
+            PANIC("cannot create an OpenGLDevice on apple environments.");
+            #endif
         }
-        default: UNREACHABLE();
+        case Backend::Metal: {
+            #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+            PANIC("cannot create a MetalDevice on non apple environments.");
+            #elifdef SIREN_MACOS
+            return std::make_unique<MetalDevice>();
+            #endif
+        }
+        default: PANIC("cannot create a device. no backend has been selected.");
     }
 }
 

@@ -6,7 +6,7 @@ class ConanApplication(ConanFile):
     name = "2iREN"
     version = "0.1.0"
     description = "A C++23 Graphics Framework"
-    topics = ("graphics", "rendering", "opengl")
+    topics = ("graphics", "rendering", "opengl", "metal")
 
     package_type = "static-library"
     settings = "os", "compiler", "build_type", "arch"
@@ -23,15 +23,32 @@ class ConanApplication(ConanFile):
 
     def requirements(self):
         self.requires("yaml-cpp/0.9.0")
-        self.requires("opengl/system")
-        self.requires("glfw/3.4", options={"with_wayland": False})
-        self.requires(
-            "glad/2.0.8",
-            options={
-                "gl_version": "4.6",
-                "gl_profile": "core",
-            },
-        )
+
+        if self.settings.os == "Macos":
+            self.requires("glfw/3.4")
+            self.requires("metal-cpp/26")
+
+        if self.settings.os == "Windows":
+            self.requires("opengl/system")
+            self.requires("glfw/3.4")
+            self.requires(
+                "glad/2.0.8",
+                options={
+                    "gl_version": "4.6",
+                    "gl_profile": "core",
+                },
+            )
+
+        if self.settings.os == "Linux":
+            self.requires("opengl/system")
+            self.requires("glfw/3.4", options={"with_wayland": False})
+            self.requires(
+                "glad/2.0.8",
+                options={
+                    "gl_version": "4.6",
+                    "gl_profile": "core",
+                },
+            )
 
     def build_requirements(self):
         self.test_requires("doctest/2.5.2")

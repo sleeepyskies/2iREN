@@ -8,8 +8,9 @@ Currently only OpenGL 4.6 is supported, but other APIs may be supported in the f
 ## Building 2iREN
 
 2iREN uses Conan for package management, as well as Just for running commands.
-
-To build 2iREN, make sure you have both of these installed.
+To build 2iREN, make sure you have both of these installed. Furthermore, 2iREN 
+requires gcc, as clang does not support some stdlib functionalities used in
+2iREN.
 
 After cloning the repository, first run:
 
@@ -32,7 +33,8 @@ To build the library.
 * **yaml-cpp**: Used for yaml file parsing.
 * **GLFW**: Windowing
 * **glad**: OpenGL loader
-* **OpenGL**: Graphics API.
+* **OpenGL**: Graphics API for Linux and Windows systems.
+* **Metal**: Graphics API for Apple systems.
 
 ## Running Tests
 

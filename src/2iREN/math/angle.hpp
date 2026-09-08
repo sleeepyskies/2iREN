@@ -2,6 +2,7 @@
 
 #include <format>
 #include <string>
+#include <numbers>
 
 #include "2iREN/base.hpp"
 

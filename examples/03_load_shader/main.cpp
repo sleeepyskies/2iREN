@@ -22,8 +22,8 @@ const ByteBuffer vertices{
 int main() {
     const auto ctx =
         Context::create({.debug = true, .level = log::Level::Trace, .backend = Backend::Auto});
-    auto window       = ctx.create_window({});
-    const auto device = ctx.create_device({.window = window});
+    auto window       = ctx.create_window({.title = "Example 03"});
+    const auto device = ctx.create_device();
     AssetServer server{*device};
 
     const auto swapchain = device->create_swapchain(

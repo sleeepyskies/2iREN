@@ -44,8 +44,8 @@ auto main() -> siren::i32 {
     const auto ctx = siren::Context::create(
         {.debug = true, .level = siren::log::Level::Trace, .backend = siren::Backend::Auto}
     );
-    auto window          = ctx.create_window({});
-    const auto device    = ctx.create_device({.window = window});
+    auto window          = ctx.create_window({.title = "Example 04"});
+    const auto device    = ctx.create_device();
     const auto swapchain = device->create_swapchain(
         {.label = std::nullopt, .vsync = true, .extent = window.extent(), .window = &window}
     );

@@ -1,6 +1,7 @@
 #include "texture.hpp"
 
 #include <algorithm>
+#include <ranges>
 #include <stb/stb_image.h>
 #include <yaml-cpp/yaml.h>
 
@@ -222,10 +223,10 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
     });
 
     ctx.device().resource_submit([&](ResourceCommandRecorder& resource) {
-        for (auto&& [index, pair] : std::views::enumerate(faces)) {
-            auto& [key, data_buffer] = pair;
+        for (u32 i = 0; i < faces.size(); i++) {
+            auto& [key, databuffer ]= faces[i];
             resource.upload_to_image(
-                image.handle(), std::span(data_buffer), static_cast<u32>(index)
+                image.handle(), std::span(databuffer), i
             );
         }
     });

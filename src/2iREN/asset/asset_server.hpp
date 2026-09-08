@@ -670,7 +670,7 @@ template <IsAsset A>
     });
 
     // todo: i think we should clean up this AssetInfo entry in the case where loading fails.
-    log::trace("Asset {} does not exist in cache, attempting to load from disk.", weak_handle);
+    log::trace("asset {} does not exist in cache, attempting to load from disk.", weak_handle);
     m_data.asset_infos.run_exclusive([weak_handle, path](auto& asset_infos) {
         asset_infos.emplace(
             path.hashed_string(),
@@ -690,7 +690,7 @@ template <IsAsset A>
     });
 
     // spawn new loading task
-    ThreadPool::get().spawn_detached(
+    ThreadPool::get().submit(
         [this, path, loader, weak_handle, config = std::move(config)] mutable {
             const auto result =
                 loader->load(LoadContext{*this, path, weak_handle, m_device}, std::move(config));

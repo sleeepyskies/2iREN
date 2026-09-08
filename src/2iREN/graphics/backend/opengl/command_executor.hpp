@@ -1,7 +1,7 @@
 #pragma once
 
 #include "2iREN/graphics/command_executor.hpp"
-#include "device.hpp"
+#include "2iREN/graphics/device.hpp"
 
 namespace siren {
 

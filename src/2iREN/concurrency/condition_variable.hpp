@@ -3,7 +3,7 @@
 #include <condition_variable>
 
 #include "2iREN/utility/concepts.hpp"
-#include "mutex.hpp"
+#include "2iREN/concurrency/mutex.hpp"
 
 namespace siren {
 

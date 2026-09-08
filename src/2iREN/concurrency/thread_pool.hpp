@@ -7,39 +7,17 @@
 #include <thread>
 #include <vector>
 
-#include "condition_variable.hpp"
-#include "mutex.hpp"
+#include "2iREN/core/assert.hpp"
+#include "2iREN/concurrency/condition_variable.hpp"
+#include "2iREN/concurrency/mutex.hpp"
 
 namespace siren {
 
-/// @todo: another pool for more idle background tasks? IOPool or something?
-
-/**
- * @class ThreadPool
- * @brief A worker pool for async task execution.
- * Manages a set of workers that handle incoming tasks.
- * Note that this should not be used for any GPU related
- * tasks, but rather CPU tasks only, @ref see GpuWorker.
- */
 class ThreadPool {
-    /**
-     * @brief Type erased internal task type. Handles calling the
-     * provided function with its arguments.
-     */
-    using Task = std::move_only_function<void()>;
+    using Job = std::function<void()>;
 
 public:
-    /**
-     * @brief Creates a new threadpool.
-     * @param thread_count The number of threads to create.
-     * A negative number creates hardware_threads - x
-     * threads, with a minimum of 1.
-     *
-     * @note If `siren::single_threaded` is defined, no threads
-     * will be created and all spawned tasks will be executed
-     * on the main thread.
-     */
-    explicit ThreadPool(i32 thread_count);
+    explicit ThreadPool(u32 workercount);
     ~ThreadPool();
 
     ThreadPool(const ThreadPool&)            = delete;
@@ -47,59 +25,23 @@ public:
     ThreadPool& operator=(const ThreadPool&) = delete;
     ThreadPool& operator=(ThreadPool&&)      = delete;
 
-    /**
-     * @brief Retrieves the singleton instance of this ThreadPool.
-     * @warning Crashes if ThreadPool::init() has not been called yet.
-     */
+    /// @brief Retrieves the singleton instance of this ThreadPool.
     static auto get() -> ThreadPool& {
+        ASSERT(s_instance != nullptr, "must call ThreadPool::init() before calling ThreadPool::get().");
         return *s_instance;
     }
 
-    /** @brief Initializes the global singleton instance. */
+    /// @brief Initializes the global singleton instance.
     static auto init(
         const i32 thread_count = static_cast<i32>(std::jthread::hardware_concurrency())
     ) -> void {
         s_instance = new ThreadPool(thread_count);
     }
 
-    /** @brief Handles cleanup of the singleton instance. */
+    /// @brief Handles cleanup of the singleton instance.
     static auto shutdown() -> void {
         delete s_instance;
         s_instance = nullptr;
-    }
-
-    /**
-     * @brief Runs the provided function in the background and returns a future to
-     * read its value.
-     * @tparam Func The function type.
-     * @tparam Args The argument types of the function.
-     * @param func The function to run.
-     * @param args The arguments to provide to the function.
-     * @return A future holding the return value of the asynchronous task.
-     */
-    template <typename Func, typename... Args>
-        requires(std::is_invocable_v<Func, Args...>)
-    [[nodiscard]]
-    auto spawn(Func&& func, Args&&... args) -> std::future<std::invoke_result_t<Func, Args...>> {
-        using ReturnType = std::invoke_result_t<Func, Args...>;
-
-        std::packaged_task<ReturnType()> packaged_task{
-            std::bind(std::forward<Func>(func), std::forward<Args>(args)...)
-        };
-
-        auto future = packaged_task.get_future();
-
-        if constexpr (SINGLE_THREADED) {
-            packaged_task();
-        } else {
-            // unlock before notifying so the thread doesn't have to wait
-            m_inner.run([packaged_task = std::move(packaged_task)](Inner& inner) mutable {
-                inner.tasks.push([t = std::move(packaged_task)] mutable { t(); });
-            });
-            m_condition.notify_one();
-        }
-
-        return future;
     }
 
     /**
@@ -112,35 +54,35 @@ public:
      * @param args The arguments to provide to the function.
      */
     template <typename Func, typename... Args>
-        requires std::is_invocable_v<Func, Args...>
-    auto spawn_detached(Func&& func, Args&&... args) -> void {
-        Task task = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
+        requires(std::is_invocable_v<Func, Args...>)
+    auto submit(Func&& func, Args&&... args) -> void {
+        auto work = std::bind(
+            std::forward<Func>(func),
+            std::forward<Args>(args)...
+        );
 
-        if constexpr (SINGLE_THREADED) {
-            // runs immediately on this thread.
-            task();
-        } else {
-            // unlock before notifying so the thread doesn't have to wait
-            m_inner.run([&task](Inner& inner) { inner.tasks.push(std::move(task)); });
-            m_condition.notify_one();
-        }
+        auto job = std::make_shared<std::packaged_task<decltype(func(args...))()>>(std::move(work));
+
+        m_inner.run([job](Inner& inner) { 
+            inner.jobs.push([job] { 
+                (*job)(); 
+            }); 
+        });
+        m_cv.notify_one();
     }
 
 private:
-    /** @brief Main worker loop for a thread. */
-    void run();
+    void worker();
 
-    /** @brief Internal data of ThreadPool. */
     struct Inner {
-        std::vector<std::jthread> threads; ///< @brief The pool of threads.
-        std::queue<Task> tasks;            ///< @brief All tasks waiting for a worker.
+        std::vector<std::jthread> threads;
+        std::queue<Job> jobs;          
     };
 
-    std::atomic_bool m_terminate = false; ///< @brief Flag indicating pool shutdown.
-    ConditionVariable m_condition;        ///< @brief Used to wake up workers for a new task.
-    Mutex<Inner> m_inner;                 ///< @brief Internal data locked behind a @ref Mutex.
+    std::atomic_bool m_terminate = false; 
+    ConditionVariable m_cv;
+    Mutex<Inner> m_inner;
 
-    /** @brief The single static instance. */
     static inline ThreadPool* s_instance;
 };
 

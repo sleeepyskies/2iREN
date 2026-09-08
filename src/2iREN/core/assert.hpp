@@ -5,10 +5,15 @@
 #include <iostream>
 #include <print>
 #include <source_location>
-#include <stacktrace>
 #include <string_view>
 #include <thread>
 #include <utility>
+#include <version>
+
+#ifdef __cpp_lib_stacktrace
+#include <stacktrace>
+#endif
+
 
 namespace siren::impl {
 
@@ -48,9 +53,11 @@ namespace siren::impl {
         std::println(std::cerr, "message: {}", message);
     }
 
+    #ifdef __cpp_lib_stacktrace
     if (const auto trace = std::stacktrace::current(1); !trace.empty()) {
         std::println(std::cerr, "stack trace:\n{}", trace);
     }
+    #endif 
 
     std::abort();
 }
