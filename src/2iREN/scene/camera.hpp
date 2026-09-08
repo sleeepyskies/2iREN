@@ -70,7 +70,7 @@ class CameraController {
 public:
     CameraController(const PositiveF32 speed, const PositiveF32 sensitivity);
 
-    auto process_movement(Camera& camera, KeyInput& keys, const f32 delta) const -> void;
+    auto process_movement(Camera& camera, const KeyboardState& keys, const f32 delta) const -> void;
     auto process_look(Camera& camera, Input& input) const -> void;
 
 private:

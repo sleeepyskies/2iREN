@@ -129,6 +129,10 @@ auto Window::input() const noexcept -> const Input& {
     return m_input;
 }
 
+auto Window::input() noexcept -> Input& {
+    return m_input;
+}
+
 auto Window::set_title(const std::string& title) -> void {
     glfwSetWindowTitle(m_handle, title.c_str());
     log::trace("Window title set to {}", title);

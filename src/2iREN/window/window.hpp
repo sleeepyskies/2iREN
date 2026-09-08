@@ -94,6 +94,10 @@ public:
     [[nodiscard]]
     auto input() const noexcept -> const Input&;
 
+    /// @brief Returns the current input state.
+    [[nodiscard]]
+    auto input() noexcept -> Input&;
+
     /// @brief Sets the title of the window.
     auto set_title(const std::string& title) -> void;
 

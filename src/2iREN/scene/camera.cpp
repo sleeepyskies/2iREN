@@ -106,8 +106,11 @@ auto Camera::update_vectors() noexcept -> void {
 CameraController::CameraController(const PositiveF32 speed, const PositiveF32 sensitivity) :
     m_speed(speed), m_sensitivity(sensitivity) { }
 
-auto CameraController::process_movement(Camera& camera, KeyInput& keys, const f32 delta) const
-    -> void {
+auto CameraController::process_movement(
+    Camera& camera,
+    const KeyboardState& keys,
+    const f32 delta
+) const -> void {
 
     auto movement = Vec3f{};
 

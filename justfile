@@ -43,3 +43,6 @@ example-cube: (_example "spinning_cube" "./build/build/Release/examples/02_spinn
 # Runs the load_shader example.
 example-shader: (_example "load_shader" "./build/build/Release/examples/03_load_shader/load_shader")
 
+# Runs the tetris example.
+example-tetris: (_example "load_shader" "./build/build/Release/examples/04_tetris/tetris")
+
