@@ -34,8 +34,6 @@ public:
     [[nodiscard]] auto create_query(const QueryDescriptor& descriptor) -> Query override;
     auto destroy_query(QueryHandle handle) -> void override;
 
-    auto flush_delete_queue() -> void override;
-
     [[nodiscard]] auto record_resource_commands() const -> ResourceCommandRecorder override;
     [[nodiscard]] auto record_render_commands() const -> RenderCommandRecorder override;
     auto submit(ResourceCommandBuffer&& command_buffer) const -> void override;

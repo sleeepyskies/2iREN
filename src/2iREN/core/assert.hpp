@@ -53,11 +53,11 @@ namespace siren::impl {
         std::println(std::cerr, "message: {}", message);
     }
 
-    #ifdef __cpp_lib_stacktrace
+#ifdef __cpp_lib_stacktrace
     if (const auto trace = std::stacktrace::current(1); !trace.empty()) {
         std::println(std::cerr, "stack trace:\n{}", trace);
     }
-    #endif 
+#endif
 
     std::abort();
 }
