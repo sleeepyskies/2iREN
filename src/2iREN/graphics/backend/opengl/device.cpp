@@ -683,6 +683,13 @@ auto OpenGLDevice::query_result(const QueryHandle handle) const -> u64 {
     return result;
 }
 
+auto OpenGLDevice::query_available(const QueryHandle handle) const -> bool {
+    const auto apihandle = m_state.query_table.fetch(handle);
+    u64 result           = 0;
+    glGetQueryObjectui64v(apihandle, GL_QUERY_RESULT_AVAILABLE, &result);
+    return result == GL_TRUE;
+}
+
 auto OpenGLDevice::begin_conditional_render(const QueryHandle query) const -> void {
     const auto apihandle = m_state.query_table.fetch(query);
     glBeginConditionalRender(apihandle, GL_QUERY_WAIT);

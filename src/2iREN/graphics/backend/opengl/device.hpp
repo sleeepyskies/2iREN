@@ -220,6 +220,8 @@ public:
 
     auto query_result(QueryHandle handle) const -> u64 override;
 
+    auto query_available(QueryHandle handle) const -> bool override;
+
     auto begin_conditional_render(QueryHandle query) const -> void override;
 
     auto end_conditional_render() const -> void override;

@@ -157,6 +157,10 @@ public:
     [[nodiscard]]
     virtual auto query_result(QueryHandle handle) const -> u64 = 0;
 
+    /// @brief Checks if a query objects result is available.
+    [[nodiscard]]
+    virtual auto query_available(QueryHandle handle) const -> bool = 0;
+
     /// @brief Begins a conditionally rendered scope. Any draw calls between
     /// this and end_conditional_render may be omitted based on the query object.
     virtual auto begin_conditional_render(QueryHandle query) const -> void = 0;
