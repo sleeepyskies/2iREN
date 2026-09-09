@@ -3,6 +3,7 @@
 #include <cstring>
 #include <glad/gl.h>
 #include <optional>
+#include <utility>
 
 #include "2iREN/graphics/backend/opengl/command_executor.hpp"
 #include "2iREN/graphics/backend/opengl/util.hpp"
@@ -949,6 +950,6 @@ auto OpenGLDevice::limits() const -> const Limits& {
 }
 
 auto OpenGLDevice::statistics() const -> Statistics {
-    return m_statistics;
+    return std::exchange(m_statistics, {});
 }
 } // namespace siren
