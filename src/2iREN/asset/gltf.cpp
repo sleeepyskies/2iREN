@@ -211,7 +211,9 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
             auto image_data =
                 stbi_load_from_memory(bytes, size, &width, &height, &channels, STBI_default);
-            DEFER(stbi_image_free(image_data));
+            DEFER {
+                stbi_image_free(image_data);
+            };
 
             if (!image_data) {
                 return std::unexpected(AssetErrorCode::AssetCorrupted);
