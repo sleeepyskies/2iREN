@@ -892,11 +892,10 @@ auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle des
     const auto& source_desc      = m_state.image_table.details(source).descriptor;
     const auto& destination_desc = m_state.image_table.details(destination).descriptor;
 
-    if (destination_desc.format != source_desc.format) {
+    if (source_desc.format.num_components() != destination_desc.format.num_components()) {
         log::warn(
-            "issue with requested image blit, source and destination image formats do not match "
-            "({} != {}). "
-            "ignoring call.",
+            "issue with requested image blit, source and destination image formats do not have the "
+            "same number of components ({} != {}).",
             destination_desc.format,
             source_desc.format
         );

@@ -41,10 +41,12 @@ public:
         Depth32f,
     } value;
 
-    constexpr ImageFormat(const Value v) : value(v) {}
-    constexpr ImageFormat() : value(Unknown) {}
+    constexpr ImageFormat(const Value v) : value(v) { }
+    constexpr ImageFormat() : value(Unknown) { }
 
-    constexpr operator Value() const { return value; }
+    constexpr operator Value() const {
+        return value;
+    }
 
     /** @brief Stringifies the given ImageFormat. */
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
@@ -81,6 +83,29 @@ public:
             case Depth24Stencil8: return 4;
             case R32UI: return 4;
             case Depth32f: return 4;
+        }
+        UNREACHABLE();
+    }
+
+    /// @brief Returns the number of components this format can hold.
+    [[nodiscard]] constexpr auto num_components() const -> u32 {
+        switch (value) {
+            case Unknown: return 0;
+
+            case R32UI:
+            case Depth32f:
+            case R8: return 1;
+
+            case Depth24Stencil8:
+            case RG32f: return 2;
+
+            case RGB16f:
+            case RGB8:
+            case sRGB8: return 3;
+
+            case RGBA8: return 4;
+            case sRGBA8:
+            case RGBA16f: return 4;
         }
         UNREACHABLE();
     }
