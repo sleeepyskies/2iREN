@@ -16,6 +16,9 @@ option(SIREN_BUILD_TESTS
     ${PROJECT_IS_TOP_LEVEL}
 )
 
+# required for some lsp's to work.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_library(2iREN STATIC)
 add_library(2iREN::2iREN ALIAS 2iREN)
 
@@ -34,9 +37,6 @@ add_subdirectory(src/2iREN/utility)
 
 target_include_directories(2iREN PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    # TODO: this should probably be private, and we expose only some
-    # wrapper image loader
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>
 )
 
 target_compile_definitions(2iREN
@@ -71,7 +71,7 @@ target_compile_options(2iREN PRIVATE
 )
 
 if(SIREN_BUILD_EXAMPLES)
-    message(STATUS "Building 2iREN Examples...")
+    message(STATUS "Building 2iREN examples")
     add_subdirectory(examples/01_hello_triangle)
     add_subdirectory(examples/02_spinning_cube)
     add_subdirectory(examples/03_load_shader)

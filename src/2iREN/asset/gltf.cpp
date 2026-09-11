@@ -1,8 +1,8 @@
 #include "gltf.hpp"
 
-#include <cgltf/cgltf.h>
+#include <cgltf.h>
 #include <expected>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/core/assert.hpp"

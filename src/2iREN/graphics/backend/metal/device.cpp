@@ -1,7 +1,9 @@
 #include "device.hpp"
 
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/query.hpp"
+#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
@@ -14,6 +16,7 @@
 namespace siren {
 
 MetalDevice::MetalDevice() {
+    //
     UNIMPLEMENTED();
 }
 
@@ -25,7 +28,10 @@ auto MetalDevice::wait_idle() const noexcept -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_buffer(const BufferDescriptor& descriptor) -> Buffer {
+auto MetalDevice::make_buffer(
+    const BufferDescriptor& descriptor,
+    std::optional<ByteBufferView> initial
+) -> Buffer {
     UNIMPLEMENTED();
 }
 
@@ -33,7 +39,7 @@ auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_image(const ImageDescriptor& descriptor) -> Image {
+auto MetalDevice::make_image(const ImageDescriptor& descriptor) -> Image {
     UNIMPLEMENTED();
 }
 
@@ -41,7 +47,7 @@ auto MetalDevice::destroy_image(ImageHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_sampler(const SamplerDescriptor& descriptor) -> Sampler {
+auto MetalDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
     UNIMPLEMENTED();
 }
 
@@ -49,7 +55,7 @@ auto MetalDevice::destroy_sampler(SamplerHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_shader(const ShaderDescriptor& descriptor) -> Shader {
+auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     UNIMPLEMENTED();
 }
 
@@ -57,7 +63,8 @@ auto MetalDevice::destroy_shader(ShaderHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_swapchain(const SwapchainDescriptor& descriptor) -> Swapchain {
+auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
+    -> Swapchain {
     UNIMPLEMENTED();
 }
 
@@ -65,7 +72,7 @@ auto MetalDevice::destroy_swapchain(SwapchainHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
     -> GraphicsPipeline {
     UNIMPLEMENTED();
 }
@@ -74,7 +81,7 @@ auto MetalDevice::destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> vo
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::create_query(const QueryDescriptor& descriptor) -> Query {
+auto MetalDevice::make_query(const QueryDescriptor& descriptor) -> Query {
     UNIMPLEMENTED();
 }
 
@@ -82,19 +89,12 @@ auto MetalDevice::destroy_query(QueryHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::record_resource_commands() const -> ResourceCommandRecorder {
+auto MetalDevice::render_pass_recorder(const RenderPassDescriptor& descriptor) const noexcept
+    -> RenderPassRecorder {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::record_render_commands() const -> RenderCommandRecorder {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::submit(ResourceCommandBuffer&& command_buffer) const -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::submit(RenderCommandBuffer&& command_buffer) const -> void {
+auto MetalDevice::submit(RenderPass&& pass) const -> void {
     UNIMPLEMENTED();
 }
 
@@ -147,7 +147,7 @@ auto MetalDevice::present(SwapchainHandle handle, OverlayFunction&& overlay) con
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::blit_image(ImageHandle source, ImageHandle destination) const -> void {
+auto MetalDevice::blit_to_image(ImageHandle source, ImageHandle destination) const -> void {
     UNIMPLEMENTED();
 }
 
@@ -164,5 +164,3 @@ auto MetalDevice::statistics() const -> Statistics {
 }
 
 } // namespace siren
-
-#pragma clang diagnostic pop

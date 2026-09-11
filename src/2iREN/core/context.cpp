@@ -1,7 +1,7 @@
 #include "context.hpp"
 
 #include <GLFW/glfw3.h>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include "2iREN/concurrency/thread_pool.hpp"
 #include "2iREN/graphics/device.hpp"

@@ -22,7 +22,9 @@ class ConanApplication(ConanFile):
         tc.generate()
 
     def requirements(self):
+        self.requires("cgltf/1.15")
         self.requires("yaml-cpp/0.9.0")
+        self.requires("stb/cci.20240531")
 
         if self.settings.os == "Macos":
             self.requires("glfw/3.4")

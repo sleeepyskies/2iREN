@@ -2,13 +2,12 @@ set default-list
 
 _configure type:
     conan install .                                     \
-        --output-folder=build                           \
         --build=missing                                 \
+        -s compiler.cppstd=23                           \
         -s build_type={{ capitalize(type) }}            \
         -c tools.cmake.cmaketoolchain:generator=Ninja
 
-    cmake --preset conan-{{ lowercase(type) }}          \
-        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON              \
+    cmake --preset conan-{{ lowercase(type) }}
 
 _build type:
     cmake --build --preset conan-{{ lowercase(type) }}
@@ -35,14 +34,14 @@ test: build
     ctest --preset conan-release --output-on-failure
 
 # Runs the hello_triangle example.
-example-hello: (_example "hello_triangle" "./build/build/Release/examples/01_hello_triangle/hello_triangle")
+example-hello: (_example "hello_triangle" "./build/Release/examples/01_hello_triangle/hello_triangle")
 
 # Runs the spinning_cube example.
-example-cube: (_example "spinning_cube" "./build/build/Release/examples/02_spinning_cube/spinning_cube")
+example-cube: (_example "spinning_cube" "./build/Release/examples/02_spinning_cube/spinning_cube")
 
 # Runs the load_shader example.
-example-shader: (_example "load_shader" "./build/build/Release/examples/03_load_shader/load_shader")
+example-shader: (_example "load_shader" "./build/Release/examples/03_load_shader/load_shader")
 
 # Runs the tetris example.
-example-tetris: (_example "load_shader" "./build/build/Release/examples/04_tetris/tetris")
+example-tetris: (_example "load_shader" "./build/Release/examples/04_tetris/tetris")
 
