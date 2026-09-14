@@ -12,6 +12,15 @@
 
 namespace siren::metal {
 
+/// @brief Scoped RAII AutoreleasePool wrapper.
+struct AutoRelease {
+    AutoRelease() : m_pool(NS::AutoreleasePool::alloc()->init()) { }
+    ~AutoRelease() {
+        m_pool->release();
+    }
+    NS::AutoreleasePool* m_pool;
+};
+
 /// @brief Creates a new NS::SharedPtr from a raw pointer.
 /// @note This does *not* increase the retain count.
 template <typename T>
@@ -29,12 +38,10 @@ constexpr auto retain_ptr(T* ptr) -> NS::SharedPtr<T> {
 }
 
 /// @brief Creates a new NS::String with UTF8 encoding.
-constexpr auto utf8_string(const std::string_view str)
-    -> NS::SharedPtr<NS::String> {
-    auto* nsstring =
-        NS::String::string(str.data(), NS::StringEncoding::UTF8StringEncoding);
-
-    return transfer_ptr(nsstring);
+/// @note Cannot take a string_view here as NS::String expects a null
+/// terminated string.
+constexpr auto utf8_string(const std::string& str) -> NS::SharedPtr<NS::String> {
+    return retain_ptr(NS::String::string(str.data(), NS::StringEncoding::UTF8StringEncoding));
 }
 
 /// @brief Returns the error message contained within an error.
@@ -59,8 +66,7 @@ constexpr auto error_msg(NS::Error* err) -> std::string {
 
     if (err->localizedRecoverySuggestion()) {
         out += "suggestion: ";
-        out +=
-            err->localizedRecoverySuggestion()->cString(NS::UTF8StringEncoding);
+        out += err->localizedRecoverySuggestion()->cString(NS::UTF8StringEncoding);
     }
 
     return out.empty() ? "unknown metal error." : out;
@@ -69,11 +75,7 @@ constexpr auto error_msg(NS::Error* err) -> std::string {
 template <typename T>
 constexpr auto check_error(T* object, NS::Error* err) -> void {
     if (object == nullptr) {
-        PANIC(
-            "failed to create metal resource {}. error: {}",
-            typename_of<T>(),
-            error_msg(err)
-        );
+        PANIC("failed to create metal resource {}. error: {}", typename_of<T>(), error_msg(err));
     } else {
         err = nullptr;
     }

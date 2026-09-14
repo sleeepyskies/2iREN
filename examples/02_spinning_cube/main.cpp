@@ -74,11 +74,11 @@ const auto indices = ByteBuffer::make<u32>({
 
 int main() {
     // init siren
-    const auto ctx = Context::make({
+    auto ctx    = Context::make({
         .debug = true,
         .level = log::Level::Trace,
     });
-    auto window    = ctx.make_window({.title = "Example 02"});
+    auto window = ctx.make_window({.title = "Example 02"});
 
     const auto device    = ctx.make_device();
     const auto swapchain = device->make_swapchain(
@@ -120,7 +120,6 @@ int main() {
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader.handle(),
-        .topology          = PrimitiveTopology::Triangles,
         .alpha_mode        = AlphaMode::Opaque,
         .depth_function    = DepthFunction::Less,
         .back_face_culling = true,
@@ -167,7 +166,7 @@ int main() {
             pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
             pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
             pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
-            pass.draw_indexed(indices.size_as<u32>(), 0);
+            pass.draw_indexed(PrimitiveTopology::Triangles, indices.size_as<u32>(), 0);
         });
 
         device->blit_to_image(target.colors[0].image, swapchain.next_image());

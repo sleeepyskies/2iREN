@@ -31,13 +31,13 @@ auto initialize_glfw() -> void {
 
     const auto platform = glfwGetPlatform();
     if (platform == GLFW_PLATFORM_X11) {
-        siren::log::info("using windowing platform X11");
+        siren::log::info("using windowing platform X11.");
     } else if (platform == GLFW_PLATFORM_WAYLAND) {
-        siren::log::info("using windowing platform Wayland");
+        siren::log::info("using windowing platform Wayland.");
     } else if (platform == GLFW_PLATFORM_COCOA) {
-        siren::log::info("using windowing platform Cocoa");
+        siren::log::info("using windowing platform Cocoa.");
     } else if (platform == GLFW_PLATFORM_WIN32) {
-        siren::log::info("using windowing platform Win32");
+        siren::log::info("using windowing platform Win32.");
     }
 
 #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)

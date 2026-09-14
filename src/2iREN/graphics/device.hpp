@@ -39,8 +39,7 @@ public:
     /// @brief Creates and returns a new @ref Image given an @ref
     /// ImageDescriptor.
     [[nodiscard]]
-    virtual auto make_sampler(const SamplerDescriptor& descriptor)
-        -> Sampler = 0;
+    virtual auto make_sampler(const SamplerDescriptor& descriptor) -> Sampler = 0;
 
     /// @brief Creates and returns a new @ref Shader given a @ref
     /// ShaderDescriptor.
@@ -50,17 +49,14 @@ public:
     /// @brief Creates and returns a new @ref GraphicsPipeline given a @ref
     /// GraphicsPipelineDescriptor.
     [[nodiscard]]
-    virtual auto make_graphics_pipeline(
-        const GraphicsPipelineDescriptor& descriptor
-    ) -> GraphicsPipeline = 0;
+    virtual auto make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
+        -> GraphicsPipeline = 0;
 
     /// @brief Creates and returns a new @ref Swapchain given a @ref
     /// SwapchainDescriptor.
     [[nodiscard]]
-    virtual auto make_swapchain(
-        const Window& window,
-        const SwapchainDescriptor& descriptor
-    ) -> Swapchain = 0;
+    virtual auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
+        -> Swapchain = 0;
 
     /// @brief Creates and returns a new @ref Query given.
     [[nodiscard]]
@@ -79,8 +75,7 @@ public:
     virtual auto destroy_shader(ShaderHandle handle) -> void = 0;
 
     /// @brief Queues the given @ref GraphicsPipeline for deletion.
-    virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle)
-        -> void = 0;
+    virtual auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void = 0;
 
     /// @brief Queues the given @ref Swapchain for deletion.
     virtual auto destroy_swapchain(SwapchainHandle handle) -> void = 0;
@@ -90,30 +85,25 @@ public:
 
     /// @brief Returns the @ref BufferDescriptor associated with this handle.
     [[nodiscard]]
-    virtual auto buffer_descriptor(BufferHandle handle) const
-        -> const BufferDescriptor& = 0;
+    virtual auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& = 0;
 
     /// @brief Returns the @ref ImageDescriptor associated with this handle.
     [[nodiscard]]
-    virtual auto image_descriptor(ImageHandle handle) const
-        -> const ImageDescriptor& = 0;
+    virtual auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& = 0;
 
     /// @brief Returns the @ref SamplerDescriptor associated with this handle.
     [[nodiscard]]
-    virtual auto sampler_descriptor(SamplerHandle handle) const
-        -> const SamplerDescriptor& = 0;
+    virtual auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& = 0;
 
     /// @brief Returns the @ref ShaderDescriptor associated with this handle.
     [[nodiscard]]
-    virtual auto shader_descriptor(ShaderHandle handle) const
-        -> const ShaderDescriptor& = 0;
+    virtual auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& = 0;
 
     /// @brief Returns the @ref GraphicsPipelineDescriptor associated with this
     /// handle.
     [[nodiscard]]
-    virtual auto graphics_pipeline_descriptor(
-        GraphicsPipelineHandle handle
-    ) const -> const GraphicsPipelineDescriptor& = 0;
+    virtual auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
+        -> const GraphicsPipelineDescriptor& = 0;
 
     /// @brief Returns the @ref ShaderDescriptor associated with this handle.
     [[nodiscard]]
@@ -122,14 +112,12 @@ public:
 
     /// @brief Returns the @ref QueryDescriptor associated with this handle.
     [[nodiscard]]
-    virtual auto query_descriptor(QueryHandle handle) const
-        -> const QueryDescriptor& = 0;
+    virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
 
     /// @brief Returns a recorder to record render commands into.
     [[nodiscard]]
-    virtual auto render_pass_recorder(
-        const RenderPassDescriptor& descriptor
-    ) const noexcept -> RenderPassRecorder {
+    virtual auto render_pass_recorder(const RenderPassDescriptor& descriptor) const noexcept
+        -> RenderPassRecorder {
         return RenderPassRecorder{descriptor};
     };
 
@@ -139,39 +127,26 @@ public:
     /// @brief Records and submits a render pass.
     template <typename Function>
         requires(std::is_invocable_v<Function, RenderPassRecorder&>)
-    auto render_pass(
-        const RenderPassDescriptor& descriptor,
-        Function&& func
-    ) noexcept -> void {
+    auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
         auto recorder = render_pass_recorder(descriptor);
         std::invoke(func, recorder);
         submit(recorder.finish());
     }
 
     /// @brief Uploads data to an image.
-    virtual auto upload_to_image(
-        ImageHandle image,
-        ByteBufferView data,
-        usize layer
-    ) const -> void = 0;
+    virtual auto upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
+        -> void = 0;
 
     /// @brief Uploads data to a buffer.
-    virtual auto upload_to_buffer(
-        BufferHandle buffer,
-        ByteBufferView data,
-        usize offset
-    ) const -> void = 0;
+    virtual auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, usize offset) const
+        -> void = 0;
 
     /// @brief Clears all pixels of an image using the provided value.
-    virtual auto clear_image(ImageHandle image, ClearValue clearvalue) const
-        -> void = 0;
+    virtual auto clear_image(ImageHandle image, ClearValue clearvalue) const -> void = 0;
 
     /// @brief Copies the content of an @ref Image to another @ref Image. @note
     /// Assumes source and destination have the same size.
-    virtual auto blit_to_image(
-        ImageHandle source,
-        ImageHandle destination
-    ) const -> void = 0;
+    virtual auto blit_to_image(ImageHandle source, ImageHandle destination) const -> void = 0;
 
     /// @brief Reads the image data into a buffer and returns it. @warning May
     /// stall the thread until task is complete.
@@ -180,16 +155,12 @@ public:
 
     /// @brief Presents the back buffer of the given swapchain to the screen and
     /// also executes a custom overlay function.
-    virtual auto present(
-        SwapchainHandle handle,
-        OverlayFunction&& overlay = nullptr
-    ) -> void = 0;
+    virtual auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) -> void = 0;
 
     /// @brief Returns the next @ref Image target managed by this framebuffer to
     /// render to.
-    [[nodiscard]] virtual auto acquire_next_swapchain_target(
-        SwapchainHandle handle
-    ) -> ImageHandle = 0;
+    [[nodiscard]] virtual auto acquire_next_swapchain_image(SwapchainHandle handle)
+        -> ImageHandle = 0;
 
     /// @brief Retrieves the information stored inside a query object. May be
     /// blocking on some implementations. The return value must be interpreted

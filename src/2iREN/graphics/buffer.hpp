@@ -7,15 +7,11 @@
 namespace siren {
 class ByteBuffer;
 
-/**
- * @brief Defines the usage of a Buffer.
- */
+/// @brief Defines the usage of a Buffer.
 enum class BufferUsage {
-    /** @brief Best used for data that is set once and persistent such as static
-       meshes. */
+    /// @brief Data is uploaded once and is thereafter read only.
     Static,
-    /** @brief Best used for data is updated often and persistent like dynamic
-       meshes. */
+    /// @brief Data may be modified frequently.
     Dynamic,
 };
 
@@ -76,7 +72,6 @@ public:
     auto descriptor() const noexcept -> const BufferDescriptor&;
 
     /// @brief Utility function to upload data to this Buffer.
-    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept
-        -> void;
+    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
 };
 } // namespace siren

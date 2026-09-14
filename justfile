@@ -1,11 +1,11 @@
 set default-list
 
-_configure type:
-    conan install .                                     \
-        --build=missing                                 \
-        -s compiler.cppstd=23                           \
-        -s build_type={{ capitalize(type) }}            \
-        -c tools.cmake.cmaketoolchain:generator=Ninja
+_configure type generator="Ninja":
+    conan install .                                             \
+        --build=missing                                         \
+        -s compiler.cppstd=23                                   \
+        -s build_type={{ capitalize(type) }}                    \
+        -c tools.cmake.cmaketoolchain:generator={{ generator }}
 
     cmake --preset conan-{{ lowercase(type) }}
 
@@ -15,7 +15,6 @@ _build type:
 _example target path:
     cmake --build --preset conan-release --target {{ target }}
     {{ path }}
-
 
 # Downloads dependencies and configure 2iREN for Release mode.
 configure: (_configure "release")

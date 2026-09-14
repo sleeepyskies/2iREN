@@ -92,5 +92,6 @@ class MetalDrawable;
 namespace NS {
 class AutoreleasePool;
 class Error;
-
+template <typename _Class>
+class SharedPtr;
 } // namespace NS

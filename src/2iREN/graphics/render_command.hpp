@@ -368,12 +368,6 @@ public:
     ) noexcept -> void;
 
     /**
-     * @brief Shorthand function for drawing a fullscreen. Simple uses
-     * draw_arrays() under the hood.
-     */
-    auto draw_fullscreen() noexcept -> void;
-
-    /**
      * @brief Draws from the currently bound vertex buffer(s) using the
      * currently bound index buffer.
      * @param primitive_topology The way to draw the points as.

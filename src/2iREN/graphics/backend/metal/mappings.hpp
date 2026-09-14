@@ -8,21 +8,12 @@
 #include <Metal/MTLVertexDescriptor.hpp>
 #include <utility>
 
-#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/render_target.hpp"
 
 namespace siren::metal {
-
-constexpr auto buffer_usage_flags(const BufferUsage usage)
-    -> MTL::ResourceOptions {
-    switch (usage) {
-        case BufferUsage::Static: return MTL::ResourceStorageModePrivate;
-        case BufferUsage::Dynamic: return MTL::ResourceStorageModeShared;
-    }
-}
 
 /// @brief Maps a @ref Component to its corresponding MTL::VertexFormat
 /// enumeration value.

@@ -19,6 +19,9 @@ option(SIREN_BUILD_TESTS
 # required for some lsp's to work.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# TODO: there should be a better way to solve this issue
+set(CMAKE_OSX_DEPLOYMENT_TARGET 26.2)
+
 add_library(2iREN STATIC)
 add_library(2iREN::2iREN ALIAS 2iREN)
 

@@ -1,8 +1,12 @@
 #pragma once
 
-#include <Metal/MTLCommandQueue.hpp>
 #include <cstddef>
+
+#include <Foundation/Foundation.hpp>
+#include <Metal/Metal.hpp>
+
 #include "2iREN/graphics/backend/metal/fwd.hpp"
+#include "2iREN/graphics/backend/metal/util.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -30,14 +34,10 @@ struct MetalSwapchainDetails {
 };
 
 struct MetalDeviceState {
-    RenderResourceTable<MTL::Buffer*, Buffer, BufferDescriptor> buffers = {};
-    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails>
-        swapchains                                                         = {};
-    RenderResourceTable<MTL::Library*, Shader, MetalShaderDetails> shaders = {};
-    RenderResourceTable<
-        MTL::RenderPipelineState*,
-        GraphicsPipeline,
-        GraphicsPipelineDescriptor>
+    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers = {};
+    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails> swapchains = {};
+    RenderResourceTable<MTL::Library*, Shader, MetalShaderDetails> shaders            = {};
+    RenderResourceTable<MTL::RenderPipelineState*, GraphicsPipeline, GraphicsPipelineDescriptor>
         pipelines                                                     = {};
     RenderResourceTable<MTL::Texture*, Image, ImageDescriptor> images = {};
 };
@@ -48,10 +48,8 @@ public:
     ~MetalDevice() override;
 
     [[nodiscard]]
-    auto make_buffer(
-        const BufferDescriptor& descriptor,
-        std::optional<ByteBufferView> initial
-    ) -> Buffer override;
+    auto make_buffer(const BufferDescriptor& descriptor, std::optional<ByteBufferView> initial)
+        -> Buffer override;
 
     [[nodiscard]]
     auto make_image(const ImageDescriptor& descriptor) -> Image override;
@@ -67,10 +65,8 @@ public:
         -> GraphicsPipeline override;
 
     [[nodiscard]]
-    auto make_swapchain(
-        const Window& window,
-        const SwapchainDescriptor& descriptor
-    ) -> Swapchain override;
+    auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
+        -> Swapchain override;
 
     [[nodiscard]]
     auto make_query(const QueryDescriptor& descriptor) -> Query override;
@@ -83,65 +79,49 @@ public:
 
     auto destroy_shader(ShaderHandle handle) -> void override;
 
-    auto destroy_graphics_pipeline(GraphicsPipelineHandle handle)
-        -> void override;
+    auto destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void override;
 
     auto destroy_swapchain(SwapchainHandle handle) -> void override;
 
     auto destroy_query(QueryHandle handle) -> void override;
 
     [[nodiscard]]
-    auto buffer_descriptor(BufferHandle handle) const
-        -> const BufferDescriptor& override;
+    auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& override;
 
     [[nodiscard]]
-    auto image_descriptor(ImageHandle handle) const
-        -> const ImageDescriptor& override;
+    auto image_descriptor(ImageHandle handle) const -> const ImageDescriptor& override;
 
     [[nodiscard]]
-    auto sampler_descriptor(SamplerHandle handle) const
-        -> const SamplerDescriptor& override;
+    auto sampler_descriptor(SamplerHandle handle) const -> const SamplerDescriptor& override;
 
     [[nodiscard]]
-    auto shader_descriptor(ShaderHandle handle) const
-        -> const ShaderDescriptor& override;
+    auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& override;
 
     [[nodiscard]]
     auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
         -> const GraphicsPipelineDescriptor& override;
 
     [[nodiscard]]
-    auto swapchain_descriptor(SwapchainHandle handle) const
-        -> const SwapchainDescriptor& override;
+    auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
 
     [[nodiscard]]
-    auto query_descriptor(QueryHandle handle) const
-        -> const QueryDescriptor& override;
+    auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
     auto submit(RenderPass&& pass) -> void override;
 
-    auto upload_to_image(
-        ImageHandle image,
-        ByteBufferView data,
-        usize layer
-    ) const -> void override;
-
-    auto upload_to_buffer(
-        BufferHandle buffer,
-        ByteBufferView data,
-        usize offset
-    ) const -> void override;
-
-    auto clear_image(ImageHandle image, ClearValue clearvalue) const
+    auto upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
         -> void override;
 
-    auto blit_to_image(ImageHandle source, ImageHandle destination) const
+    auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, usize offset) const
         -> void override;
+
+    auto clear_image(ImageHandle image, ClearValue clearvalue) const -> void override;
+
+    auto blit_to_image(ImageHandle source, ImageHandle destination) const -> void override;
 
     auto read_image(ImageHandle image) const -> std::vector<u8> override;
 
-    auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr)
-        -> void override;
+    auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) -> void override;
 
     auto query_result(QueryHandle handle) const -> u64 override;
 
@@ -158,19 +138,18 @@ public:
     auto statistics() const -> Statistics override;
 
     [[nodiscard]]
-    auto acquire_next_swapchain_target(SwapchainHandle handle)
-        -> ImageHandle override;
+    auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle override;
 
     auto wait_idle() const noexcept -> void override;
 
 private:
-    MetalDeviceState m_state               = {};
-    MTL::Device* m_device                  = nullptr;
-    MTL::CommandQueue* m_cmd_queue         = nullptr;
-    MTL::CommandBuffer* m_cmd_buffer       = nullptr;
-    NS::AutoreleasePool* m_autoreleasepool = nullptr;
-    Limits m_limits                        = {};
-    Statistics m_statistics                = {};
+    MetalDeviceState m_state                       = {};
+    NS::SharedPtr<MTL::Device> m_device            = nullptr;
+    NS::SharedPtr<MTL::CommandQueue> m_cmd_queue   = nullptr;
+    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer = nullptr;
+    metal::AutoRelease m_autorelease               = {};
+    Limits m_limits                                = {};
+    Statistics m_statistics                        = {};
 };
 
 } // namespace siren

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Metal/Metal.hpp>
+
 #include "2iREN/graphics/backend/metal/fwd.hpp"
 #include "2iREN/graphics/command_executor.hpp"
 #include "2iREN/graphics/render_command.hpp"
@@ -11,10 +13,7 @@ struct MetalDeviceState;
 
 class MetalCommandExecutor final : public CommandExecutor {
 public:
-    MetalCommandExecutor(
-        MetalDeviceState& state,
-        MTL::CommandBuffer* cmd_buffer
-    );
+    MetalCommandExecutor(MetalDeviceState& state, NS::SharedPtr<MTL::CommandBuffer> cmd_buffer);
 
     auto execute(RenderPass&& pass) -> void override;
 
@@ -29,8 +28,8 @@ private:
 private:
     MetalDeviceState& m_state;
     Statistics m_statistics;
-    MTL::CommandBuffer* m_cmd_buffer;
-    MTL::RenderCommandEncoder* m_cmd_encoder;
+    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer         = nullptr;
+    NS::SharedPtr<MTL::RenderCommandEncoder> m_cmd_encoder = nullptr;
 };
 
 } // namespace siren

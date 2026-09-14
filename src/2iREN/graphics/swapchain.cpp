@@ -31,7 +31,7 @@ auto Swapchain::descriptor() const -> const SwapchainDescriptor& {
 }
 
 auto Swapchain::next_image() const -> ImageHandle {
-    return m_device->acquire_next_swapchain_target(m_handle);
+    return m_device->acquire_next_swapchain_image(m_handle);
 }
 
 auto Swapchain::present() const -> void {

@@ -136,7 +136,7 @@ auto main() -> i32 {
                 ColorAttachment{
                     .image           = swapchain.next_image(),
                     .begin_operation = BeginOperation::Clear,
-                    .clear_color     = Rgba::BLACK(),
+                    .clear_color     = Rgba::CYAN(),
                 },
             },
         },

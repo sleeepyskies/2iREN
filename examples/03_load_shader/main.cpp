@@ -15,18 +15,42 @@ struct Vertex {
 };
 
 const ByteBuffer vertices{
-    Vertex{.x = 0.0f, .y = 0.5f, .z = 0.0f, .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = -0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = 0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f},
+    Vertex{
+        .x = 0.0f,
+        .y = 0.5f,
+        .z = 0.0f,
+        .r = 1.0f,
+        .g = 0.0f,
+        .b = 0.0f,
+        .a = 1.0f
+    },
+    Vertex{
+        .x = -0.5f,
+        .y = -0.5f,
+        .z = 0.0f,
+        .r = 0.0f,
+        .g = 1.0f,
+        .b = 0.0f,
+        .a = 1.0f
+    },
+    Vertex{
+        .x = 0.5f,
+        .y = -0.5f,
+        .z = 0.0f,
+        .r = 0.0f,
+        .g = 0.0f,
+        .b = 1.0f,
+        .a = 1.0f
+    },
 };
 
 int main() {
-    const auto ctx    = Context::make({
+    auto ctx    = Context::make({
         .debug = true,
         .level = log::Level::Trace,
     });
-    auto window       = ctx.make_window({.title = "Example 03"});
-    const auto device = ctx.make_device();
+    auto window = ctx.make_window({.title = "Example 03"});
+    auto device = ctx.make_device();
     AssetServer server{*device};
 
     const auto swapchain = device->make_swapchain(
@@ -49,8 +73,9 @@ int main() {
                             .add(Attribute::Color, 4, DataType::Float32)
                             .finish();
 
-    const auto shaderh =
-        server.load<ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
+    const auto shaderh = server.load<ShaderAsset>(
+        "engine://examples/assets/shaders/load_shader.sshg"
+    );
     server.wait_until_loaded(shaderh);
     auto* shader_asset = server.get<ShaderAsset>(shaderh);
 
@@ -58,7 +83,6 @@ int main() {
         .label             = std::nullopt,
         .layout            = layout,
         .shader            = shader_asset->shader.handle(),
-        .topology          = PrimitiveTopology::Triangles,
         .alpha_mode        = AlphaMode::Opaque,
         .depth_function    = DepthFunction::Less,
         .back_face_culling = true,
@@ -82,11 +106,13 @@ int main() {
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
-            pass.bind_graphics_pipeline(pipeline.handle());
-            pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-            pass.draw_fullscreen();
-        });
+        device->render_pass(
+            {.target = target}, [&](RenderPassRecorder& pass) -> void {
+                pass.bind_graphics_pipeline(pipeline.handle());
+                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+                pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
+            }
+        );
 
         device->present(swapchain.handle());
     }
