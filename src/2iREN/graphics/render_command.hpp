@@ -5,11 +5,13 @@
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/render_target.hpp"
 
 namespace siren {
-// todo: optimization here to use a packed blob vector. we serialize the commands basically,
-// and make use of a CommandHeader indicating the size and type to interpret the next bytes as
+// todo: optimization here to use a packed blob vector. we serialize the
+// commands basically, and make use of a CommandHeader indicating the size and
+// type to interpret the next bytes as
 
 enum class AccessKind {
     ReadOnly,
@@ -49,29 +51,13 @@ struct BindGraphicsPipeline {
     GraphicsPipelineHandle pipeline_handle;
 };
 
-/**
- * @brief Sets the viewport transform (from NDC to target coords).
- */
-struct SetViewport {
-    /** @brief The offset in pixels from the left of the viewport. */
-    u32 x;
-    /** @brief The offset in pixels from the top of the viewport. */
-    u32 y;
-    /** @brief The width in pixels of the viewport. */
-    u32 width;
-    /** @brief The height in pixels of the viewport. */
-    u32 height;
-};
-
-/**
- * @brief Binds a vertex buffer to a slot.
- */
+/// @brief Binds a vertex buffer to a slot.
 struct BindVertexBuffer {
-    /** @brief The buffer to bind. */
+    /// @brief The buffer to bind.
     BufferHandle vertex_buffer;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to
     u32 slot;
-    /** @brief The offset into the vertex buffer. */
+    /// @brief The offset into the vertex buffer.
     u32 offset;
 };
 
@@ -103,7 +89,8 @@ struct BindUniformBufferRange {
     BufferHandle uniform_buffer;
     /** @brief The slot to bind to. */
     u32 slot;
-    /** @brief The offset in bytes into the buffer to begin the binding range. */
+    /** @brief The offset in bytes into the buffer to begin the binding range.
+     */
     usize offset;
     /** @brief The size of the sub binding range. */
     usize size;
@@ -120,8 +107,9 @@ struct BindShaderStorageBuffer {
 };
 
 /**
- * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap sampling.
- * This also allows only for read access and uses texture coordinates instead of pixel coordinates.
+ * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap
+ * sampling. This also allows only for read access and uses texture coordinates
+ * instead of pixel coordinates.
  */
 struct BindSampledImage {
     /** @brief The @ref Image to bind. */
@@ -133,9 +121,9 @@ struct BindSampledImage {
 };
 
 /**
- * @brief Binds an @ref Image for direct pixel access. This applies no filtering or mip map
- * sampling. This also allows for read write access and uses raw pixel coordinates instead of
- * texture coordinates.
+ * @brief Binds an @ref Image for direct pixel access. This applies no filtering
+ * or mip map sampling. This also allows for read write access and uses raw
+ * pixel coordinates instead of texture coordinates.
  */
 struct BindStorageImage {
     /** @brief The image to bind. */
@@ -162,13 +150,13 @@ struct EndQuery {
     QueryHandle query;
 };
 
-/**
- * @brief Performs a non indexed draw call.
- */
+/// @brief Performs a non indexed draw call.
 struct DrawArrays {
-    /** @brief The start vertex to draw. */
+    /// @brief The primitives the points should be drawn as.
+    PrimitiveTopology primitive_topology;
+    /// @brief The start vertex to draw.
     u32 start;
-    /** @brief The amount of vertices to draw. */
+    /// @brief The amount of vertices to draw.
     u32 count;
 };
 
@@ -188,7 +176,6 @@ struct DrawIndexed {
 struct RenderCommand {
     union {
         BindGraphicsPipeline bind_graphics_pipeline;
-        SetViewport set_viewport;
         BindVertexBuffer bind_vertex_buffer;
         BindIndexBuffer bind_index_buffer;
         BindUniformBuffer bind_uniform_buffer;
@@ -204,13 +191,12 @@ struct RenderCommand {
 
     RenderCommandType type;
 
-    /** @brief Attempts to cast the internal command into a Command type. Crashes on fail. */
+    /** @brief Attempts to cast the internal command into a Command type.
+     * Crashes on fail. */
     template <typename Command>
     auto as() const -> const Command& {
         if constexpr (std::is_same_v<Command, BindGraphicsPipeline>) {
             return command.bind_graphics_pipeline;
-        } else if constexpr (std::is_same_v<Command, SetViewport>) {
-            return command.set_viewport;
         } else if constexpr (std::is_same_v<Command, BindVertexBuffer>) {
             return command.bind_vertex_buffer;
         } else if constexpr (std::is_same_v<Command, BindIndexBuffer>) {
@@ -261,7 +247,10 @@ public:
      * @param size_hint Defines the initial size of the inner command buffer.
      * Use if it is known roughly how many commands will be submitted.
      */
-    explicit RenderPassRecorder(const RenderPassDescriptor& descriptor, usize size_hint = 1024);
+    explicit RenderPassRecorder(
+        const RenderPassDescriptor& descriptor,
+        usize size_hint = 1024
+    );
 
     /**
      * @brief Binds a @ref GraphicsPipeline to the current render pass.
@@ -269,19 +258,9 @@ public:
      * including shaders used, vertex layout, blend mode etc...
      * @param pipeline_handle The @ref GraphicsPipeline to bind.
      */
-    auto bind_graphics_pipeline(const GraphicsPipelineHandle pipeline_handle) noexcept -> void;
-
-    /**
-     * @brief Sets the viewport area for all following draw calls.
-     * The viewport defines a transformation from NDC to the pixel coords
-     * of the render target.
-     * If not called, siren defaults to the full render target dimensions.
-     * @param x The offset in pixels from the left side of the viewport.
-     * @param y The offset in pixels from the top side of the viewport.
-     * @param width The width in pixels of the viewport.
-     * @param height The height in pixels of the viewport.
-     */
-    auto set_viewport(const u32 x, const u32 y, const u32 width, const u32 height) noexcept -> void;
+    auto bind_graphics_pipeline(
+        const GraphicsPipelineHandle pipeline_handle
+    ) noexcept -> void;
 
     /**
      * @brief Assigns a vertex buffer to a slot.
@@ -292,8 +271,11 @@ public:
      * @param slot The slot to bind to.
      * @param offset The offset into the @ref Buffer to start from.
      */
-    auto bind_vertex_buffer(const BufferHandle buffer, const u32 slot, const u32 offset) noexcept
-        -> void;
+    auto bind_vertex_buffer(
+        const BufferHandle buffer,
+        const u32 slot,
+        const u32 offset
+    ) noexcept -> void;
 
     /**
      * @brief Binds an index buffer to the current pass.
@@ -301,15 +283,18 @@ public:
      * @param buffer The index buffer to bind.
      * @param index_format The format of the indices (e.g., u8, u16, u32).
      */
-    auto bind_index_buffer(const BufferHandle buffer, const IndexFormat index_format) noexcept
-        -> void;
+    auto bind_index_buffer(
+        const BufferHandle buffer,
+        const IndexFormat index_format
+    ) noexcept -> void;
 
     /**
      * @brief Binds a Uniform Buffer to the given slot.
      * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      */
-    auto bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept -> void;
+    auto bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept
+        -> void;
 
     /**
      * @brief Binds a sub range of a Uniform Buffer to the given slot.
@@ -330,7 +315,10 @@ public:
      * @param buffer The @ref Buffer to bind to the slot.
      * @param slot The slot to bind to.
      */
-    auto bind_shader_storage_buffer(const BufferHandle buffer, const u32 slot) noexcept -> void;
+    auto bind_shader_storage_buffer(
+        const BufferHandle buffer,
+        const u32 slot
+    ) noexcept -> void;
 
     /**
      * @brief Binds an @ref Image to the given slot for sampled access.
@@ -370,23 +358,31 @@ public:
 
     /**
      * @brief Draws from the currently bound vertex buffer(s) non indexed.
+     * @param primitive_topology The way to draw the points as.
      * @param start The first vertex to draw.
      * @param count The amount of vertices starting from the first to draw.
      */
-    auto draw_arrays(const u32 start, const u32 count) noexcept -> void;
+    auto draw_arrays(
+        const PrimitiveTopology primitive_topology,
+        const u32 start,
+        const u32 count
+    ) noexcept -> void;
 
     /**
-     * @brief Shorthand function for drawing a fullscreen. Simple uses draw_arrays() under the hood.
+     * @brief Shorthand function for drawing a fullscreen. Simple uses
+     * draw_arrays() under the hood.
      */
     auto draw_fullscreen() noexcept -> void;
 
     /**
-     * @brief Draws from the currently bound vertex buffer(s) using the currently
-     * bound index buffer.
+     * @brief Draws from the currently bound vertex buffer(s) using the
+     * currently bound index buffer.
      * @param index_count The amount of indices to draw.
-     * @param first_index The offset (in indices) into the index buffer to start from.
+     * @param first_index The offset (in indices) into the index buffer to start
+     * from.
      */
-    auto draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void;
+    auto draw_indexed(const u32 index_count, const u32 first_index) noexcept
+        -> void;
 
     /// @brief Consumes the RenderPassRecorder. Result should be passed into
     /// @ref RenderCommandRecorder.

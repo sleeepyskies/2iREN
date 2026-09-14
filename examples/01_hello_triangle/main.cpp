@@ -1,6 +1,5 @@
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
-#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/render_target.hpp"
 #include "2iREN/graphics/shader.hpp"
@@ -16,6 +15,43 @@ struct Vertex {
     f32 r, g, b, a;
 };
 
+#ifdef SIREN_MACOS
+const auto shader_source = R"(
+#include <metal_stdlib>
+using namespace metal;
+
+struct VertexOut {
+    float4 position [[position]];
+    float4 color;
+};
+
+struct VertexIn {
+    float3 position [[attribute(0)]];
+    float4 color [[attribute(1)]];
+};
+
+vertex VertexOut vmain(VertexIn in [[stage_in]]) {
+    VertexOut out;
+    out.position = float4(in.position, 1.0);
+    out.color = in.color;
+    return out;
+}
+
+fragment float4 fmain(VertexOut in [[stage_in]]){
+    return in.color;
+}
+)";
+const ShaderData vertex_shader{
+    .label  = "Triangle Vertex Shader",
+    .source = shader_source,
+    .entry  = "vmain",
+};
+const ShaderData fragment_shader{
+    .label  = "Triangle Fragment Shader",
+    .source = shader_source,
+    .entry  = "fmain",
+};
+#else
 const ShaderData vertex_shader{
     .label  = std::nullopt,
     .source = R"(
@@ -42,6 +78,7 @@ const ShaderData fragment_shader{
             FragColor = v_color;
         })",
 };
+#endif
 
 const std::unordered_map<ShaderStage, ShaderData> shaders = {
     {ShaderStage::Vertex, vertex_shader},
@@ -49,9 +86,9 @@ const std::unordered_map<ShaderStage, ShaderData> shaders = {
 };
 
 const ByteBuffer vertices{
-    Vertex{.x = 0.0f, .y = 0.5f, .z = 0.0f, .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = -0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = 0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f},
+    Vertex{0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+    Vertex{-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
+    Vertex{0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f},
 };
 
 auto main() -> i32 {
@@ -61,13 +98,7 @@ auto main() -> i32 {
     });
     auto window          = ctx.make_window({.title = "Example 01"});
     const auto device    = ctx.make_device();
-    const auto swapchain = device->make_swapchain(
-        window,
-        {
-            .label = std::nullopt,
-            .vsync = true,
-        }
-    );
+    const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
     const auto buffer = device->make_buffer(
         {
@@ -82,12 +113,15 @@ auto main() -> i32 {
                             .add(Attribute::Color, 4, DataType::Float32)
                             .finish();
 
-    const auto shader   = device->make_shader({.label = std::nullopt, .source = shaders});
+    const auto shader = device->make_shader({
+        .label  = "Triangle Shader",
+        .source = shaders,
+    });
+
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = std::nullopt,
+        .label             = "Triagle Pipeline",
         .layout            = layout,
         .shader            = shader.handle(),
-        .topology          = PrimitiveTopology::Triangles,
         .alpha_mode        = AlphaMode::Opaque,
         .depth_function    = DepthFunction::Less,
         .back_face_culling = false,
@@ -95,34 +129,30 @@ auto main() -> i32 {
         .depth_write       = true,
     });
 
-    const auto color = device->make_image({
-        .format        = ImageFormat::RGBA8,
-        .extent        = window.framebuffer_extent().to_extent3(),
-        .dimension     = ImageDimension::D2,
-        .mipmap_levels = 1,
-    });
-    const RenderTarget target{
-        .colors =
-            {
-                {
-                    .image           = color.handle(),
+    auto pass = RenderPassDescriptor{
+        .label  = "Triangle Render Pass",
+        .target = RenderTarget{
+            .colors = ColorAttachments{
+                ColorAttachment{
+                    .image           = swapchain.next_image(),
                     .begin_operation = BeginOperation::Clear,
                     .clear_color     = Rgba::BLACK(),
                 },
             },
-        .depth_stencil = std::nullopt
+        },
     };
 
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
+        pass.target.colors[0].image = swapchain.next_image();
+
+        device->render_pass(pass, [&](RenderPassRecorder& pass) -> void {
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-            pass.draw_fullscreen();
+            pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
         });
 
-        device->blit_to_image(target.colors[0].image, swapchain.next_image());
         swapchain.present();
     }
 

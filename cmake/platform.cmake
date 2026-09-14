@@ -7,6 +7,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     message(STATUS "Detected Apple environment.")
     set(SIREN_MACOS ON)
     target_compile_definitions(2iREN PUBLIC "SIREN_MACOS")
+    enable_language(OBJCXX)
+    set_target_properties(2iREN PROPERTIES
+        OBJCXX_STANDARD 23
+        OBJCXX_STANDARD_REQUIRED ON
+        OBJCXX_EXTENSIONS OFF
+    )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     message(STATUS "Detected Windows environment.")
     set(SIREN_WINDOWS ON)

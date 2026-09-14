@@ -8,7 +8,6 @@ namespace siren {
 /// of operations performed by backend.
 struct Statistics {
     u32 count_bind_graphics_pipeline;
-    u32 count_set_viewport;
     u32 count_bind_vertex_buffer;
     u32 count_bind_index_buffer;
     u32 count_bind_uniform_buffer;
@@ -24,7 +23,6 @@ struct Statistics {
 
     auto operator+=(const Statistics& rhs) noexcept -> Statistics& {
         count_bind_graphics_pipeline += rhs.count_bind_graphics_pipeline;
-        count_set_viewport += rhs.count_set_viewport;
         count_bind_vertex_buffer += rhs.count_bind_vertex_buffer;
         count_bind_index_buffer += rhs.count_bind_index_buffer;
         count_bind_uniform_buffer += rhs.count_bind_uniform_buffer;
@@ -41,7 +39,8 @@ struct Statistics {
 };
 
 [[nodiscard]]
-constexpr auto operator+(Statistics lhs, const Statistics& rhs) noexcept -> Statistics {
+constexpr auto operator+(Statistics lhs, const Statistics& rhs) noexcept
+    -> Statistics {
     lhs += rhs;
     return lhs;
 }

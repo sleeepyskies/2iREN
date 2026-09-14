@@ -3,8 +3,6 @@
 2iREN is a c++23 rendering framework. The code originates from the [siren](https://github.com/sleeepyskies/siren)
 game engine, but has since evolved further.
 
-Currently only OpenGL 4.6 is supported, but other APIs may be supported in the future.
-
 ## Building 2iREN
 
 2iREN uses Conan for package management, as well as Just for running commands.

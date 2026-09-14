@@ -29,7 +29,9 @@ if(SIREN_LINUX OR SIREN_WINDOWS)
     find_package(glad REQUIRED)
 
     target_link_libraries(2iREN PRIVATE glad::glad opengl::opengl)
-elseif(SIREN_MACOS)
+endif()
+
+if(SIREN_MACOS)
     find_package(metal-cpp REQUIRED)
 
     target_link_libraries(2iREN PRIVATE metal-cpp::metal-cpp)

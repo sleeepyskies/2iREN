@@ -9,7 +9,8 @@ namespace siren::string {
 
 /// @brief Converts a string to lower case.
 [[nodiscard]]
-constexpr inline auto tolower(const std::string_view str) noexcept -> std::string {
+constexpr inline auto tolower(const std::string_view str) noexcept
+    -> std::string {
     return str
         | std::views::transform([](auto c) { return std::tolower(c); })
         | std::ranges::to<std::string>();
@@ -17,7 +18,8 @@ constexpr inline auto tolower(const std::string_view str) noexcept -> std::strin
 
 /// @brief Converts a string to upper case.
 [[nodiscard]]
-constexpr inline auto toupper(const std::string_view str) noexcept -> std::string {
+constexpr inline auto toupper(const std::string_view str) noexcept
+    -> std::string {
     return str
         | std::views::transform([](auto c) { return std::toupper(c); })
         | std::ranges::to<std::string>();

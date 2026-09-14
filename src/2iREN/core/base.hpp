@@ -6,7 +6,7 @@
 
 namespace siren {
 
-/** @brief Simple macro to mark wrapping PANIC with an unimplemented message. */
+/// @brief Simple macro to mark wrapping PANIC with an unimplemented message.
 #define UNIMPLEMENTED() PANIC("Not implemented")
 
 /** @brief An unsigned 8-bit integer, aka a byte */

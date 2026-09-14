@@ -7,11 +7,13 @@
 #include "2iREN/math/extent.hpp"
 #include "2iREN/math/point2.hpp"
 #include "2iREN/utility/log.hpp"
+#include "2iREN/window/codes.hpp"
 #include "2iREN/window/mappings.hpp"
 
 namespace siren {
 
-Window::Window(const WindowDescriptor& descriptor) : m_input(*this) {
+Window::Window(const WindowDescriptor& descriptor, const Backend backend) :
+    m_input(*this) {
     GLFWmonitor* monitor = nullptr;
 
     if (descriptor.mode == WindowMode::Fullscreen) {
@@ -23,7 +25,11 @@ Window::Window(const WindowDescriptor& descriptor) : m_input(*this) {
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, descriptor.transparent);
 
     m_handle = glfwCreateWindow(
-        descriptor.width, descriptor.height, descriptor.title.c_str(), monitor, nullptr
+        descriptor.width,
+        descriptor.height,
+        descriptor.title.c_str(),
+        monitor,
+        nullptr
     );
 
     ASSERT(m_handle, "Failed to create GLFW window");
@@ -46,7 +52,10 @@ Window::Window(const WindowDescriptor& descriptor) : m_input(*this) {
     log::info("window created");
 
     glfwDefaultWindowHints();
-    glfwMakeContextCurrent(m_handle);
+
+    if (backend == Backend::OpenGL) {
+        glfwMakeContextCurrent(m_handle);
+    }
 }
 
 Window::~Window() {
@@ -74,7 +83,10 @@ auto Window::extent() const noexcept -> Extent2u {
 auto Window::framebuffer_extent() const noexcept -> Extent2u {
     i32 x, y;
     glfwGetFramebufferSize(m_handle, &x, &y);
-    ASSERT(x > 0 && y > 0, "glfw error: window framebuffer extent cannot be negative");
+    ASSERT(
+        x > 0 && y > 0,
+        "glfw error: window framebuffer extent cannot be negative"
+    );
 
     return Extent2u{
         static_cast<u32>(x),
@@ -114,7 +126,9 @@ auto Window::mode() const noexcept -> WindowMode {
 }
 
 auto Window::cursor_mode() const noexcept -> CursorMode {
-    return from_glfw_mouse_mode(static_cast<u32>(glfwGetInputMode(m_handle, GLFW_CURSOR)));
+    return from_glfw_mouse_mode(
+        static_cast<u32>(glfwGetInputMode(m_handle, GLFW_CURSOR))
+    );
 }
 
 auto Window::should_close() const noexcept -> bool {
@@ -135,7 +149,7 @@ auto Window::input() noexcept -> Input& {
 
 auto Window::set_title(const std::string& title) -> void {
     glfwSetWindowTitle(m_handle, title.c_str());
-    log::trace("Window title set to {}", title);
+    log::trace("window title set to {}", title);
 }
 
 auto Window::set_mode(const WindowMode mode) -> void {
@@ -161,10 +175,19 @@ auto Window::set_mode(const WindowMode mode) -> void {
             ASSERT(monitor, "glfw failed to get the primary monitor.");
 
             const auto videomode = glfwGetVideoMode(monitor);
-            ASSERT(videomode, "glfw failed to get the videomode of the primary monitor.");
+            ASSERT(
+                videomode,
+                "glfw failed to get the videomode of the primary monitor."
+            );
 
             glfwSetWindowMonitor(
-                m_handle, monitor, 0, 0, videomode->width, videomode->height, videomode->refreshRate
+                m_handle,
+                monitor,
+                0,
+                0,
+                videomode->width,
+                videomode->height,
+                videomode->refreshRate
             );
             break;
         }
@@ -172,7 +195,9 @@ auto Window::set_mode(const WindowMode mode) -> void {
 }
 
 auto Window::set_extent(const Extent2u extent) -> void {
-    glfwSetWindowSize(m_handle, static_cast<i32>(extent.x), static_cast<i32>(extent.y));
+    glfwSetWindowSize(
+        m_handle, static_cast<i32>(extent.x), static_cast<i32>(extent.y)
+    );
     log::trace("window extent set to {}.", extent);
 }
 
@@ -182,7 +207,9 @@ auto Window::set_position(Point2u position) -> void {
 }
 
 auto Window::set_cursor_mode(const CursorMode cursormode) -> void {
-    glfwSetInputMode(m_handle, GLFW_CURSOR, static_cast<i32>(to_glfw(cursormode)));
+    glfwSetInputMode(
+        m_handle, GLFW_CURSOR, static_cast<i32>(to_glfw(cursormode))
+    );
 }
 
 auto Window::poll_events() -> void {
@@ -227,26 +254,42 @@ auto Window::glfw_mouse_button_callback(
     }
 }
 
-auto Window::glfw_mouse_move_callback(GLFWwindow* window, const f64 xpos, const f64 ypos) -> void {
+auto Window::glfw_mouse_move_callback(
+    GLFWwindow* window,
+    const f64 xpos,
+    const f64 ypos
+) -> void {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    self->m_input.move_mouse(Point2f{static_cast<f32>(xpos), static_cast<f32>(ypos)});
+    self->m_input.move_mouse(
+        Point2f{static_cast<f32>(xpos), static_cast<f32>(ypos)}
+    );
 }
 
-auto Window::glfw_scroll_callback(GLFWwindow* window, const f64 xoffset, const f64 yoffset)
-    -> void {
+auto Window::glfw_scroll_callback(
+    GLFWwindow* window,
+    const f64 xoffset,
+    const f64 yoffset
+) -> void {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    self->m_input.scroll_mouse(Vec2f{static_cast<f32>(xoffset), static_cast<f32>(yoffset)});
+    self->m_input.scroll_mouse(
+        Vec2f{static_cast<f32>(xoffset), static_cast<f32>(yoffset)}
+    );
 }
 
-auto Window::glfw_framebuffer_resize_callback(GLFWwindow* window, const i32 width, const i32 height)
-    -> void {
+auto Window::glfw_framebuffer_resize_callback(
+    GLFWwindow* window,
+    const i32 width,
+    const i32 height
+) -> void {
     if (width <= 0 || height <= 0) {
         return;
     }
 
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_resize_callback) {
-        self->m_resize_callback(Extent2u{static_cast<u32>(width), static_cast<u32>(height)});
+        self->m_resize_callback(
+            Extent2u{static_cast<u32>(width), static_cast<u32>(height)}
+        );
     }
 }
 } // namespace siren

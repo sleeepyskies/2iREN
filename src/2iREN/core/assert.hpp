@@ -14,11 +14,11 @@
 #include <stacktrace>
 #endif
 
-
 namespace siren::impl {
 
 /** @brief Attempts to trim a file path to 2iREN root. */
-[[nodiscard]] constexpr auto strip_path(const std::string_view path) -> std::string_view {
+[[nodiscard]]
+constexpr auto strip_path(const std::string_view path) -> std::string_view {
     const auto pos = path.find("2iREN/");
 
     if (pos != std::string_view::npos) {
@@ -28,13 +28,17 @@ namespace siren::impl {
     return path; // fallback to original path if we cant trim somehow
 }
 
-[[noreturn]] inline auto report_and_terminate(
+[[noreturn]]
+inline auto report_and_terminate(
     const std::source_location& location,
     const std::string_view expression,
     const std::string_view message
 ) -> void {
     const std::string locationstring = std::format(
-        "{}:{}:{}", strip_path(location.file_name()), location.line(), location.column()
+        "{}:{}:{}",
+        strip_path(location.file_name()),
+        location.line(),
+        location.column()
     );
 
     std::println(
@@ -62,11 +66,13 @@ namespace siren::impl {
     std::abort();
 }
 
-[[noreturn]] inline auto do_panic(const std::source_location& location) -> void {
+[[noreturn]]
+inline auto do_panic(const std::source_location& location) -> void {
     report_and_terminate(location, "", "");
 }
 
-[[noreturn]] inline auto do_panic(
+[[noreturn]]
+inline auto do_panic(
     const std::source_location& location,
     const std::string_view message
 ) -> void {
@@ -74,7 +80,8 @@ namespace siren::impl {
 }
 
 template <typename... Args>
-[[noreturn]] inline auto do_panic(
+[[noreturn]]
+inline auto do_panic(
     const std::source_location& location,
     const std::format_string<Args...> format,
     Args&&... args
@@ -82,11 +89,13 @@ template <typename... Args>
     do_panic(location, std::format(format, std::forward<Args>(args)...));
 }
 
-[[noreturn]] inline auto do_unreachable(const std::source_location& location) -> void {
+[[noreturn]]
+inline auto do_unreachable(const std::source_location& location) -> void {
     do_panic(location, "unreachable code reached");
 }
 
-[[noreturn]] inline auto do_unreachable(
+[[noreturn]]
+inline auto do_unreachable(
     const std::source_location& location,
     const std::string_view message
 ) -> void {
@@ -94,7 +103,8 @@ template <typename... Args>
 }
 
 template <typename... Args>
-[[noreturn]] inline auto do_unreachable(
+[[noreturn]]
+inline auto do_unreachable(
     const std::source_location& location,
     const std::format_string<Args...> format,
     Args&&... args
@@ -102,14 +112,16 @@ template <typename... Args>
     do_panic(location, format, std::forward<Args>(args)...);
 }
 
-[[noreturn]] inline auto do_assertion_failed(
+[[noreturn]]
+inline auto do_assertion_failed(
     const std::source_location& location,
     const std::string_view expression
 ) -> void {
     report_and_terminate(location, expression, "");
 }
 
-[[noreturn]] inline auto do_assertion_failed(
+[[noreturn]]
+inline auto do_assertion_failed(
     const std::source_location& location,
     const std::string_view expression,
     const std::string_view message
@@ -118,30 +130,46 @@ template <typename... Args>
 }
 
 template <typename... Args>
-[[noreturn]] inline auto do_assertion_failed(
+[[noreturn]]
+inline auto do_assertion_failed(
     const std::source_location& location,
     const std::string_view expression,
     const std::format_string<Args...> format,
     Args&&... args
 ) -> void {
-    do_assertion_failed(location, expression, std::format(format, std::forward<Args>(args)...));
+    do_assertion_failed(
+        location, expression, std::format(format, std::forward<Args>(args)...)
+    );
 }
 
 } // namespace siren::impl
 
-/// @brief Crashes the program with an optional formatted message and stack trace.
-#define PANIC(...) siren::impl::do_panic(std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)
+/// @brief Crashes the program with an optional formatted message and stack
+/// trace.
+#define PANIC(...)                                                             \
+    siren::impl::do_panic(                                                     \
+        std::source_location::current() __VA_OPT__(, ) __VA_ARGS__             \
+    )
 
-/// @brief Crashes the program because control reached a logically impossible path.
-#define UNREACHABLE(...)                                                                           \
-    siren::impl::do_unreachable(std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)
+/// @brief Crashes the program because control reached a logically impossible
+/// path.
+#define UNREACHABLE(...)                                                       \
+    siren::impl::do_unreachable(                                               \
+        std::source_location::current() __VA_OPT__(, ) __VA_ARGS__             \
+    )
 
-/// @brief Checks a condition and crashes with an optional formatted message when it is false.
-#define ASSERT(condition, ...)                                                                     \
-    do {                                                                                           \
-        if (!(condition)) [[unlikely]] {                                                           \
-            siren::impl::do_assertion_failed(                                                      \
-                std::source_location::current(), #condition __VA_OPT__(, ) __VA_ARGS__             \
-            );                                                                                     \
-        }                                                                                          \
+/// @brief Checks a condition and crashes with an optional formatted message
+/// when it is false.
+#define ASSERT(condition, ...)                                                 \
+    do {                                                                       \
+        if (!(condition)) [[unlikely]] {                                       \
+            siren::impl::do_assertion_failed(                                  \
+                std::source_location::current(),                               \
+                #condition __VA_OPT__(, ) __VA_ARGS__                          \
+            );                                                                 \
+        }                                                                      \
     } while (false)
+
+/// @brief Checks some value is not nullptr.
+#define ASSERT_NOT_NULL(ptr, ...)                                              \
+    ASSERT(ptr != nullptr __VA_OPT__(, ) __VA_ARGS__)

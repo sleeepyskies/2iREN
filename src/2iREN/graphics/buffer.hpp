@@ -11,13 +11,12 @@ class ByteBuffer;
  * @brief Defines the usage of a Buffer.
  */
 enum class BufferUsage {
-    /** @brief Best used for data that is set once and persistent such as static meshes. */
+    /** @brief Best used for data that is set once and persistent such as static
+       meshes. */
     Static,
-    /** @brief Best used for data is updated often and persistent like dynamic meshes. */
+    /** @brief Best used for data is updated often and persistent like dynamic
+       meshes. */
     Dynamic,
-    /** @brief Best used for data that is updated often but not persistent like UI or short term
-       effects. */
-    Stream,
 };
 
 /** @brief Defines the index format of an index buffer. */
@@ -47,8 +46,8 @@ public:
 
 /**
  * @brief Describes a @ref Buffer. Used for object creation via @ref Device.
- * @todo pass in the data as a separate buffer in the device->create_buffer(), or just remove
- * entirely
+ * @todo pass in the data as a separate buffer in the device->create_buffer(),
+ * or just remove entirely
  */
 struct BufferDescriptor {
     /** @brief An optional label. Mainly useful for debugging. */
@@ -59,11 +58,10 @@ struct BufferDescriptor {
     BufferUsage usage;
 };
 
-/**
- * @brief The Buffer class represents a chunk of GPU memory.
- * This makes use of OpenGL DSA and can thus be used as a buffer
- * for arbitrary types of data (vertex buffers, index buffers etc...)
- */
+/// @brief A Buffer represents a typeless memory allocation on the GPU. The
+/// app defines how the memory is laid out. Can be used to represent various
+/// things such as vertex buffers, index buffers, shader storage objects,
+/// uniform buffers. The main use of buffers is to be used from shaders.
 class Buffer final : public RenderResource<Buffer> {
 public:
     using Base = RenderResource<Buffer>;
@@ -73,11 +71,12 @@ public:
     Buffer(Buffer&& other) noexcept;
     Buffer& operator=(Buffer&& other) noexcept;
 
-    /** @brief Returns the descriptor of this Buffer. */
+    /// @brief Returns the descriptor of this Buffer.
     [[nodiscard]]
     auto descriptor() const noexcept -> const BufferDescriptor&;
 
-    /** @brief Utility function to upload data to this Buffer. */
-    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
+    /// @brief Utility function to upload data to this Buffer.
+    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept
+        -> void;
 };
 } // namespace siren

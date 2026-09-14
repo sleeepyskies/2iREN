@@ -192,7 +192,7 @@ auto to_physical(const Path& path) -> std::optional<Path> {
     }(p_str)
                                            .transform([&p_str](const Mount& m) {
                                                const u32 idx =
-                                                   m.virt.length() + 3; // account for ://
+                                                   (u32)m.virt.length() + 3; // account for ://
                                                return m.pyhs / p_str.erase(0, idx);
                                            });
 }

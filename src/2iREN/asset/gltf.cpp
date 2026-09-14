@@ -210,7 +210,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             i32 width, height, channels;
 
             auto image_data =
-                stbi_load_from_memory(bytes, size, &width, &height, &channels, STBI_default);
+                stbi_load_from_memory(bytes, (i32)size, &width, &height, &channels, STBI_default);
             DEFER {
                 stbi_image_free(image_data);
             };

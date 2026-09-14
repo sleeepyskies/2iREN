@@ -8,27 +8,15 @@
 #include "2iREN/utility/string.hpp"
 
 namespace siren {
-/** @brief Represents the various possible shader stages. */
+/// @brief Represents the various possible shader stages
 struct ShaderStage {
-    enum Value {
-        /** @brief A Vertex Shader. */
-        Vertex,
-        /** @brief A Fragment Shader. */
-        Fragment,
-        /** @brief A Geometry Shader (optional). */
-        Geometry,
-        /** @brief A Compute Shader. */
-        Compute,
-        /** @brief A Task Shader (optional). */
-        Task,
-        /** @brief A Mesh Shader (replaces Vertex + Fragment stages). */
-        Mesh,
-    } value;
+    enum Value { Vertex, Fragment, Geometry, Compute, Task, Mesh } value;
 
-    constexpr ShaderStage(const Value v) : value(v) {}
-    constexpr operator Value() const { return value; }
+    constexpr ShaderStage(const Value v) : value(v) { }
+    constexpr operator Value() const {
+        return value;
+    }
 
-    /** @brief Returns the string representation of this value. */
     [[nodiscard]]
     constexpr auto to_string() const -> std::string_view {
         switch (value) {
@@ -42,9 +30,9 @@ struct ShaderStage {
         }
     }
 
-    /** @brief Creates a new ShaderStage parsed from a string. */
     [[nodiscard]]
-    static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
+    static auto from_string(const std::string_view str)
+        -> std::optional<ShaderStage> {
         const std::string lower = string::tolower(str);
 
         if (lower == "vertex") {
@@ -70,40 +58,39 @@ struct ShaderStage {
     }
 };
 
-/**
- * @brief Holds information on a single shader stage.
- */
+/// @brief Holds information on a single shader stage.
 struct ShaderData {
-    /** @brief The optional label of the shader. */
+    /// @brief The optional label of the shader.
     std::optional<std::string> label;
-    /** @brief The source code of the stage. */
+    /// @brief The source code of the stage.
     std::string source;
+    /// @brief The name of the entry function.
+    std::string entry = "main";
 };
 } // namespace siren
 
 template <>
 struct std::hash<siren::ShaderStage> {
-    auto operator()(const siren::ShaderStage& stage) const noexcept -> siren::usize {
+    auto operator()(const siren::ShaderStage& stage) const noexcept
+        -> siren::usize {
         return static_cast<siren::usize>(stage.value);
     }
 };
 
 namespace siren {
 
-/**
- * @brief Describes a @ref Shader to be created.
- */
+/// @brief Describes a @ref Shader to be created.
 struct ShaderDescriptor {
-    /** @brief The optional label of the shader. */
+    /// @brief The optional label of the shader.
     std::optional<std::string> label;
-    /** @brief The shader code for each stage of the Shader. */
+    /// @brief The shader code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };
 
 /**
- * @brief Represents a shader compiled on the GPU. Provides an interface to interact
- * with the GPU shader object. However, does not retain any information post compile.
- * To recover information after compiling, see @ref ShaderAsset.
+ * @brief Represents a shader compiled on the GPU. Provides an interface to
+ * interact with the GPU shader object. However, does not retain any information
+ * post compile. To recover information after compiling, see @ref ShaderAsset.
  */
 class Shader : public RenderResource<Shader> {
     using Base = RenderResource<Shader>;

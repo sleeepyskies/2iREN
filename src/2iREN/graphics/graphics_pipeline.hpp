@@ -8,17 +8,19 @@
 
 namespace siren {
 /**
- * @brief Represents the drawing mode. Aka how points are interpreted and how lines
- * are drawn between them
+ * @brief Represents the drawing mode. Aka how points are interpreted and how
+ * lines are drawn between them
  */
 enum class PrimitiveTopology {
     /** @brief Draw vertices as points. */
     Points,
-    /** @brief Every pair of vertices is treated as a line (1-2, 3-4, etc...). */
+    /** @brief Every pair of vertices is treated as a line (1-2, 3-4, etc...).
+     */
     Lines,
     /** @brief Chain draw vertices as lines (1-2-3-4-5...) */
     LineStrip,
-    /** @brief Every triple of vertices is treated as a triangle (1-2-3, 4-5-6, etc...) */
+    /** @brief Every triple of vertices is treated as a triangle (1-2-3, 4-5-6,
+       etc...) */
     Triangles,
     /** @brief Vertices connected in a ribbon (0-1-2, 0-2-3, etc...) */
     TriangleStrip,
@@ -28,31 +30,32 @@ enum class PrimitiveTopology {
 
 /** @brief Defines how the renderer determines a pixels' transparency. */
 enum class AlphaMode {
-    /** @brief Surface is fully solid. Depth always written to the z-buffer. */
+    ///  @brief Surface is fully solid. Depth always written to the z-buffer. */
     Opaque,
-    /** @brief Semi-transparent. Colors from behind can show through. */
+    /// @brief Semi-transparent. Colors from behind can show through.
     Blend,
-    /** @brief Surface is either fully transparent or fully opaque based on a threshold. */
+    /// @brief Surface is either fully transparent or fully opaque based on a
+    /// threshold.
     Mask,
 };
 
-/** @brief The function that determines if a fragment will pass the depth test. */
+///  @brief The function that determines if a fragment will pass the depth test.
 enum class DepthFunction {
-    /** @brief Always pass. */
+    /// @brief Always pass
     Always,
-    /** @brief Never pass. */
+    /// @brief Never pass.
     Never,
-    /** @brief Pass if new < old. */
+    /// @brief Pass if new < old.
     Less,
-    /** @brief Pass if new == old. */
+    /// @brief Pass if new == old.
     Equal,
-    /** @brief Pass if new <= old. */
+    /// @brief Pass if new <= old.
     LessEqual,
-    /** @brief Pass if new > old. */
+    /// @brief Pass if new > old.
     Greater,
-    /** @brief Pass if new >= old. */
+    /// @brief Pass if new >= old.
     GreaterEqual,
-    /** @brief Pass if new != old. */
+    /// @brief Pass if new != old.
     NotEqual,
 };
 
@@ -68,15 +71,15 @@ enum class BlendFunction {
     Subtract,
     /** @brief Subtracts the first alpha value from the second. */
     ReverseSubtract,
-    /** @brief Takes the minimum of both alpha values. Note this ignores @ref BlendFactor */
+    /** @brief Takes the minimum of both alpha values. Note this ignores @ref
+       BlendFactor */
     Min,
-    /** @brief Takes the maximum of both alpha values. Note this ignores @ref BlendFactor */
+    /** @brief Takes the maximum of both alpha values. Note this ignores @ref
+       BlendFactor */
     Max,
 };
 
-/**
- * @brief Defines what weights to multiply with the
- */
+/// @brief Defines what weights to multiply with the
 enum class BlendFactor {
     /** @brief Multiplies all values with 0. */
     Zero,
@@ -92,11 +95,9 @@ enum class BlendFactor {
     OneMinusDestinationAlpha,
 };
 
-/**
- * @brief Collection of parameters describing how to blend together values.
- */
+/// @brief Collection of parameters describing how to blend together values.
 struct BlendDescription {
-    /** @brief Describes what function to use to blend 2 values together. */
+    /// @brief Describes what function to use to blend 2 values together.
     BlendFunction function = BlendFunction::Add;
     /** @brief The @ref BlendFactor to affect the source. */
     BlendFactor source_factor = BlendFactor::SourceAlpha;
@@ -104,34 +105,36 @@ struct BlendDescription {
     BlendFactor dest_factor = BlendFactor::OneMinusSourceAlpha;
 };
 
+/// @brief A colletion of parameters used to describe how a @ref
+/// GraphicsPipeline should behave.
 struct GraphicsPipelineDescriptor {
-    /** @brief An optional label for the @ref GraphicsPipeline. Mainly used for debugging. */
+    /// @brief An optional label for the @ref GraphicsPipeline.
     std::optional<std::string> label = std::nullopt;
-    /** @brief How the shader interprets vertex data. */
+    /// @brief How the vertices are structured. @see LayoutBuilder.
     Layout layout = DEFAULT_VERTEX_LAYOUT;
-    /** @brief The shader to use. */
+    /// @brief The shader to use.
     ShaderHandle shader;
-    /** @brief How to draw vertex data. */
-    PrimitiveTopology topology = PrimitiveTopology::Triangles;
-    /** @brief Surface transparency type. */
+    /// @brief Surface transparency type
     AlphaMode alpha_mode = AlphaMode::Opaque;
-    /** @brief Depth function. */
+    /// @brief Depth function.
     DepthFunction depth_function = DepthFunction::Less;
-    /** @brief Describes how to blend color values. Only used if alpha_mode == AlphaMode::Blend. */
+    /// @brief Describes how to blend color values. Only used if alpha_mode ==
+    /// AlphaMode::Blend.
     BlendDescription color_blend = {};
-    /** @brief Describes how to blend alpha values. Only used if alpha_mode == AlphaMode::Blend. */
+    /// @brief Describes how to blend alpha values. Only used if alpha_mode ==
+    /// AlphaMode::Blend.
     BlendDescription alpha_blend = {};
-    /** @brief Whether back face is culled. */
+    /// @brief Whether back face is culled.
     bool back_face_culling = true;
-    /** @brief Whether to perform the depth test. */
+    /// @brief Whether to perform the depth test.
     bool depth_test = true;
-    /** @brief Whether to write the depth buffer. */
+    /// @brief Whether to write the depth buffer.
     bool depth_write = true;
 };
 
 /**
- * @brief The GraphicsPipeline encapsulates the vertex layout of a buffer, as well
- * as any fixed functions state.
+ * @brief The GraphicsPipeline encapsulates the vertex layout of a buffer, as
+ * well as any fixed functions state.
  */
 class GraphicsPipeline final : public RenderResource<GraphicsPipeline> {
     using Base = RenderResource<GraphicsPipeline>;
@@ -143,7 +146,9 @@ public:
     GraphicsPipeline(GraphicsPipeline&& other) noexcept;
     GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;
 
-    /** @brief Returns the @ref GraphicsPipelineDescriptor used to create this GraphicsPipeline. */
-    [[nodiscard]] auto descriptor() const noexcept -> const GraphicsPipelineDescriptor&;
+    /** @brief Returns the @ref GraphicsPipelineDescriptor used to create this
+     * GraphicsPipeline. */
+    [[nodiscard]] auto descriptor() const noexcept
+        -> const GraphicsPipelineDescriptor&;
 };
 } // namespace siren

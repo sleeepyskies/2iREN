@@ -1,5 +1,8 @@
 #pragma once
 
+#undef MIN
+#undef MAX
+
 #include <format>
 #include <limits>
 #include <type_traits>
@@ -28,10 +31,16 @@ struct Vec2 {
     constexpr explicit Vec2(const Type x, const Type y) : x(x), y(y) { }
 
     template <typename S>
-        requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
+        requires(
+            !std::is_same_v<std::remove_cvref_t<S>, Type>
+            && std::is_convertible_v<S, Type>
+        )
     constexpr explicit Vec2(const S xy) : Vec2(static_cast<Type>(xy)) { }
     template <typename S>
-        requires(!std::is_same_v<std::remove_cvref_t<S>, Type> && std::is_convertible_v<S, Type>)
+        requires(
+            !std::is_same_v<std::remove_cvref_t<S>, Type>
+            && std::is_convertible_v<S, Type>
+        )
     constexpr explicit Vec2(const S x, const S y) :
         Vec2(static_cast<Type>(x), static_cast<Type>(y)) { }
 

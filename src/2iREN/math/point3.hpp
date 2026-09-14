@@ -28,8 +28,10 @@ struct Point3 {
     }
 
     [[nodiscard]]
-    static constexpr inline auto translate(const Point3 point, const Vec3<T>& translation) noexcept
-        -> Point3 {
+    static constexpr inline auto translate(
+        const Point3 point,
+        const Vec3<T>& translation
+    ) noexcept -> Point3 {
         return Point3{
             point.x + translation.x,
             point.y + translation.y,
@@ -45,7 +47,8 @@ struct Point3 {
 
 /// @brief Returns a Vec3 that goes from b to a.
 template <typename T>
-constexpr auto operator-(const Point3<T> a, const Point3<T> b) noexcept -> Vec3<T> {
+constexpr auto operator-(const Point3<T> a, const Point3<T> b) noexcept
+    -> Vec3<T> {
     return Vec3<T>{
         a.x - b.x,
         a.y - b.y,

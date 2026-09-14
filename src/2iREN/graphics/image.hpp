@@ -21,6 +21,8 @@ public:
         R8,
         /** @brief 1-channel 32-bit R. */
         R32UI,
+        /** @brief 2-channel 32-bit float HDR RG. */
+        RG32f,
         /** @brief 3-channel 8-bit linear RGB. */
         RGB8,
         /** @brief 3-channel 8-bit sRGB. */
@@ -33,8 +35,6 @@ public:
         RGB16f,
         /** @brief 4-channel 16-bit float HDR RGB. */
         RGBA16f,
-        /** @brief 2-channel 32-bit float HDR RG. */
-        RG32f,
         /** @brief Depth-stencil format (24-bit depth, 8-bit stencil). */
         Depth24Stencil8,
         /** @brief Depth buffer format (32-bit depth). */
@@ -111,9 +111,7 @@ public:
     }
 };
 
-/**
- * @brief Describes an @ref Image for creation.
- */
+/// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
     /** @brief An optional label. Mainly used for debugging. */
     std::optional<std::string> label = std::nullopt;

@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "2iREN/graphics/backend.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -40,7 +41,7 @@ public:
 
     /// @brief Makes a graphics device.
     [[nodiscard]]
-    auto make_device() const -> std::unique_ptr<Device>;
+    auto make_device() -> std::unique_ptr<Device>;
 
     /// @brief Makes a new window based on the provided descriptor.
     [[nodiscard]]
@@ -48,5 +49,6 @@ public:
 
 private:
     explicit Context(const ContextDescriptor& descriptor);
+    Backend m_backend;
 };
 } // namespace siren

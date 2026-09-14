@@ -31,13 +31,13 @@ auto initialize_glfw() -> void {
 
     const auto platform = glfwGetPlatform();
     if (platform == GLFW_PLATFORM_X11) {
-        siren::log::info("Using windowing platform X11");
+        siren::log::info("using windowing platform X11");
     } else if (platform == GLFW_PLATFORM_WAYLAND) {
-        siren::log::info("Using windowing platform Wayland");
+        siren::log::info("using windowing platform Wayland");
     } else if (platform == GLFW_PLATFORM_COCOA) {
-        siren::log::info("Using windowing platform Cocoa");
+        siren::log::info("using windowing platform Cocoa");
     } else if (platform == GLFW_PLATFORM_WIN32) {
-        siren::log::info("Using windowing platform Win32");
+        siren::log::info("using windowing platform Win32");
     }
 
 #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
@@ -48,7 +48,6 @@ auto initialize_glfw() -> void {
 #elifdef SIREN_MACOS
     siren::log::info("selecting Metal backend.");
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    m_backend = Backend::Metal;
 #endif
 }
 
@@ -80,12 +79,13 @@ Context::~Context() {
     glfwTerminate();
 }
 
-auto Context::make_device() const -> std::unique_ptr<Device> {
-    return
+auto Context::make_device() -> std::unique_ptr<Device> {
 #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
-        std::make_unique<OpenGLDevice>();
+    m_backend = Backend::OpenGL;
+    return std::make_unique<OpenGLDevice>();
 #elifdef SIREN_MACOS
-        std::make_unique<MetalDevice>();
+    m_backend = Backend::Metal;
+    return std::make_unique<MetalDevice>();
 #endif
 }
 
@@ -93,6 +93,6 @@ auto Context::make_window(const WindowDescriptor& descriptor) const -> Window {
     static bool called = false;
     ASSERT(!called, "a window has already been created");
     called = true;
-    return Window{descriptor};
+    return Window{descriptor, m_backend};
 }
 } // namespace siren

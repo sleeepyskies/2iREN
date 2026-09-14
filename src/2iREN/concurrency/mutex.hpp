@@ -10,9 +10,7 @@
 
 namespace siren {
 
-/**
- * @brief Type alias for a lock held on a mutex.
- */
+/// @brief Type alias for a lock held on a mutex.
 using UniqueMutexLock = std::unique_lock<std::mutex>;
 
 /**

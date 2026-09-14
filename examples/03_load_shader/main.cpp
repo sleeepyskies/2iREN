@@ -32,7 +32,6 @@ int main() {
     const auto swapchain = device->make_swapchain(
         window,
         {
-            .label = std::nullopt,
             .vsync = true,
         }
     );

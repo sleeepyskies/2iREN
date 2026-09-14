@@ -83,22 +83,28 @@ auto fetch_limits() -> Limits {
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &values[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &values[2]);
     limits.max_compute_work_group_count = {
-        static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])
+        static_cast<u32>(values[0]),
+        static_cast<u32>(values[1]),
+        static_cast<u32>(values[2])
     };
 
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &values[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &values[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &values[2]);
     limits.max_compute_work_group_size = {
-        static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])
+        static_cast<u32>(values[0]),
+        static_cast<u32>(values[1]),
+        static_cast<u32>(values[2])
     };
 
     return limits;
 }
 
 /// helper to create an optional label of form "prefix-suffix"
-auto make_label(const std::optional<std::string>& prefix, const std::string_view suffix)
-    -> std::optional<std::string> {
+auto make_label(
+    const std::optional<std::string>& prefix,
+    const std::string_view suffix
+) -> std::optional<std::string> {
     if (prefix) {
         return *prefix + "-" + std::string(suffix);
     }
@@ -114,7 +120,9 @@ auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
             | std::views::transform(&ColorAttachment::image)
             | std::ranges::to<std::vector>(),
         .depth_stencil =
-            target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
+            target.depth_stencil.transform(
+                                    [](auto a) { return a.image; }
+            ).value_or(NullHandle),
     };
     if (const auto it = m_cache.find(key); it != m_cache.end()) {
         return it->second;
@@ -140,27 +148,39 @@ auto FramebufferCache::Hasher::operator()(const Key& key) const -> usize {
     return hash;
 }
 
-auto FramebufferCache::create_framebuffer(const RenderTarget& target) const -> GLuint {
+auto FramebufferCache::create_framebuffer(const RenderTarget& target) const
+    -> GLuint {
     GLuint framebuffer;
     glCreateFramebuffers(1, &framebuffer);
 
-    for (const auto [index, attachment] : std::views::enumerate(target.colors)) {
+    for (const auto [index, attachment] :
+         std::views::enumerate(target.colors)) {
         const auto image_id = m_image_table.fetch(attachment.image);
-        glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0 + index, image_id, 0);
+        glNamedFramebufferTexture(
+            framebuffer, GL_COLOR_ATTACHMENT0 + index, image_id, 0
+        );
     }
 
     if (target.depth_stencil.has_value()) {
         const auto image_id = m_image_table.fetch(target.depth_stencil->image);
-        const auto type     = m_image_table.details(target.depth_stencil->image).descriptor.format;
+        const auto type     = m_image_table.details(target.depth_stencil->image)
+                                  .descriptor.format;
         switch (type) {
             case ImageFormat::Depth32f:
-                glNamedFramebufferTexture(framebuffer, GL_DEPTH_ATTACHMENT, image_id, 0);
+                glNamedFramebufferTexture(
+                    framebuffer, GL_DEPTH_ATTACHMENT, image_id, 0
+                );
                 break;
             case ImageFormat::Depth24Stencil8:
-                glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0);
+                glNamedFramebufferTexture(
+                    framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, image_id, 0
+                );
                 break;
             default:
-                PANIC("Depth/Stencil buffer must have either Depth32f or Depth24Stencil8 format");
+                PANIC(
+                    "Depth/Stencil buffer must have either Depth32f or "
+                    "Depth24Stencil8 format"
+                );
         }
     }
 
@@ -170,10 +190,13 @@ auto FramebufferCache::create_framebuffer(const RenderTarget& target) const -> G
     for (const usize index : range(target.colors.size())) {
         draw_buffers.push_back(GL_COLOR_ATTACHMENT0 + index);
     }
-    glNamedFramebufferDrawBuffers(framebuffer, draw_buffers.size(), draw_buffers.data());
+    glNamedFramebufferDrawBuffers(
+        framebuffer, draw_buffers.size(), draw_buffers.data()
+    );
 
     ASSERT(
-        glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER)
+            == GL_FRAMEBUFFER_COMPLETE,
         "Framebuffer could not be created."
     );
 
@@ -197,7 +220,9 @@ auto OpenGLDevice::make_buffer(
     const BufferDescriptor& descriptor,
     std::optional<ByteBufferView> initial
 ) -> Buffer {
-    ASSERT(descriptor.size > 0, "cannot legally allocate empty buffer (sorry).");
+    ASSERT(
+        descriptor.size > 0, "cannot legally allocate empty buffer (sorry)."
+    );
 
     const auto buffer_handle = m_state.buffer_table.reserve();
 
@@ -228,7 +253,9 @@ auto OpenGLDevice::make_buffer(
         );
         data = initial->data();
     }
-    glNamedBufferStorage(buf, static_cast<GLsizeiptr>(descriptor.size), data, flags);
+    glNamedBufferStorage(
+        buf, static_cast<GLsizeiptr>(descriptor.size), data, flags
+    );
 
     // if the buffer is streamed, we also need to store a mapping pointer
     MappedBufferPtr mapped_buffer;
@@ -244,7 +271,9 @@ auto OpenGLDevice::make_buffer(
 
     // link proxy handle to opengl handle
     this->m_state.buffer_table.link(
-        buffer_handle, buf, GlBufferDetails{.descriptor = descriptor, .buffer_ptr = mapped_buffer}
+        buffer_handle,
+        buf,
+        GlBufferDetails{.descriptor = descriptor, .buffer_ptr = mapped_buffer}
     );
 
     log::trace("{} created.", buffer_handle);
@@ -259,11 +288,17 @@ auto OpenGLDevice::destroy_buffer(const BufferHandle handle) -> void {
 
 auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
     ASSERT(
-        descriptor.extent.x > 0 && descriptor.extent.y > 0 && descriptor.extent.z > 0,
+        descriptor.extent.x
+            > 0
+            && descriptor.extent.y
+            > 0
+            && descriptor.extent.z
+            > 0,
         "Cannot create an empty image."
     );
     const auto image_handle = m_state.image_table.reserve();
-    const auto target       = opengl::img_to_target_gl(descriptor.extent, descriptor.dimension);
+    const auto target =
+        opengl::img_to_target_gl(descriptor.extent, descriptor.dimension);
 
     // create the image
     GLuint img;
@@ -279,8 +314,9 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         );
     }
 
-    const auto internal_format = opengl::img_format_to_gl_internal(descriptor.format);
-    const auto& extent         = descriptor.extent;
+    const auto internal_format =
+        opengl::img_format_to_gl_internal(descriptor.format);
+    const auto& extent = descriptor.extent;
 
     // allocate enough memory
     switch (target) {
@@ -319,7 +355,9 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
     }
 
     // assign the proxy handle to the real handle
-    this->m_state.image_table.link(image_handle, img, GlImageDetails{.descriptor = descriptor});
+    this->m_state.image_table.link(
+        image_handle, img, GlImageDetails{.descriptor = descriptor}
+    );
 
     log::trace("{} created.", image_handle);
     return Image{this, image_handle};
@@ -331,7 +369,8 @@ auto OpenGLDevice::destroy_image(const ImageHandle handle) -> void {
     log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
+auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor)
+    -> Sampler {
     const auto sampler_handle = m_state.sampler_table.reserve();
 
     GLuint sampler;
@@ -339,9 +378,9 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
     glSamplerParameteri(
         sampler,
         GL_TEXTURE_MIN_FILTER,
-        static_cast<GLint>(
-            opengl::min_img_filter_to_gl(descriptor.min_filter, descriptor.mipmap_filter)
-        )
+        static_cast<GLint>(opengl::min_img_filter_to_gl(
+            descriptor.min_filter, descriptor.mipmap_filter
+        ))
     );
     glSamplerParameteri(
         sampler,
@@ -350,13 +389,19 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
     );
 
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_S, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.s_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_S,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.s_wrap))
     );
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_T, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.t_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_T,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.t_wrap))
     );
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_R, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.r_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_R,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.r_wrap))
     );
 
     glSamplerParameterf(sampler, GL_TEXTURE_MIN_LOD, descriptor.lod_min);
@@ -371,7 +416,9 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
     }
 
     glSamplerParameteri(
-        sampler, GL_TEXTURE_COMPARE_MODE, opengl::img_compare_mode_to_gl(descriptor.compare_mode)
+        sampler,
+        GL_TEXTURE_COMPARE_MODE,
+        opengl::img_compare_mode_to_gl(descriptor.compare_mode)
     );
     glSamplerParameteri(
         sampler,
@@ -396,11 +443,11 @@ auto OpenGLDevice::destroy_sampler(const SamplerHandle handle) -> void {
 auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     ASSERT(
         descriptor.source.contains(ShaderStage::Vertex),
-        "Cannot create a Shader without a Vertex Shader"
+        "cannot create a shader without a vertex shader"
     );
     ASSERT(
         descriptor.source.contains(ShaderStage::Fragment),
-        "Cannot create a Shader without a Fragment Shader"
+        "cannot create a shader without a fragment shader"
     );
 
     const auto shader_handle = m_state.shader_table.reserve();
@@ -412,7 +459,8 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     std::vector<GLuint> shader_ids;
     shader_ids.reserve(descriptor.source.size());
 
-    // process all stages, we can be sure we have at least vertex + fragment here
+    // process all stages, we can be sure we have at least vertex + fragment
+    // here
     for (const auto& [stage, stage_data] : descriptor.source) {
         const GLuint shader = glCreateShader(opengl::shader_stage_to_gl(stage));
         const char* raw     = stage_data.source.c_str();
@@ -424,7 +472,11 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader, 512, nullptr, err_info);
-            log::warn("{} Shader compilation from failed with error message: {}", stage, err_info);
+            log::warn(
+                "{} Shader compilation from failed with error message: {}",
+                stage,
+                err_info
+            );
         }
 
         // optionally label the shader
@@ -469,7 +521,8 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         GLsizei count       = 0;
         GLenum type         = GL_NONE;
         glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_length);
-        const auto uniform_name = std::make_unique<char[]>(static_cast<usize>(max_name_length));
+        const auto uniform_name =
+            std::make_unique<char[]>(static_cast<usize>(max_name_length));
 
         for (i32 i = 0; i < uniform_count; i++) {
             glGetActiveUniform(
@@ -481,9 +534,12 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
                 &type,
                 uniform_name.get()
             );
-            const i32 location = glGetUniformLocation(program, uniform_name.get());
+            const i32 location =
+                glGetUniformLocation(program, uniform_name.get());
             if (location != -1) {
-                cache[std::string(uniform_name.get(), static_cast<usize>(length))] = location;
+                cache[std::string(
+                    uniform_name.get(), static_cast<usize>(length)
+                )] = location;
             }
         }
     }
@@ -499,7 +555,9 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     }
 
     this->m_state.shader_table.link(
-        shader_handle, program, GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
+        shader_handle,
+        program,
+        GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
     );
 
     log::trace("{} created.", shader_handle);
@@ -512,17 +570,20 @@ auto OpenGLDevice::destroy_shader(const ShaderHandle handle) -> void {
     log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
-    -> Swapchain {
-    // so OpenGL doesn't expose any concept of a swapchain, so the opengl swapchain in 2iREN
-    // is just an offscreen image. on Device::present() we just blit this image to window.
+auto OpenGLDevice::make_swapchain(
+    const Window& window,
+    const SwapchainDescriptor& descriptor
+) -> Swapchain {
+    // so OpenGL doesn't expose any concept of a swapchain, so the opengl
+    // swapchain in 2iREN is just an offscreen image. on Device::present() we
+    // just blit this image to window.
 
     const auto swapchain_handle = m_state.swapchain_table.reserve();
     const auto windowfb_extent  = window.framebuffer_extent();
 
     auto image = make_image({
-        .label =
-            make_label(descriptor.label, "Swapchain Backbuffer").value_or("Swapchain Backbuffer"),
+        .label         = make_label(descriptor.label, "Swapchain Backbuffer")
+                             .value_or("Swapchain Backbuffer"),
         .format        = ImageFormat::RGBA8,
         .extent        = Extent3u{windowfb_extent.x, windowfb_extent.y, 1},
         .dimension     = ImageDimension::D2,
@@ -559,13 +620,18 @@ auto OpenGLDevice::destroy_swapchain(const SwapchainHandle handle) -> void {
     log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
-    -> GraphicsPipeline {
+auto OpenGLDevice::make_graphics_pipeline(
+    const GraphicsPipelineDescriptor& descriptor
+) -> GraphicsPipeline {
     const auto pipeline_handle = m_state.graphics_pipeline_table.reserve();
 
     // check the shader exists
-    const auto program_handle = this->m_state.shader_table.fetch(descriptor.shader);
-    ASSERT(program_handle != 0, "Cannot create GraphicsPipeline with invalid Shader.");
+    const auto program_handle =
+        this->m_state.shader_table.fetch(descriptor.shader);
+    ASSERT(
+        program_handle != 0,
+        "Cannot create GraphicsPipeline with invalid Shader."
+    );
 
     GLuint vertex_array;
     glCreateVertexArrays(1, &vertex_array);
@@ -580,7 +646,8 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
         );
     }
 
-    for (const auto& [index, attribute] : descriptor.layout.components | std::views::enumerate) {
+    for (const auto& [index, attribute] :
+         descriptor.layout.components | std::views::enumerate) {
         // enables some element aka the layout(location = n) shader side
         glEnableVertexArrayAttrib(vertex_array, static_cast<GLuint>(index));
 
@@ -606,15 +673,20 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
     }
 
     m_state.graphics_pipeline_table.link(
-        pipeline_handle, vertex_array, GlGraphicsPipelineDetails{.descriptor = descriptor}
+        pipeline_handle,
+        vertex_array,
+        GlGraphicsPipelineDetails{.descriptor = descriptor}
     );
 
     log::trace("{} created.", pipeline_handle);
     return GraphicsPipeline{this, pipeline_handle};
 }
 
-auto OpenGLDevice::destroy_graphics_pipeline(const GraphicsPipelineHandle handle) -> void {
-    const auto api_handle = m_state.graphics_pipeline_table.fetch_release(handle);
+auto OpenGLDevice::destroy_graphics_pipeline(
+    const GraphicsPipelineHandle handle
+) -> void {
+    const auto api_handle =
+        m_state.graphics_pipeline_table.fetch_release(handle);
     glDeleteVertexArrays(1, &api_handle);
     log::trace("{} deleted.", handle);
 }
@@ -623,7 +695,9 @@ auto OpenGLDevice::make_query(const QueryDescriptor& descriptor) -> Query {
     const auto handle = m_state.query_table.reserve();
     GLuint query;
     glGenQueries(1, &query);
-    m_state.query_table.link(handle, query, GlQueryDetails{.descriptor = descriptor});
+    m_state.query_table.link(
+        handle, query, GlQueryDetails{.descriptor = descriptor}
+    );
     log::trace("{} created.", handle);
     return Query{this, handle};
 }
@@ -634,8 +708,9 @@ auto OpenGLDevice::destroy_query(const QueryHandle handle) -> void {
     log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::render_pass_recorder(const RenderPassDescriptor& descriptor) const noexcept
-    -> RenderPassRecorder {
+auto OpenGLDevice::render_pass_recorder(
+    const RenderPassDescriptor& descriptor
+) const noexcept -> RenderPassRecorder {
     return RenderPassRecorder{descriptor};
 }
 
@@ -645,11 +720,13 @@ auto OpenGLDevice::submit(RenderPass&& pass) const -> void {
     m_statistics += executor.statistics();
 }
 
-auto OpenGLDevice::buffer_descriptor(const BufferHandle handle) const -> const BufferDescriptor& {
+auto OpenGLDevice::buffer_descriptor(const BufferHandle handle) const
+    -> const BufferDescriptor& {
     return m_state.buffer_table.details(handle).descriptor;
 }
 
-auto OpenGLDevice::image_descriptor(const ImageHandle handle) const -> const ImageDescriptor& {
+auto OpenGLDevice::image_descriptor(const ImageHandle handle) const
+    -> const ImageDescriptor& {
     return m_state.image_table.details(handle).descriptor;
 }
 
@@ -658,12 +735,14 @@ auto OpenGLDevice::sampler_descriptor(const SamplerHandle handle) const
     return m_state.sampler_table.details(handle).descriptor;
 }
 
-auto OpenGLDevice::shader_descriptor(const ShaderHandle handle) const -> const ShaderDescriptor& {
+auto OpenGLDevice::shader_descriptor(const ShaderHandle handle) const
+    -> const ShaderDescriptor& {
     return m_state.shader_table.details(handle).descriptor;
 }
 
-auto OpenGLDevice::graphics_pipeline_descriptor(const GraphicsPipelineHandle handle) const
-    -> const GraphicsPipelineDescriptor& {
+auto OpenGLDevice::graphics_pipeline_descriptor(
+    const GraphicsPipelineHandle handle
+) const -> const GraphicsPipelineDescriptor& {
     return m_state.graphics_pipeline_table.details(handle).descriptor;
 }
 
@@ -672,7 +751,8 @@ auto OpenGLDevice::swapchain_descriptor(const SwapchainHandle handle) const
     return m_state.swapchain_table.details(handle).descriptor;
 }
 
-auto OpenGLDevice::query_descriptor(const QueryHandle handle) const -> const QueryDescriptor& {
+auto OpenGLDevice::query_descriptor(const QueryHandle handle) const
+    -> const QueryDescriptor& {
     return m_state.query_table.details(handle).descriptor;
 }
 
@@ -690,7 +770,8 @@ auto OpenGLDevice::query_available(const QueryHandle handle) const -> bool {
     return result == GL_TRUE;
 }
 
-auto OpenGLDevice::begin_conditional_render(const QueryHandle query) const -> void {
+auto OpenGLDevice::begin_conditional_render(const QueryHandle query) const
+    -> void {
     const auto apihandle = m_state.query_table.fetch(query);
     glBeginConditionalRender(apihandle, GL_QUERY_WAIT);
 }
@@ -791,7 +872,10 @@ auto OpenGLDevice::upload_to_buffer(
             GLuint staging_buffer;
             glCreateBuffers(1, &staging_buffer);
             glNamedBufferStorage(
-                staging_buffer, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), 0
+                staging_buffer,
+                static_cast<GLsizeiptr>(data.size_bytes()),
+                data.data(),
+                0
             );
 
             // perform transfer
@@ -817,55 +901,74 @@ auto OpenGLDevice::upload_to_buffer(
             break;
         }
         case BufferUsage::Stream: {
-            const auto [ptr, size] = m_state.buffer_table.details(buffer).buffer_ptr;
+            const auto [ptr, size] =
+                m_state.buffer_table.details(buffer).buffer_ptr;
             ASSERT(ptr != nullptr, "stream buffer mapped pointer is null!");
             ASSERT(
                 size - offset >= data.size_bytes(),
                 "attempted to overwrite a streamed mapped buffer!"
             );
-            std::memcpy(static_cast<u8*>(ptr) + offset, data.data(), data.size_bytes());
+            std::memcpy(
+                static_cast<u8*>(ptr) + offset, data.data(), data.size_bytes()
+            );
             break;
         }
         default:
             ASSERT(
                 false,
-                "invalid BufferUsage encountered. cannot perform execute_buffer_upload on the "
+                "invalid BufferUsage encountered. cannot perform "
+                "execute_buffer_upload on the "
                 "opengl backend"
             );
     }
 }
 
-auto OpenGLDevice::clear_image(const ImageHandle image, const ClearValue clearvalue) const -> void {
+auto OpenGLDevice::clear_image(
+    const ImageHandle image,
+    const ClearValue clearvalue
+) const -> void {
     const auto img    = m_state.image_table.fetch(image);
     const auto format = m_state.image_table.details(image).descriptor.format;
 
     if (std::holds_alternative<Rgba>(clearvalue)) {
         glClearTexImage(
-            img, 0, opengl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(clearvalue).r
+            img,
+            0,
+            opengl::img_format_to_gl_layout(format),
+            GL_FLOAT,
+            &std::get<Rgba>(clearvalue).r
         );
     } else if (std::holds_alternative<u32>(clearvalue)) {
-        glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(clearvalue));
+        glClearTexImage(
+            img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(clearvalue)
+        );
     } else {
         PANIC("unknown data type passed to Device::clear_image()");
     }
 }
 
-auto OpenGLDevice::acquire_next_swapchain_target(const SwapchainHandle handle) const
-    -> ImageHandle {
+auto OpenGLDevice::acquire_next_swapchain_target(
+    const SwapchainHandle handle
+) const -> ImageHandle {
     return m_state.swapchain_table.details(handle).target->image.handle();
 }
 
-auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) const -> void {
+auto OpenGLDevice::present(
+    const SwapchainHandle handle,
+    OverlayFunction&& overlay
+) const -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
-    auto* window         = m_state.swapchain_table.details(handle).native_handle;
-    const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
-    const auto [w, h, _] = m_state.image_table.details(target.colors[0].image).descriptor.extent;
+    auto* window = m_state.swapchain_table.details(handle).native_handle;
+    const auto& target =
+        m_state.swapchain_table.details(handle).target->render_target;
+    const auto [w, h, _] =
+        m_state.image_table.details(target.colors[0].image).descriptor.extent;
 
     // basically, we just blit swapchain image fbo to default fbo
     const auto offscreen_fb = m_state.framebuffer_cache.get_create_for(target);
 
-    // iff there is an overlay, we have to bind its fbo so it can perform the custom render
-    // logic
+    // iff there is an overlay, we have to bind its fbo so it can perform the
+    // custom render logic
     if (overlay) {
         glBindFramebuffer(GL_FRAMEBUFFER, offscreen_fb);
         glViewport(0, 0, w, h);
@@ -883,18 +986,23 @@ auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overl
     glfwSwapBuffers(window);
 }
 
-auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle destination) const
-    -> void {
-    // opengl doesn't have image blitting, so we get_create() cached fbos for images and then blit
-    // between the fbos.
-    const auto source_id         = m_state.image_table.fetch(source);
-    const auto destination_id    = m_state.image_table.fetch(destination);
-    const auto& source_desc      = m_state.image_table.details(source).descriptor;
-    const auto& destination_desc = m_state.image_table.details(destination).descriptor;
+auto OpenGLDevice::blit_to_image(
+    const ImageHandle source,
+    const ImageHandle destination
+) const -> void {
+    // opengl doesn't have image blitting, so we get_create() cached fbos for
+    // images and then blit between the fbos.
+    const auto source_id      = m_state.image_table.fetch(source);
+    const auto destination_id = m_state.image_table.fetch(destination);
+    const auto& source_desc   = m_state.image_table.details(source).descriptor;
+    const auto& destination_desc =
+        m_state.image_table.details(destination).descriptor;
 
-    if (source_desc.format.num_components() != destination_desc.format.num_components()) {
+    if (source_desc.format.num_components()
+        != destination_desc.format.num_components()) {
         log::warn(
-            "issue with requested image blit, source and destination image formats do not have the "
+            "issue with requested image blit, source and destination image "
+            "formats do not have the "
             "same number of components ({} != {}).",
             destination_desc.format,
             source_desc.format
@@ -904,7 +1012,8 @@ auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle des
 
     if (destination_desc.extent != source_desc.extent) {
         log::warn(
-            "issue with requested image blit, source and destination image extents do not match "
+            "issue with requested image blit, source and destination image "
+            "extents do not match "
             "({} != {}). "
             "ignoring call.",
             destination_desc.extent,
@@ -922,14 +1031,18 @@ auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle des
     // clang-format on
 }
 
-auto OpenGLDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
+auto OpenGLDevice::read_image(const ImageHandle image) const
+    -> std::vector<u8> {
     std::vector<u8> buffer;
 
     const auto& details = m_state.image_table.details(image);
 
     const auto& desc = details.descriptor;
 
-    ASSERT(desc.dimension == ImageDimension::D2, "Reading is only supported for 2D images.");
+    ASSERT(
+        desc.dimension == ImageDimension::D2,
+        "Reading is only supported for 2D images."
+    );
 
     ASSERT(
         desc.format == ImageFormat::RGBA8 || desc.format == ImageFormat::sRGBA8,
@@ -945,7 +1058,12 @@ auto OpenGLDevice::read_image(const ImageHandle image) const -> std::vector<u8> 
     const auto gl_image = m_state.image_table.fetch(image);
 
     glGetTextureImage(
-        gl_image, 0, GL_RGBA, GL_UNSIGNED_BYTE, static_cast<GLsizei>(buffer.size()), buffer.data()
+        gl_image,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        static_cast<GLsizei>(buffer.size()),
+        buffer.data()
     );
 
     return buffer;
