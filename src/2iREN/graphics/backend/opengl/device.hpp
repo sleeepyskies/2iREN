@@ -32,9 +32,6 @@ struct MappedBufferPtr {
 /// @brief Information needed by the OpenGL backend for @ref Buffer's
 struct GlBufferDetails {
     BufferDescriptor descriptor;
-    /// @brief A mapped region of storage. Used iff the buffer type is
-    /// BufferUsage::Stream.
-    MappedBufferPtr buffer_ptr;
 };
 
 /// @brief Information needed by the OpenGL backend for @ref Image's
@@ -217,7 +214,7 @@ public:
         const RenderPassDescriptor& descriptor
     ) const noexcept -> RenderPassRecorder override;
 
-    auto submit(RenderPass&& pass) const -> void override;
+    auto submit(RenderPass&& pass) -> void override;
 
     auto upload_to_image(
         ImageHandle image,
@@ -239,10 +236,8 @@ public:
 
     auto read_image(ImageHandle image) const -> std::vector<u8> override;
 
-    auto present(
-        SwapchainHandle handle,
-        OverlayFunction&& overlay = nullptr
-    ) const -> void override;
+    auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr)
+        -> void override;
 
     auto query_result(QueryHandle handle) const -> u64 override;
 
@@ -259,7 +254,7 @@ public:
     auto statistics() const -> Statistics override;
 
     [[nodiscard]]
-    auto acquire_next_swapchain_target(SwapchainHandle handle) const
+    auto acquire_next_swapchain_target(SwapchainHandle handle)
         -> ImageHandle override;
 
     auto wait_idle() const noexcept -> void override;

@@ -268,6 +268,7 @@ auto RenderPassRecorder::draw_arrays(
 }
 
 auto RenderPassRecorder::draw_indexed(
+    const PrimitiveTopology primitive_topology,
     const u32 index_count,
     const u32 first_index
 ) noexcept -> void {
@@ -294,8 +295,9 @@ auto RenderPassRecorder::draw_indexed(
                 {
                     .draw_indexed =
                         {
-                            .first_index = first_index,
-                            .index_count = index_count,
+                            .primitive_topology = primitive_topology,
+                            .first_index        = first_index,
+                            .index_count        = index_count,
                         },
                 },
             .type = RenderCommandType::DrawIndexed,

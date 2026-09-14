@@ -39,26 +39,31 @@ private:
 
     /** @brief Handles @ref BindGraphicsPipeline. */
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;
-    /** @brief Handles @ref SetViewport. */
-    auto set_viewport(const SetViewport& set_viewport, const RenderTarget& target) const -> void;
 
     /** @brief Handles @ref BindVertexBuffer. */
-    auto bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const -> void;
+    auto bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const
+        -> void;
     /** @brief Handles @ref BindIndexBuffer. */
-    auto bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const -> void;
+    auto bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const
+        -> void;
     /** @brief Handles @ref BindUniformBuffer. */
-    auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const -> void;
+    auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const
+        -> void;
     /** @brief Handles @ref BindUniformBufferRange. */
-    auto bind_uniform_buffer_range(const BindUniformBufferRange& bind_uniform_buffer_range) const
-        -> void;
+    auto bind_uniform_buffer_range(
+        const BindUniformBufferRange& bind_uniform_buffer_range
+    ) const -> void;
     /** @brief Handles @ref BindShaderStorageBuffer. */
-    auto bind_shader_storage_buffer(const BindShaderStorageBuffer& bind_shader_storage_buffer) const
-        -> void;
+    auto bind_shader_storage_buffer(
+        const BindShaderStorageBuffer& bind_shader_storage_buffer
+    ) const -> void;
 
     /** @brief Handles @ref BindSampledImage. */
-    auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const -> void;
+    auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const
+        -> void;
     /** @brief Handles @ref BindStorageImage. */
-    auto bind_storage_image(const BindStorageImage& bind_storage_image) const -> void;
+    auto bind_storage_image(const BindStorageImage& bind_storage_image) const
+        -> void;
     /** @brief Handles @ref BeginQuery. */
     auto begin_query(const BeginQuery& begin_query) const -> void;
     /** @brief Handles @ref EndQuery. */

@@ -1,9 +1,7 @@
 #include "command_executor.hpp"
 
-#include <cstring>
 #include <glad/gl.h>
 
-#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/opengl/device.hpp"
 #include "2iREN/graphics/backend/opengl/util.hpp"
 #include "2iREN/graphics/render_command.hpp"
@@ -358,12 +356,9 @@ auto OpenGLCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) const
     -> void {
     m_statistics.count_draw_arrays++;
     m_statistics.count_draw_calls++;
-    const auto& pl_desc =
-        m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline)
-            .descriptor;
 
     glDrawArrays(
-        opengl::topology_to_gl(pl_desc.topology),
+        opengl::topology_to_gl(draw_arrays.primitive_topology),
         static_cast<GLsizei>(draw_arrays.start),
         static_cast<GLsizei>(draw_arrays.count)
     );
@@ -373,11 +368,7 @@ auto OpenGLCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const
     -> void {
     m_statistics.count_draw_indexed++;
     m_statistics.count_draw_calls++;
-    const auto& pl_desc =
-        m_state.graphics_pipeline_table.details(m_tracked_state.active_pipeline)
-            .descriptor;
-    const auto mode = opengl::topology_to_gl(pl_desc.topology);
-    const auto type =
+    const auto index_format =
         opengl::index_format_to_gl(m_tracked_state.active_ibo.index_format);
 
     // because OpenGL is OpenGL, we pass in the first index as a void*. Its then
@@ -385,9 +376,9 @@ auto OpenGLCommandExecutor::draw_indexed(const DrawIndexed& draw_indexed) const
     // also we must pass a byte offset, not an index offset.
 
     glDrawElements(
-        mode,
+        opengl::topology_to_gl(draw_indexed.primitive_topology),
         static_cast<GLsizei>(draw_indexed.index_count),
-        type,
+        index_format,
         reinterpret_cast<const void*>(
             draw_indexed.first_index
             * m_tracked_state.active_ibo.index_format.size_bytes()

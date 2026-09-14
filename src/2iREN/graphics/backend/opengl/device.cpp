@@ -1,6 +1,5 @@
 #include "device.hpp"
 
-#include <cstring>
 #include <glad/gl.h>
 #include <optional>
 #include <utility>
@@ -98,17 +97,6 @@ auto fetch_limits() -> Limits {
     };
 
     return limits;
-}
-
-/// helper to create an optional label of form "prefix-suffix"
-auto make_label(
-    const std::optional<std::string>& prefix,
-    const std::string_view suffix
-) -> std::optional<std::string> {
-    if (prefix) {
-        return *prefix + "-" + std::string(suffix);
-    }
-    return std::nullopt;
 }
 
 } // namespace
@@ -257,23 +245,9 @@ auto OpenGLDevice::make_buffer(
         buf, static_cast<GLsizeiptr>(descriptor.size), data, flags
     );
 
-    // if the buffer is streamed, we also need to store a mapping pointer
-    MappedBufferPtr mapped_buffer;
-    mapped_buffer.size = descriptor.size;
-    if (descriptor.usage == BufferUsage::Stream) {
-        mapped_buffer.ptr = glMapNamedBufferRange(
-            buf,
-            0,
-            static_cast<GLsizeiptr>(descriptor.size),
-            GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_MAP_WRITE_BIT
-        );
-    }
-
     // link proxy handle to opengl handle
     this->m_state.buffer_table.link(
-        buffer_handle,
-        buf,
-        GlBufferDetails{.descriptor = descriptor, .buffer_ptr = mapped_buffer}
+        buffer_handle, buf, GlBufferDetails{.descriptor = descriptor}
     );
 
     log::trace("{} created.", buffer_handle);
@@ -582,8 +556,6 @@ auto OpenGLDevice::make_swapchain(
     const auto windowfb_extent  = window.framebuffer_extent();
 
     auto image = make_image({
-        .label         = make_label(descriptor.label, "Swapchain Backbuffer")
-                             .value_or("Swapchain Backbuffer"),
         .format        = ImageFormat::RGBA8,
         .extent        = Extent3u{windowfb_extent.x, windowfb_extent.y, 1},
         .dimension     = ImageDimension::D2,
@@ -714,7 +686,7 @@ auto OpenGLDevice::render_pass_recorder(
     return RenderPassRecorder{descriptor};
 }
 
-auto OpenGLDevice::submit(RenderPass&& pass) const -> void {
+auto OpenGLDevice::submit(RenderPass&& pass) -> void {
     auto executor = OpenGLCommandExecutor{this->m_state};
     executor.execute(std::move(pass));
     m_statistics += executor.statistics();
@@ -900,19 +872,6 @@ auto OpenGLDevice::upload_to_buffer(
             );
             break;
         }
-        case BufferUsage::Stream: {
-            const auto [ptr, size] =
-                m_state.buffer_table.details(buffer).buffer_ptr;
-            ASSERT(ptr != nullptr, "stream buffer mapped pointer is null!");
-            ASSERT(
-                size - offset >= data.size_bytes(),
-                "attempted to overwrite a streamed mapped buffer!"
-            );
-            std::memcpy(
-                static_cast<u8*>(ptr) + offset, data.data(), data.size_bytes()
-            );
-            break;
-        }
         default:
             ASSERT(
                 false,
@@ -947,16 +906,15 @@ auto OpenGLDevice::clear_image(
     }
 }
 
-auto OpenGLDevice::acquire_next_swapchain_target(
-    const SwapchainHandle handle
-) const -> ImageHandle {
+auto OpenGLDevice::acquire_next_swapchain_target(const SwapchainHandle handle)
+    -> ImageHandle {
     return m_state.swapchain_table.details(handle).target->image.handle();
 }
 
 auto OpenGLDevice::present(
     const SwapchainHandle handle,
     OverlayFunction&& overlay
-) const -> void {
+) -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
     auto* window = m_state.swapchain_table.details(handle).native_handle;
     const auto& target =
