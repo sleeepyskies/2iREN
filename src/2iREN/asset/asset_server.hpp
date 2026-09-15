@@ -23,21 +23,19 @@ namespace siren {
 
 class Device;
 
-/**
- * @brief Represents the loading status of an asset.
- */
+/// @brief Represents the loading status of an asset.
 enum class LoadStatus {
-    /** @brief The asset is not loaded, and loading hasn't begun. */
+    /// @brief The asset is not loaded, and loading hasn't begun.
     NotLoaded,
-    /** @brief The asset is currently being loaded by an AssetLoader. */
+    /// @brief The asset is currently being loaded by an AssetLoader.
     Loading,
-    /** @brief The asset was successfully loaded. */
+    /// @brief The asset was successfully loaded.
     Loaded,
-    /** @brief There was an error while loading the asset. */
+    /// @brief There was an error while loading the asset.
     Fail,
 };
 
-/** @brief Simple state machine utility class for managing LoadStatus. */
+/// @brief Simple state machine utility class for managing LoadStatus.
 class LoadState {
 public:
     [[nodiscard]] constexpr auto get_main() const noexcept -> LoadStatus { return m_main; }
@@ -92,58 +90,52 @@ class AssetServer {
         /// @brief The path of the asset (if it was loaded from disk).
         /// @todo add this!
         // AssetPath path;
-        /** @brief The main asset. */
+        /// @brief The main asset.
         WeakHandle weak_handle;
-        /** @brief The load state of this asset and its dependencies. */
+        /// @brief The load state of this asset and its dependencies.
         LoadState load_state;
-        /** @brief Any labeled (aka embedded) assets of the main asset. */
+        /// @brief Any labeled (aka embedded) assets of the main asset.
         std::unordered_map<std::string, WeakHandle> labeled_deps;
-        /** @brief Any external (aka external files) dependencies of this main asset. */
+        /// @brief Any external (aka external files) dependencies of this main asset.
         std::unordered_set<WeakHandle> dependencies;
-        /** @brief All assets that are waiting for this asset to finish loading. */
+        /// @brief All assets that are waiting for this asset to finish loading.
         std::unordered_set<WeakHandle> dependents;
     };
 
     struct Loaders {
-        /** @brief Main loader storage. */
+        /// @brief Main loader storage.
         std::vector<std::unique_ptr<AssetLoaderBase>> loaders;
-        /** @brief Cached loaders based on their accepted file extensions. */
+        /// @brief Cached loaders based on their accepted file extensions.
         std::unordered_map<std::string, AssetLoaderBase*> ext_to_loader;
     };
 
     struct AssetServerData {
-        /** @brief Mapping of AssetId to its AssetInfo entry. Used for cleaning up cache on refcount
-         * == 0. */
+        /// @brief Mapping of AssetId to its AssetInfo entry. Used for cleaning up cache on refcount
+        /// == 0.
         RwLock<std::unordered_map<AssetId, HashedString>> id_to_path;
-        /** @brief General data on assets (dep tree, load status). */
+        /// @brief General data on assets (dep tree, load status).
         RwLock<std::unordered_map<HashedString, AssetInfo>> asset_infos;
-        /** @brief Main storage for asset data. */
+        /// @brief Main storage for asset data.
         RwLock<std::unordered_map<TypeID, std::unique_ptr<AssetPoolBase>>> storage{};
-        /**
-         * @brief All active loaders.
-         * @note The reason we do not use any sync primitives here, is that Loaders are
-         * in principle stateless. Furthermore, we assume all loaders are registered at engine init.
-         * If this is not the case, and loaders are added at runtime, there can be issues.
-         */
+        /// @brief All active loaders.
+        /// @note The reason we do not use any sync primitives here, is that Loaders are
+        /// in principle stateless. Furthermore, we assume all loaders are registered at engine init.
+        /// If this is not the case, and loaders are added at runtime, there can be issues.
         Loaders loaders;
-        /**
-         * @brief Cache of at most a single default handle per asset type.
-         * @todo do we have to use std::any? not great imo, but @ref WeakHandle is not ref counted,
-         * but StrongHandle is not type erased such that we can store in a container....
-         */
+        /// @brief Cache of at most a single default handle per asset type.
+        /// @todo do we have to use std::any? not great imo, but @ref WeakHandle is not ref counted,
+        /// but StrongHandle is not type erased such that we can store in a container....
         RwLock<std::unordered_map<TypeID, std::any>> default_handles{};
     };
 
 public:
     explicit AssetServer(Device& device);
 
-    /**
-     * @brief Attempts to find and return the asset that the provided handle points to.
-     * If the asset cannot be found or is still being loaded, this will return a nullptr.
-     * @tparam A The specific asset type.
-     * @param handle A handle to the asset.
-     * @return The asset if it can be found on the server, otherwise a nullptr.
-     */
+    /// @brief Attempts to find and return the asset that the provided handle points to.
+    /// If the asset cannot be found or is still being loaded, this will return a nullptr.
+    /// @tparam A The specific asset type.
+    /// @param handle A handle to the asset.
+    /// @return The asset if it can be found on the server, otherwise a nullptr.
     template <IsAsset A>
     [[nodiscard]] auto get(const StrongHandle<A> handle) -> A* {
         if (!handle.is_valid()) {
@@ -178,13 +170,11 @@ public:
         );
     }
 
-    /**
-     * @brief Attempts to find and return the asset that the provided handle points to.
-     * @warning Crashes on failure, use with caution.
-     * @tparam A The specific asset type.
-     * @param handle A handle to the asset.
-     * @return The asset if it can be found on the server, otherwise a nullptr.
-     */
+    /// @brief Attempts to find and return the asset that the provided handle points to.
+    /// @warning Crashes on failure, use with caution.
+    /// @tparam A The specific asset type.
+    /// @param handle A handle to the asset.
+    /// @return The asset if it can be found on the server, otherwise a nullptr.
     template <IsAsset A>
     [[nodiscard]] auto get_unsafe(const StrongHandle<A> handle) const -> const A& {
         auto* asset = get(handle);
@@ -192,13 +182,11 @@ public:
         return *asset;
     }
 
-    /**
-     * @brief Attempts to find and return the asset that the provided handle points to.
-     * @warning Crashes on failure, use with caution.
-     * @tparam A The specific asset type.
-     * @param handle A handle to the asset.
-     * @return The asset if it can be found on the server, otherwise a nullptr.
-     */
+    /// @brief Attempts to find and return the asset that the provided handle points to.
+    /// @warning Crashes on failure, use with caution.
+    /// @tparam A The specific asset type.
+    /// @param handle A handle to the asset.
+    /// @return The asset if it can be found on the server, otherwise a nullptr.
     template <IsAsset A>
     [[nodiscard]] auto get_unsafe(const StrongHandle<A> handle) -> A& {
         auto* asset = get(handle);
@@ -206,13 +194,11 @@ public:
         return *asset;
     }
 
-    /**
-     * @brief Loads an asset from disk, as well as recursively loading all of its dependencies.
-     * @tparam A The asset type of the to be loaded asset.
-     * @param path The string asset path of the asset to load. @see AssetPath for format options.
-     * @param config An optional configuration object with influences how to load the asset.
-     * @return A handle to the loaded asset.
-     */
+    /// @brief Loads an asset from disk, as well as recursively loading all of its dependencies.
+    /// @tparam A The asset type of the to be loaded asset.
+    /// @param path The string asset path of the asset to load. @see AssetPath for format options.
+    /// @param config An optional configuration object with influences how to load the asset.
+    /// @return A handle to the loaded asset.
     template <IsAsset A>
     [[nodiscard]] auto load(
         const std::string& path,
@@ -221,27 +207,23 @@ public:
         return load<A>(AssetPath::parse(path), std::move(config));
     }
 
-    /**
-     * @brief Loads an asset from disk, as well as recursively loading all of its dependencies.
-     * @tparam A The asset type of the to be loaded asset.
-     * @param path The @ref AssetPath of the asset to load.
-     * @param config An optional configuration object with influences how to load the asset.
-     * @return A handle to the loaded asset.
-     */
+    /// @brief Loads an asset from disk, as well as recursively loading all of its dependencies.
+    /// @tparam A The asset type of the to be loaded asset.
+    /// @param path The @ref AssetPath of the asset to load.
+    /// @param config An optional configuration object with influences how to load the asset.
+    /// @return A handle to the loaded asset.
     template <IsAsset A>
     [[nodiscard]] auto load(
         const AssetPath& path,
         std::optional<typename AssetLoader<A>::ConfigType>&& config = std::nullopt
     ) -> StrongHandle<A>;
 
-    /**
-     * @brief Directly adds the provided asset into storage, if a pool exists for its type.
-     * @tparam A The type of the asset being added.
-     * @param asset The asset to add.
-     * @param path An optional path parameter. Useful if adding as asset that was loaded external to
-     * the server.
-     * @return A @ref StrongHandle referencing the newly added asset.
-     */
+    /// @brief Directly adds the provided asset into storage, if a pool exists for its type.
+    /// @tparam A The type of the asset being added.
+    /// @param asset The asset to add.
+    /// @param path An optional path parameter. Useful if adding as asset that was loaded external to
+    /// the server.
+    /// @return A @ref StrongHandle referencing the newly added asset.
     template <IsAsset A>
     [[nodiscard]] auto add(std::unique_ptr<A>&& asset, const AssetPath& path = AssetPath::invalid())
         -> StrongHandle<A> {
@@ -263,11 +245,9 @@ public:
         });
     }
 
-    /**
-     * @brief Shallow checks if this asset is loaded. The status of any dependencies is ignored.
-     * @param handle The handle to check the status of.
-     * @return True if this asset is loaded ignoring dependencies, false otherwise.
-     */
+    /// @brief Shallow checks if this asset is loaded. The status of any dependencies is ignored.
+    /// @param handle The handle to check the status of.
+    /// @return True if this asset is loaded ignoring dependencies, false otherwise.
     template <IsAsset A>
     auto is_loaded(const StrongHandle<A>& handle) -> bool {
         return m_data.asset_infos.run(
@@ -281,12 +261,10 @@ public:
         );
     }
 
-    /**
-     * @brief Recursively checks if this asset is loaded. The status of all dependencies is also
-     * checked.
-     * @param handle The handle to check the status of.
-     * @return True if this asset is loaded including dependencies, false otherwise.
-     */
+    /// @brief Recursively checks if this asset is loaded. The status of all dependencies is also
+    /// checked.
+    /// @param handle The handle to check the status of.
+    /// @return True if this asset is loaded including dependencies, false otherwise.
     template <IsAsset A>
     auto is_loaded_with_dependencies(const StrongHandle<A>& handle) -> bool {
         if (!handle.is_valid()) {
@@ -308,12 +286,10 @@ public:
         return info->load_state.is_ready();
     }
 
-    /**
-     * @brief Waits until an asset is loaded. Note that if there was an
-     * error during loading, this will never return.
-     * @param handle The asset handle to wait for.
-     * @todo Handle case where a load error occurred.
-     */
+    /// @brief Waits until an asset is loaded. Note that if there was an
+    /// error during loading, this will never return.
+    /// @param handle The asset handle to wait for.
+    /// @todo Handle case where a load error occurred.
     template <IsAsset A>
     auto wait_until_loaded(const StrongHandle<A> handle) -> void {
         while (!is_loaded_with_dependencies(handle)) {
@@ -321,11 +297,9 @@ public:
         }
     }
 
-    /**
-     * @brief Registers a loader with the asset server. No assets can be
-     * loaded from disk until an appropriate loader has been registered.
-     * @param loader
-     */
+    /// @brief Registers a loader with the asset server. No assets can be
+    /// loaded from disk until an appropriate loader has been registered.
+    /// @param loader
     auto register_loader(std::unique_ptr<AssetLoaderBase> loader) -> void {
         // todo: do a check for loaders here that already exists?
         // todo: should ig also auto register the type here
@@ -336,10 +310,8 @@ public:
         }
     }
 
-    /**
-     * @brief Fetches a handle to the default asset of type A, iff present.
-     * @tparam A The asset type to fetch a handle to the default asset for.
-     */
+    /// @brief Fetches a handle to the default asset of type A, iff present.
+    /// @tparam A The asset type to fetch a handle to the default asset for.
     template <IsAsset A>
     auto fetch_default() const -> StrongHandle<A> {
         return m_data.default_handles.run(
@@ -357,11 +329,9 @@ public:
         );
     }
 
-    /**
-     * @brief Registers a default asset instance for the type A. If one is already present,
-     * it will be overwritten.
-     * @tparam A The asset type to register a new default asset for.
-     */
+    /// @brief Registers a default asset instance for the type A. If one is already present,
+    /// it will be overwritten.
+    /// @tparam A The asset type to register a new default asset for.
     template <IsAsset A>
     auto register_default(std::unique_ptr<A>&& asset) -> void {
         StrongHandle<A> handle = add(std::move(asset));
@@ -409,12 +379,10 @@ private:
         });
     }
 
-    /**
-     * @brief Ensures that the asset type has a registered storage block.
-     * @tparam A The asset type to register.
-     * @note This may lock m_data.storage, and will read from it, so make sure there is no lock on
-     * this yet!
-     */
+    /// @brief Ensures that the asset type has a registered storage block.
+    /// @tparam A The asset type to register.
+    /// @note This may lock m_data.storage, and will read from it, so make sure there is no lock on
+    /// this yet!
     template <IsAsset A>
     auto ensure_asset_registered() {
         const auto tid = AssetId::type_id<A>();
@@ -437,12 +405,10 @@ private:
         });
     }
 
-    /**
-     * Searches the cache for a handle to the asset based on its path.
-     * @tparam A The asset type to search for.
-     * @param path The path of the asset used as a cache key.
-     * @return An optional handle to the asset.
-     */
+    /// Searches the cache for a handle to the asset based on its path.
+    /// @tparam A The asset type to search for.
+    /// @param path The path of the asset used as a cache key.
+    /// @return An optional handle to the asset.
     template <IsAsset A>
     auto search_cache(const AssetPath& path) -> std::optional<StrongHandle<A>> {
         return m_data.asset_infos.run(
@@ -471,12 +437,10 @@ private:
         );
     }
 
-    /**
-     * Attempts to fetch a suitable loader for the asset type and file type.
-     * @tparam A The type of asset the loader is for.
-     * @param ext The extension the loader should handle.
-     * @return A pointer to a loader, or nullptr in case on does not exist.
-     */
+    /// Attempts to fetch a suitable loader for the asset type and file type.
+    /// @tparam A The type of asset the loader is for.
+    /// @param ext The extension the loader should handle.
+    /// @return A pointer to a loader, or nullptr in case on does not exist.
     template <IsAsset A>
     auto fetch_loader(const std::string& ext) -> AssetLoader<A>* {
         const auto it = m_data.loaders.ext_to_loader.find(ext);
@@ -486,16 +450,14 @@ private:
         return dynamic_cast<AssetLoader<A>*>(it->second);
     }
 
-    /** @brief The underlying data of the AssetServer. */
+    /// @brief The underlying data of the AssetServer.
     AssetServerData m_data;
-    /** @brief Handle to the device used for creation of certain render objects. */
+    /// @brief Handle to the device used for creation of certain render objects.
     Device& m_device;
 };
 
-/**
- * @brief LoadContext serves as the AssetServer API for AssetLoaders. It handles registering sub
- * assets, as well as tracking asset dependencies.
- */
+/// @brief LoadContext serves as the AssetServer API for AssetLoaders. It handles registering sub
+/// assets, as well as tracking asset dependencies.
 class LoadContext {
 public:
     LoadContext(
@@ -580,13 +542,13 @@ public:
         return m_server.fetch_default<A>();
     }
 
-    /** @brief Returns the @ref AssetPath this LoadContext was created for. */
+    /// @brief Returns the @ref AssetPath this LoadContext was created for.
     [[nodiscard]] constexpr auto path() const noexcept -> const AssetPath& {
         return m_handle.path();
     }
-    /** @brief Returns the @ref Device this LoadContext is using. */
+    /// @brief Returns the @ref Device this LoadContext is using.
     [[nodiscard]] constexpr auto device() noexcept -> Device& { return m_device; }
-    /** @brief Returns the @ref WeakHandle this LoadContext was made to load an asset for. */
+    /// @brief Returns the @ref WeakHandle this LoadContext was made to load an asset for.
     [[nodiscard]] constexpr auto handle() noexcept -> WeakHandle { return m_handle; }
 
 private:

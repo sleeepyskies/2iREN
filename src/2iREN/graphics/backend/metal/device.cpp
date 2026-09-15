@@ -44,24 +44,22 @@ auto fetch_limits(MTL::Device* device) -> Limits {
 
     Limits lim;
 
-    /**
-    lim.max_uniform_buffer_bindings;
-    lim.max_shader_storage_buffer_bindings;
-    lim.max_uniform_block_size;
-    lim.max_shader_storage_block_size;
-    lim.uniform_buffer_offset_alignment;
-    lim.shader_storage_buffer_offset_alignment;
-    lim.max_vertex_attributes;
-    lim.max_texture_size;
-    lim.max_array_texture_layers;
-    lim.max_texture_units;
-    lim.max_color_attachments;
-    lim.max_draw_buffers;
-    lim.max_samples;
-    lim.max_compute_work_group_invocations;
-    lim.max_compute_work_group_count;
-    lim.max_compute_work_group_size;
-    */
+    /// lim.max_uniform_buffer_bindings;
+    /// lim.max_shader_storage_buffer_bindings;
+    /// lim.max_uniform_block_size;
+    /// lim.max_shader_storage_block_size;
+    /// lim.uniform_buffer_offset_alignment;
+    /// lim.shader_storage_buffer_offset_alignment;
+    /// lim.max_vertex_attributes;
+    /// lim.max_texture_size;
+    /// lim.max_array_texture_layers;
+    /// lim.max_texture_units;
+    /// lim.max_color_attachments;
+    /// lim.max_draw_buffers;
+    /// lim.max_samples;
+    /// lim.max_compute_work_group_invocations;
+    /// lim.max_compute_work_group_count;
+    /// lim.max_compute_work_group_size;
 
     return lim;
 }

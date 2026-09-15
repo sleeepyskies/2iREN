@@ -9,9 +9,7 @@
 
 namespace siren {
 
-/**
- * @brief A Basic PBR material that closely follows the GLTF specs.
- */
+/// @brief A Basic PBR material that closely follows the GLTF specs.
 class MaterialAsset : public Asset {
 public:
     explicit MaterialAsset(const std::string& name) : m_name(name) {}

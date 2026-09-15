@@ -16,7 +16,7 @@
 
 namespace siren::impl {
 
-/** @brief Attempts to trim a file path to 2iREN root. */
+/// @brief Attempts to trim a file path to 2iREN root.
 [[nodiscard]]
 constexpr auto strip_path(const std::string_view path) -> std::string_view {
     const auto pos = path.find("2iREN/");

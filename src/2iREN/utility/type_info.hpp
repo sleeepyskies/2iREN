@@ -48,63 +48,51 @@ template <typename Type>
     return value;
 }
 
-/**
- * @brief Utility for fetching a human-readable name for a given type.
- * @tparam Type The Type to reflect.
- */
+/// @brief Utility for fetching a human-readable name for a given type.
+/// @tparam Type The Type to reflect.
 template <typename Type>
 struct TypeName final {
-    /**
-     * @brief Returns the type name.
-     */
+    /// @brief Returns the type name.
     [[nodiscard]] static constexpr auto value() noexcept -> std::string_view {
         return type_name_helper<Type>(0);
     }
 
-    /**
-     * @brief Implicit conversion to string_view.
-     */
+    /// @brief Implicit conversion to string_view.
     [[nodiscard]] constexpr operator std::string_view() const noexcept {
         return type_name_helper<Type>(0);
     }
 };
 
-/**
- * @brief Utility for providing a type-unique hash for a given type.
- * @tparam Type The type to reflect.
- */
+/// @brief Utility for providing a type-unique hash for a given type.
+/// @tparam Type The type to reflect.
 template <typename Type>
 struct TypeHash final {
-    /** @brief Returns the type hash. */
+    /// @brief Returns the type hash.
     [[nodiscard]] static constexpr auto value() noexcept -> HashedString {
         return HashedString{type_name_helper<Type>(0).data()};
     }
 
-    /** @brief Implicit conversion to @ref HashedString. */
+    /// @brief Implicit conversion to @ref HashedString.
     [[nodiscard]] constexpr operator HashedString() const noexcept {
         return HashedString{type_name_helper<Type>(0).data()};
     }
 
-    /** @brief Shorthand for fetching the hash value of the @ref HashedString. */
+    /// @brief Shorthand for fetching the hash value of the @ref HashedString.
     [[nodiscard]] static constexpr auto hash() noexcept -> HashedString::HashType {
         return value().hash();
     }
 };
 
-/**
- * @brief Returns the cleaned name of a type.
- * @tparam T The type to find the name of.
- */
+/// @brief Returns the cleaned name of a type.
+/// @tparam T The type to find the name of.
 template <typename T>
 [[nodiscard]]
 constexpr inline auto typename_of() -> std::string_view {
     return TypeName<T>::value();
 }
 
-/**
- * @brief Returns the hash of a type.
- * @tparam T The type to find the type hash of.
- */
+/// @brief Returns the hash of a type.
+/// @tparam T The type to find the type hash of.
 template <typename T>
 [[nodiscard]]
 constexpr inline auto typehash_of() -> HashedString::HashType {

@@ -11,12 +11,10 @@
 #include "2iREN/graphics/shader.hpp"
 
 namespace siren::opengl {
-/**
- * @brief Converts a 2iREN @ref ImageFilterMode to a standard OpenGL filter
- * constant.
- * @param mode The filter mode.
- * @return The OpenGL version of the filter mode.
- */
+/// @brief Converts a 2iREN @ref ImageFilterMode to a standard OpenGL filter
+/// constant.
+/// @param mode The filter mode.
+/// @return The OpenGL version of the filter mode.
 [[nodiscard]] constexpr auto img_filter_to_gl(const ImageFilterMode mode)
     -> GLenum {
     switch (mode) {
@@ -27,12 +25,10 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Maps minification and LOD filtering modes to OpenGL's combined
- * constants.
- * @note OpenGL requires a single enum to describe both base minification and
- * mipmap sampling.
- */
+/// @brief Maps minification and LOD filtering modes to OpenGL's combined
+/// constants.
+/// @note OpenGL requires a single enum to describe both base minification and
+/// mipmap sampling.
 [[nodiscard]] constexpr auto min_img_filter_to_gl(
     const ImageFilterMode min,
     const ImageFilterMode lod
@@ -45,9 +41,7 @@ namespace siren::opengl {
                                           : GL_NEAREST_MIPMAP_NEAREST;
 }
 
-/**
- * @brief Converts an OpenGL filter constant back to a 2iREN filter mode.
- */
+/// @brief Converts an OpenGL filter constant back to a 2iREN filter mode.
 [[nodiscard]] constexpr auto img_filter_to_siren(const GLenum mode)
     -> ImageFilterMode {
     switch (mode) {
@@ -57,9 +51,7 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Converts 2iREN wrap modes to OpenGL texture wrap constants.
- */
+/// @brief Converts 2iREN wrap modes to OpenGL texture wrap constants.
 [[nodiscard]] constexpr auto img_wrap_to_gl(const ImageWrapMode mode)
     -> GLenum {
     switch (mode) {
@@ -71,9 +63,7 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts an OpenGL wrap constant back to a 2iREN wrap mode.
- */
+/// @brief Converts an OpenGL wrap constant back to a 2iREN wrap mode.
 [[nodiscard]] constexpr auto img_wrap_to_siren(const GLenum mode)
     -> ImageWrapMode {
     switch (mode) {
@@ -85,9 +75,7 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Converts 2iREN image dimensions to OpenGL texture target constants.
- */
+/// @brief Converts 2iREN image dimensions to OpenGL texture target constants.
 [[nodiscard]] constexpr auto img_dim_to_gl(const ImageDimension dim) -> GLenum {
     switch (dim) {
         case ImageDimension::D1: return GL_TEXTURE_1D;
@@ -98,9 +86,7 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts an OpenGL texture target to 2iREN image dimensions.
- */
+/// @brief Converts an OpenGL texture target to 2iREN image dimensions.
 [[nodiscard]] constexpr auto img_dim_to_siren(const GLenum dim)
     -> ImageDimension {
     switch (dim) {
@@ -111,11 +97,9 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Maps a 2iREN format to the corresponding OpenGL internal storage
- * format.
- * @details Defines how data is packed in VRAM.
- */
+/// @brief Maps a 2iREN format to the corresponding OpenGL internal storage
+/// format.
+/// @details Defines how data is packed in VRAM.
 [[nodiscard]] constexpr auto img_format_to_gl_internal(const ImageFormat format)
     -> GLenum {
     switch (format) {
@@ -135,9 +119,7 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Maps a 2iREN @ref AccessKind to its OpenGL equivalent.
- */
+/// @brief Maps a 2iREN @ref AccessKind to its OpenGL equivalent.
 [[nodiscard]] constexpr auto access_kind_to_gl(const AccessKind access_kind)
     -> GLenum {
     switch (access_kind) {
@@ -148,10 +130,8 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts an OpenGL internal format constant back to a 2iREN
- * ImageFormat.
- */
+/// @brief Converts an OpenGL internal format constant back to a 2iREN
+/// ImageFormat.
 [[nodiscard]] constexpr auto img_format_from_gl_internal(
     const GLenum internal_format
 ) -> ImageFormat {
@@ -171,10 +151,8 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Maps a 2iREN format to the OpenGL pixel layout (format/type).
- * @details Defines the expected structure of CPU-side pixel data.
- */
+/// @brief Maps a 2iREN format to the OpenGL pixel layout (format/type).
+/// @details Defines the expected structure of CPU-side pixel data.
 [[nodiscard]] constexpr auto img_format_to_gl_layout(const ImageFormat format)
     -> GLenum {
     switch (format) {
@@ -200,11 +178,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref ImageCompareMode to its native GLint version.
- * @param mode The @ref ImageCompareMode to convert.
- * @return A converted GLint.
- */
+/// @brief Converts a siren @ref ImageCompareMode to its native GLint version.
+/// @param mode The @ref ImageCompareMode to convert.
+/// @return A converted GLint.
 [[nodiscard]] constexpr auto img_compare_mode_to_gl(const ImageCompareMode mode)
     -> GLint {
     switch (mode) {
@@ -214,11 +190,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts an OpenGL GLint to a siren ImageCompareMode.
- * @param mode The GLint to convert.
- * @return A converted siren @ref ImageCompareMode.
- */
+/// @brief Converts an OpenGL GLint to a siren ImageCompareMode.
+/// @param mode The GLint to convert.
+/// @return A converted siren @ref ImageCompareMode.
 [[nodiscard]] constexpr auto img_compare_mode_to_siren(const GLint mode)
     -> ImageCompareMode {
     switch (mode) {
@@ -228,11 +202,9 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Converts a siren @ref ImageCompareFn to its native GLenum version.
- * @param func The @ref ImageCompareFn to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref ImageCompareFn to its native GLenum version.
+/// @param func The @ref ImageCompareFn to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto img_compare_fn_to_gl(const ImageCompareFn func)
     -> GLenum {
     switch (func) {
@@ -248,11 +220,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts an OpenGL GLenum to a siren ImageCompareFn.
- * @param func The GLenum to convert.
- * @return A converted siren @ref ImageCompareFn.
- */
+/// @brief Converts an OpenGL GLenum to a siren ImageCompareFn.
+/// @param func The GLenum to convert.
+/// @return A converted siren @ref ImageCompareFn.
 [[nodiscard]] constexpr auto img_compare_fn_to_siren(const GLenum func)
     -> ImageCompareFn {
     switch (func) {
@@ -268,21 +238,19 @@ namespace siren::opengl {
     }
 }
 
-/**
- * @brief Maps Siren image dimensions and extent to OpenGL texture targets.
- * Works as follows:
- * - @b D1: Returns @c GL_TEXTURE_1D or @c GL_TEXTURE_1D_ARRAY.
- * - @b D2: Returns @c GL_TEXTURE_2D or @c GL_TEXTURE_2D_ARRAY.
- * - @b D3: Always returns @c GL_TEXTURE_3D (3D arrays are not supported in
- * OpenGL).
- * - @b Cube: Returns @c GL_TEXTURE_CUBE_MAP (iff 6 layers) or @c
- * GL_TEXTURE_CUBE_MAP_ARRAY.
- *
- * @param extent The @ref ImageExtent.
- * @param dimension The @ref ImageDimension.
- * @return GLenum The resulting OpenGL texture target (e.g., @c
- * GL_TEXTURE_2D_ARRAY).
- */
+/// @brief Maps Siren image dimensions and extent to OpenGL texture targets.
+/// Works as follows:
+/// - @b D1: Returns @c GL_TEXTURE_1D or @c GL_TEXTURE_1D_ARRAY.
+/// - @b D2: Returns @c GL_TEXTURE_2D or @c GL_TEXTURE_2D_ARRAY.
+/// - @b D3: Always returns @c GL_TEXTURE_3D (3D arrays are not supported in
+/// OpenGL).
+/// - @b Cube: Returns @c GL_TEXTURE_CUBE_MAP (iff 6 layers) or @c
+/// GL_TEXTURE_CUBE_MAP_ARRAY.
+///
+/// @param extent The @ref ImageExtent.
+/// @param dimension The @ref ImageDimension.
+/// @return GLenum The resulting OpenGL texture target (e.g., @c
+/// GL_TEXTURE_2D_ARRAY).
 [[nodiscard]] constexpr auto img_to_target_gl(
     const Extent3u extent,
     const ImageDimension dimension
@@ -302,20 +270,18 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts enum BufferUsage to native OpenGL storage flags.
- *
- * - @b Static: Returns @c 0. This creates immutable, non CPU accessible
- * storage. Updates must be performed via staging buffers.
- * - @b Dynamic: Returns @c GL_DYNAMIC_STORAGE_BIT. Enables @c
- * glNamedBufferSubData for occasional CPU-to-GPU updates.
- *
- * @note Reading from GPU memory is explicitly unsupported. If readback is
- * required, the caller should maintain a CPU copy.
- *
- * @param usage The @ref BufferUsage for the buffer.
- * @return GLbitfield The bitmask of OpenGL storage flags.
- */
+/// @brief Converts enum BufferUsage to native OpenGL storage flags.
+///
+/// - @b Static: Returns @c 0. This creates immutable, non CPU accessible
+/// storage. Updates must be performed via staging buffers.
+/// - @b Dynamic: Returns @c GL_DYNAMIC_STORAGE_BIT. Enables @c
+/// glNamedBufferSubData for occasional CPU-to-GPU updates.
+///
+/// @note Reading from GPU memory is explicitly unsupported. If readback is
+/// required, the caller should maintain a CPU copy.
+///
+/// @param usage The @ref BufferUsage for the buffer.
+/// @return GLbitfield The bitmask of OpenGL storage flags.
 [[nodiscard]] constexpr auto buffer_usage_to_flags_gl(const BufferUsage usage)
     -> GLbitfield {
     if (usage == BufferUsage::Dynamic) {
@@ -324,11 +290,9 @@ namespace siren::opengl {
     return 0;
 }
 
-/**
- * @brief Converts a siren @ref ShaderStage to its native GLenum version.
- * @param shader_stage The @ref ShaderStage to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref ShaderStage to its native GLenum version.
+/// @param shader_stage The @ref ShaderStage to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto shader_stage_to_gl(const ShaderStage shader_stage)
     -> GLenum {
     switch (shader_stage) {
@@ -342,11 +306,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref DepthFunction to its native GLenum version.
- * @param depth_function The @ref DepthFunction to convert
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref DepthFunction to its native GLenum version.
+/// @param depth_function The @ref DepthFunction to convert
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto depth_func_to_gl(
     const DepthFunction depth_function
 ) -> GLenum {
@@ -363,11 +325,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref BlendFunction to its native GLenum version.
- * @param blend_function The @ref BlendFunction to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref BlendFunction to its native GLenum version.
+/// @param blend_function The @ref BlendFunction to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto blend_function_to_gl(
     const BlendFunction blend_function
 ) -> GLenum {
@@ -381,11 +341,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref BlendFactor to its native GLenum version.
- * @param factor The @ref BlendFactor to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref BlendFactor to its native GLenum version.
+/// @param factor The @ref BlendFactor to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto blend_factor_to_gl(const BlendFactor factor)
     -> GLenum {
     switch (factor) {
@@ -400,11 +358,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref PrimitiveTopology to its native GLenum version.
- * @param topology The @ref PrimitiveTopology to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref PrimitiveTopology to its native GLenum version.
+/// @param topology The @ref PrimitiveTopology to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto topology_to_gl(const PrimitiveTopology topology)
     -> GLenum {
     switch (topology) {
@@ -418,11 +374,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref IndexFormat to its native GLenum version.
- * @param format The @ref IndexFormat to convert.
- * @return A converted GLenum.
- */
+/// @brief Converts a siren @ref IndexFormat to its native GLenum version.
+/// @param format The @ref IndexFormat to convert.
+/// @return A converted GLenum.
 [[nodiscard]] constexpr auto index_format_to_gl(const IndexFormat format)
     -> GLenum {
     switch (format) {
@@ -433,11 +387,9 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * Converts a @ref DataType value to its OpenGL equivalent.
- * @param type The @ref DataType to convert.
- * @return A GLenum converted DataType.
- */
+/// Converts a @ref DataType value to its OpenGL equivalent.
+/// @param type The @ref DataType to convert.
+/// @return A GLenum converted DataType.
 [[nodiscard]] constexpr auto siren_datatype_to_gl(const DataType type)
     -> GLenum {
     switch (type) {
@@ -458,9 +410,7 @@ namespace siren::opengl {
     UNREACHABLE();
 }
 
-/**
- * @brief Converts a siren @ref QueryKind to its OpenGL equivalent.
- */
+/// @brief Converts a siren @ref QueryKind to its OpenGL equivalent.
 [[nodiscard]] constexpr auto query_kind_to_gl(const QueryKind kind) -> GLenum {
     switch (kind) {
         case QueryKind::SamplesPassed: return GL_SAMPLES_PASSED;

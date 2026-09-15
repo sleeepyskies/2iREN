@@ -9,10 +9,8 @@ namespace siren {
 
 struct RenderResourceState;
 
-/**
- * @brief Struct for the OpenGL backend tracking any
- * state by OpenGL needed for the @ref Executor.
- */
+/// @brief Struct for the OpenGL backend tracking any
+/// state by OpenGL needed for the @ref Executor.
 struct TrackedState {
     GLuint active_vao                      = 0;
     GraphicsPipelineHandle active_pipeline = NullHandle;
@@ -37,40 +35,40 @@ private:
     mutable TrackedState m_tracked_state;
     mutable Statistics m_statistics{};
 
-    /** @brief Handles @ref BindGraphicsPipeline. */
+    /// @brief Handles @ref BindGraphicsPipeline.
     auto bind_graphics_pipeline(const BindGraphicsPipeline& bind) const -> void;
 
-    /** @brief Handles @ref BindVertexBuffer. */
+    /// @brief Handles @ref BindVertexBuffer.
     auto bind_vertex_buffer(const BindVertexBuffer& bind_vertex_buffer) const
         -> void;
-    /** @brief Handles @ref BindIndexBuffer. */
+    /// @brief Handles @ref BindIndexBuffer.
     auto bind_index_buffer(const BindIndexBuffer& bind_index_buffer) const
         -> void;
-    /** @brief Handles @ref BindUniformBuffer. */
+    /// @brief Handles @ref BindUniformBuffer.
     auto bind_uniform_buffer(const BindUniformBuffer& bind_uniform_buffer) const
         -> void;
-    /** @brief Handles @ref BindUniformBufferRange. */
+    /// @brief Handles @ref BindUniformBufferRange.
     auto bind_uniform_buffer_range(
         const BindUniformBufferRange& bind_uniform_buffer_range
     ) const -> void;
-    /** @brief Handles @ref BindShaderStorageBuffer. */
+    /// @brief Handles @ref BindShaderStorageBuffer.
     auto bind_shader_storage_buffer(
         const BindShaderStorageBuffer& bind_shader_storage_buffer
     ) const -> void;
 
-    /** @brief Handles @ref BindSampledImage. */
+    /// @brief Handles @ref BindSampledImage.
     auto bind_sampled_image(const BindSampledImage& bind_sampled_image) const
         -> void;
-    /** @brief Handles @ref BindStorageImage. */
+    /// @brief Handles @ref BindStorageImage.
     auto bind_storage_image(const BindStorageImage& bind_storage_image) const
         -> void;
-    /** @brief Handles @ref BeginQuery. */
+    /// @brief Handles @ref BeginQuery.
     auto begin_query(const BeginQuery& begin_query) const -> void;
-    /** @brief Handles @ref EndQuery. */
+    /// @brief Handles @ref EndQuery.
     auto end_query(const EndQuery& end_query) const -> void;
-    /** @brief Handles @ref DrawArrays. */
+    /// @brief Handles @ref DrawArrays.
     auto draw_arrays(const DrawArrays& draw_arrays) const -> void;
-    /** @brief Handles @ref DrawIndexed. */
+    /// @brief Handles @ref DrawIndexed.
     auto draw_indexed(const DrawIndexed& draw_indexed) const -> void;
 };
 

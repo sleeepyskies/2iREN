@@ -11,27 +11,23 @@
 
 namespace siren {
 
-/**
- * @struct IndexBuffer
- * @brief Simple container semantically representing an index buffer.
- */
+/// @struct IndexBuffer
+/// @brief Simple container semantically representing an index buffer.
 struct IndexBuffer {
-    /** @brief The GPU side index data. */
+    /// @brief The GPU side index data.
     Buffer buffer;
-    /** @brief The number of indices. */
+    /// @brief The number of indices.
     usize count;
-    /** @brief The type of the indices. */
+    /// @brief The type of the indices.
     IndexFormat format;
 };
 
-/**
- * @struct VertexBuffer
- * @brief Simple container semantically representing a vertex buffer.
- */
+/// @struct VertexBuffer
+/// @brief Simple container semantically representing a vertex buffer.
 struct VertexBuffer {
-    /** @brief The GPU buffer of the vertex data. */
+    /// @brief The GPU buffer of the vertex data.
     Buffer buffer;
-    /** @brief Describes the layout of the vertex buffer. */
+    /// @brief Describes the layout of the vertex buffer.
     Layout layout;
 };
 
@@ -45,21 +41,21 @@ struct Surface : Asset {
         name(name), material(material), index_buffer(std::move(index_buffer)),
         vertex_buffer(std::move(vertex_buffer)) { }
 
-    /** @brief The name of the surface. */
+    /// @brief The name of the surface.
     std::string name;
-    /** @brief The material to use for this surface. */
+    /// @brief The material to use for this surface.
     StrongHandle<MaterialAsset> material;
-    /** @brief The indices of the Surface. */
+    /// @brief The indices of the Surface.
     IndexBuffer index_buffer;
-    /** @brief The vertices of the Surface. */
+    /// @brief The vertices of the Surface.
     VertexBuffer vertex_buffer;
 };
 
-/** @brief A collection of @ref Surface's forming a complete Mesh. */
+/// @brief A collection of @ref Surface's forming a complete Mesh.
 struct Mesh : Asset {
-    /** @brief Name of the mesh. */
+    /// @brief Name of the mesh.
     std::string name;
-    /** @brief Surfaces belonging to this mesh. */
+    /// @brief Surfaces belonging to this mesh.
     std::vector<StrongHandle<Surface>> surfaces;
 };
 

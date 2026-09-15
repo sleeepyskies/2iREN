@@ -4,9 +4,7 @@
 
 namespace siren::gl {
 
-/**
- * @brief Callback that links OpenGL messages to 2iREN's logging system.
- */
+/// @brief Callback that links OpenGL messages to 2iREN's logging system.
 auto debug_callback(
     GLenum source,
     GLenum type,

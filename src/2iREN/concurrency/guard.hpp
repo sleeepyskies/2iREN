@@ -12,13 +12,11 @@ template <typename M>
 struct IsSharedLock<std::shared_lock<M>> : std::true_type { };
 } // namespace impl
 
-/**
- * @class Guard
- * @brief A RAII container for accessing shared data in a thread safe manner.
- * The lock/guard is held until this object is dropped.
- * @tparam T The type of the data behind the guard.
- * @tparam Lock The type of the lock. Maybe either a shared or a unique lock.
- */
+/// @class Guard
+/// @brief A RAII container for accessing shared data in a thread safe manner.
+/// The lock/guard is held until this object is dropped.
+/// @tparam T The type of the data behind the guard.
+/// @tparam Lock The type of the lock. Maybe either a shared or a unique lock.
 template <typename T, typename Lock>
 class Guard {
 public:

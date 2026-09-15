@@ -10,30 +10,30 @@
 
 namespace siren {
 
-/** @brief Error codes possible during asset loading. */
+/// @brief Error codes possible during asset loading.
 class AssetErrorCode {
 public:
     enum Value {
-        /** @brief The asset file could not be located on disk. */
+        /// @brief The asset file could not be located on disk.
         FileNotFound,
-        /** @brief The asset file is somehow corrupted or could not be parsed. */
+        /// @brief The asset file is somehow corrupted or could not be parsed.
         InvalidFormat,
-        /** @brief The file could be parsed, but was missing some required fields. */
+        /// @brief The file could be parsed, but was missing some required fields.
         InvalidSchema,
-        /** @brief Some GPU or Driver failure. */
+        /// @brief Some GPU or Driver failure.
         RuntimeFailed,
-        /** @brief Some feature was encountered that 1iren does not support. */
+        /// @brief Some feature was encountered that 1iren does not support.
         NotSupported,
-        /** @brief Some data has been corrupted. */
+        /// @brief Some data has been corrupted.
         AssetCorrupted,
-        /** @brief No config was provided, when one is required. */
+        /// @brief No config was provided, when one is required.
         NoConfig,
     } value;
 
     constexpr AssetErrorCode(const Value v) : value(v) {}
     constexpr operator Value() const { return value; }
 
-    /** @brief Stringifies the given AssetErrorCode. */
+    /// @brief Stringifies the given AssetErrorCode.
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (value) {
             case FileNotFound: return "FileNotFound";
@@ -57,25 +57,21 @@ struct LoaderTraits {
 
 struct AssetLoaderBase {
     virtual ~AssetLoaderBase() = default;
-    /** @brief Returns a list of file extensions this loader can load. */
+    /// @brief Returns a list of file extensions this loader can load.
     [[nodiscard]] virtual auto extensions() const -> std::vector<std::string_view> = 0;
 };
 
-/**
- * @brief Base class for standard AssetLoaders.
- * See @ref Asset.
- */
+/// @brief Base class for standard AssetLoaders.
+/// See @ref Asset.
 template <IsAsset AssetType>
 struct AssetLoader : AssetLoaderBase {
     using ConfigType = LoaderTraits<AssetType>::Config;
 
     ~AssetLoader() override = default;
-    /**
-     * @brief Loads a new asset into the @ref AssetServer.
-     * @param ctx A @ref LoadContext object. Acts as an API to the @ref AssetServer.
-     * @param config A config determining how to load the asset.
-     * @return Nothing on success, or an error code on fail.
-     */
+    /// @brief Loads a new asset into the @ref AssetServer.
+    /// @param ctx A @ref LoadContext object. Acts as an API to the @ref AssetServer.
+    /// @param config A config determining how to load the asset.
+    /// @return Nothing on success, or an error code on fail.
     virtual auto load(LoadContext&& ctx, const std::optional<ConfigType> config) const
         -> AssetLoadError = 0;
 };

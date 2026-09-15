@@ -15,7 +15,7 @@ enum class BufferUsage {
     Dynamic,
 };
 
-/** @brief Defines the index format of an index buffer. */
+/// @brief Defines the index format of an index buffer.
 class IndexFormat {
 public:
     enum Value : u8 {
@@ -24,7 +24,7 @@ public:
         UInt32,
     } value;
 
-    /** @brief Returns the size of this format in bytes. */
+    /// @brief Returns the size of this format in bytes.
     [[nodiscard]] constexpr auto size_bytes() const -> usize {
         switch (value) {
             case UInt8: return 1;
@@ -40,17 +40,15 @@ public:
     }
 };
 
-/**
- * @brief Describes a @ref Buffer. Used for object creation via @ref Device.
- * @todo pass in the data as a separate buffer in the device->create_buffer(),
- * or just remove entirely
- */
+/// @brief Describes a @ref Buffer. Used for object creation via @ref Device.
+/// @todo pass in the data as a separate buffer in the device->create_buffer(),
+/// or just remove entirely
 struct BufferDescriptor {
-    /** @brief An optional label. Mainly useful for debugging. */
+    /// @brief An optional label. Mainly useful for debugging.
     std::optional<std::string> label = std::nullopt;
-    /** @brief The initial size of the buffer in bytes. */
+    /// @brief The initial size of the buffer in bytes.
     usize size;
-    /** @brief The intended use of the buffer. */
+    /// @brief The intended use of the buffer.
     BufferUsage usage;
 };
 

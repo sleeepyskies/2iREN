@@ -5,17 +5,15 @@
 
 namespace siren {
 
-/**
- * @brief An asset wrapper around a @ref Shader. Provides access to the shader,
- * as well as retains information of the shader.
- */
+/// @brief An asset wrapper around a @ref Shader. Provides access to the shader,
+/// as well as retains information of the shader.
 struct ShaderAsset : Asset {
     ShaderAsset(Shader&& shader, const std::unordered_map<ShaderStage, ShaderData>& data) :
         shader(std::move(shader)), source(data) {}
 
-    /** @brief The underlying GPU Shader object. */
+    /// @brief The underlying GPU Shader object.
     Shader shader;
-    /** @brief The source code for each stage of the Shader. */
+    /// @brief The source code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };
 
@@ -24,10 +22,8 @@ struct LoaderTraits<ShaderAsset> {
     struct Config {};
 };
 
-/**
- * @brief Loader for shaders.
- * See @ref Shader
- */
+/// @brief Loader for shaders.
+/// See @ref Shader
 class ShaderLoader final : public AssetLoader<ShaderAsset> {
 public:
     auto load(LoadContext&& ctx, std::optional<ConfigType> config) const -> AssetLoadError override;

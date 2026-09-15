@@ -8,11 +8,9 @@
 
 namespace siren {
 
-/**
- * @brief Maps siren KeyCode's to native GLFW.
- * @param key The siren @ref KeyCode to map.
- * @return An unsigned integer representing a GLFW key.
- */
+/// @brief Maps siren KeyCode's to native GLFW.
+/// @param key The siren @ref KeyCode to map.
+/// @return An unsigned integer representing a GLFW key.
 constexpr auto to_glfw(const Key key) -> u32 {
     switch (key) {
         case Key::Space: return GLFW_KEY_SPACE;
@@ -130,11 +128,9 @@ constexpr auto to_glfw(const Key key) -> u32 {
     }
 }
 
-/**
- * @brief Maps GLFW keycodes to siren.
- * @param key The GLFW keycode to map.
- * @return A siren @ref KeyCode.
- */
+/// @brief Maps GLFW keycodes to siren.
+/// @param key The GLFW keycode to map.
+/// @return A siren @ref KeyCode.
 constexpr auto from_glfw_key(const u32 key) -> Key {
     switch (key) {
         case GLFW_KEY_SPACE: return Key::Space;
@@ -252,11 +248,9 @@ constexpr auto from_glfw_key(const u32 key) -> Key {
     }
 }
 
-/**
- * @brief Maps siren MouseCode's to native GLFW.
- * @param key The siren @ref MouseCode to map.
- * @return An unsigned integer representing a GLFW mouse key.
- */
+/// @brief Maps siren MouseCode's to native GLFW.
+/// @param key The siren @ref MouseCode to map.
+/// @return An unsigned integer representing a GLFW mouse key.
 constexpr auto to_glfw(const Mouse key) -> u32 {
     switch (key) {
         case Mouse::Left: return GLFW_MOUSE_BUTTON_LEFT;
@@ -266,11 +260,9 @@ constexpr auto to_glfw(const Mouse key) -> u32 {
     }
 }
 
-/**
- * @brief Maps GLFW mouse keycodes to siren.
- * @param key The GLFW keycode to map.
- * @return A siren @ref MouseCode.
- */
+/// @brief Maps GLFW mouse keycodes to siren.
+/// @param key The GLFW keycode to map.
+/// @return A siren @ref MouseCode.
 constexpr auto from_glfw_mouse(const u32 key) -> Mouse {
     switch (key) {
         case GLFW_MOUSE_BUTTON_LEFT: return Mouse::Left;
@@ -280,11 +272,9 @@ constexpr auto from_glfw_mouse(const u32 key) -> Mouse {
     }
 }
 
-/**
- * @brief Maps siren MouseMode's to native GLFW.
- * @param mode The siren @ref MouseMode to map.
- * @return An unsigned integer representing a GLFW mouse mode.
- */
+/// @brief Maps siren MouseMode's to native GLFW.
+/// @param mode The siren @ref MouseMode to map.
+/// @return An unsigned integer representing a GLFW mouse mode.
 constexpr auto to_glfw(const CursorMode mode) -> u32 {
     switch (mode) {
         case CursorMode::Visible: return GLFW_CURSOR_NORMAL;
@@ -294,11 +284,9 @@ constexpr auto to_glfw(const CursorMode mode) -> u32 {
     }
 }
 
-/**
- * @brief Maps GLFW mouse keycodes to siren.
- * @param mode The GLFW mouse mode to map.
- * @return A siren @ref MouseMode.
- */
+/// @brief Maps GLFW mouse keycodes to siren.
+/// @param mode The GLFW mouse mode to map.
+/// @return A siren @ref MouseMode.
 constexpr auto from_glfw_mouse_mode(const u32 mode) -> CursorMode {
     switch (mode) {
         case GLFW_CURSOR_NORMAL: return CursorMode::Visible;

@@ -87,11 +87,9 @@ struct ShaderDescriptor {
     std::unordered_map<ShaderStage, ShaderData> source;
 };
 
-/**
- * @brief Represents a shader compiled on the GPU. Provides an interface to
- * interact with the GPU shader object. However, does not retain any information
- * post compile. To recover information after compiling, see @ref ShaderAsset.
- */
+/// @brief Represents a shader compiled on the GPU. Provides an interface to
+/// interact with the GPU shader object. However, does not retain any information
+/// post compile. To recover information after compiling, see @ref ShaderAsset.
 class Shader : public RenderResource<Shader> {
     using Base = RenderResource<Shader>;
 
@@ -102,7 +100,7 @@ public:
     Shader(Shader&& other) noexcept;
     Shader& operator=(Shader&& other) noexcept;
 
-    /** @brief Returns the @ref ShaderDescriptor associated with this shader. */
+    /// @brief Returns the @ref ShaderDescriptor associated with this shader.
     [[nodiscard]] auto descriptor() const noexcept -> const ShaderDescriptor&;
 };
 

@@ -19,10 +19,8 @@ enum class AccessKind {
     ReadWrite,
 };
 
-/**
- * @brief Identifies the type of operation recorded into the buffer.
- * Acts as a tag for a union.
- */
+/// @brief Identifies the type of operation recorded into the buffer.
+/// Acts as a tag for a union.
 enum class RenderCommandType : u8 {
     BindGraphicsPipeline,
 
@@ -42,11 +40,9 @@ enum class RenderCommandType : u8 {
     DrawIndexed,
 };
 
-/**
- * @brief Indicates a @ref GraphicsPipeline bind. Sets all of its state.
- */
+/// @brief Indicates a @ref GraphicsPipeline bind. Sets all of its state.
 struct BindGraphicsPipeline {
-    /** @brief The pipeline to bind. */
+    /// @brief The pipeline to bind.
     GraphicsPipelineHandle pipeline_handle;
 };
 
@@ -60,92 +56,75 @@ struct BindVertexBuffer {
     u32 offset;
 };
 
-/**
- * @brief Binds an index buffer.
- */
+/// @brief Binds an index buffer.
 struct BindIndexBuffer {
-    /** @brief The buffer to bind. */
+    /// @brief The buffer to bind.
     BufferHandle index_buffer;
-    /** @brief The format of the indices. */
+    /// @brief The format of the indices.
     IndexFormat index_format;
 };
 
-/**
- * @brief Binds a uniform buffer.
- */
+/// @brief Binds a uniform buffer.
 struct BindUniformBuffer {
-    /** @brief The buffer to bind. */
+    /// @brief The buffer to bind.
     BufferHandle uniform_buffer;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to.
     u32 slot;
 };
 
-/**
- * @brief Binds a subsection of a uniform buffer.
- */
+/// @brief Binds a subsection of a uniform buffer.
 struct BindUniformBufferRange {
-    /** @brief The buffer to bind. */
+    /// @brief The buffer to bind.
     BufferHandle uniform_buffer;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to.
     u32 slot;
-    /** @brief The offset in bytes into the buffer to begin the binding range.
-     */
+    /// @brief The offset in bytes into the buffer to begin the binding range.
     usize offset;
-    /** @brief The size of the sub binding range. */
+    /// @brief The size of the sub binding range.
     usize size;
 };
 
-/**
- * @brief Binds a Shader Storage Buffer Object.
- */
+/// @brief Binds a Shader Storage Buffer Object.
 struct BindShaderStorageBuffer {
-    /** @brief The buffer to bind. */
+    /// @brief The buffer to bind.
     BufferHandle shader_storage_buffer;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to.
     u32 slot;
 };
 
-/**
- * @brief Binds an @ref Image for sampled access. This uses filtering and mipmap
- * sampling. This also allows only for read access and uses texture coordinates
- * instead of pixel coordinates.
- */
+/// @brief Binds an @ref Image for sampled access. This uses filtering and mipmap
+/// sampling. This also allows only for read access and uses texture coordinates
+/// instead of pixel coordinates.
 struct BindSampledImage {
-    /** @brief The @ref Image to bind. */
+    /// @brief The @ref Image to bind.
     ImageHandle image;
-    /** @brief The @ref Sampler to use. */
+    /// @brief The @ref Sampler to use.
     SamplerHandle sampler;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to.
     u32 slot;
 };
 
-/**
- * @brief Binds an @ref Image for direct pixel access. This applies no filtering
- * or mip map sampling. This also allows for read write access and uses raw
- * pixel coordinates instead of texture coordinates.
- */
+/// @brief Binds an @ref Image for direct pixel access. This applies no filtering
+/// or mip map sampling. This also allows for read write access and uses raw
+/// pixel coordinates instead of texture coordinates.
 struct BindStorageImage {
-    /** @brief The image to bind. */
+    /// @brief The image to bind.
     ImageHandle image;
-    /** @brief The slot to bind to. */
+    /// @brief The slot to bind to.
     u32 slot;
-    /** @brief Specifies how the shader may access the @ref Image. */
+    /// @brief Specifies how the shader may access the @ref Image.
     AccessKind access;
 };
 
-/**
- * @brief Begins recording into a @ref Query.
- */
+/// @brief Begins recording into a @ref Query.
 struct BeginQuery {
-    /** @brief The @ref Query to begin. */
+    /// @brief The @ref Query to begin.
     QueryHandle query;
 };
 
-/**
- * @brief Ends recording into a @ref Query.
- */
+/// @brief Ends recording into a @ref Query.
 struct EndQuery {
-    /** @brief The @ref Query to end. */
+    /// @brief The @ref Query to end.
     QueryHandle query;
 };
 
@@ -169,9 +148,7 @@ struct DrawIndexed {
     u32 index_count;
 };
 
-/**
- * @brief Encapsulates a render related command.
- */
+/// @brief Encapsulates a render related command.
 struct RenderCommand {
     union {
         BindGraphicsPipeline bind_graphics_pipeline;
@@ -190,8 +167,8 @@ struct RenderCommand {
 
     RenderCommandType type;
 
-    /** @brief Attempts to cast the internal command into a Command type.
-     * Crashes on fail. */
+    /// @brief Attempts to cast the internal command into a Command type.
+    /// Crashes on fail.
     template <typename Command>
     auto as() const -> const Command& {
         if constexpr (std::is_same_v<Command, BindGraphicsPipeline>) {
@@ -240,68 +217,56 @@ struct RenderPass {
 
 class RenderPassRecorder {
 public:
-    /**
-     * @brief Constructs a new @ref RenderPassRecorder.
-     * @param descriptor Parameters used to define the render pass.
-     * @param size_hint Defines the initial size of the inner command buffer.
-     * Use if it is known roughly how many commands will be submitted.
-     */
+    /// @brief Constructs a new @ref RenderPassRecorder.
+    /// @param descriptor Parameters used to define the render pass.
+    /// @param size_hint Defines the initial size of the inner command buffer.
+    /// Use if it is known roughly how many commands will be submitted.
     explicit RenderPassRecorder(
         const RenderPassDescriptor& descriptor,
         usize size_hint = 1024
     );
 
-    /**
-     * @brief Binds a @ref GraphicsPipeline to the current render pass.
-     * This sets up the state for any following draw commands to this recorder,
-     * including shaders used, vertex layout, blend mode etc...
-     * @param pipeline_handle The @ref GraphicsPipeline to bind.
-     */
+    /// @brief Binds a @ref GraphicsPipeline to the current render pass.
+    /// This sets up the state for any following draw commands to this recorder,
+    /// including shaders used, vertex layout, blend mode etc...
+    /// @param pipeline_handle The @ref GraphicsPipeline to bind.
     auto bind_graphics_pipeline(
         const GraphicsPipelineHandle pipeline_handle
     ) noexcept -> void;
 
-    /**
-     * @brief Assigns a vertex buffer to a slot.
-     * Any following draw calls will use the provided buffer.
-     * @note The caller should make sure the @ref Buffer layout matches the
-     * layout in the bound @ref GraphicsPipeline.
-     * @param buffer The @ref Buffer to bind to the slot.
-     * @param slot The slot to bind to.
-     * @param offset The offset into the @ref Buffer to start from.
-     */
+    /// @brief Assigns a vertex buffer to a slot.
+    /// Any following draw calls will use the provided buffer.
+    /// @note The caller should make sure the @ref Buffer layout matches the
+    /// layout in the bound @ref GraphicsPipeline.
+    /// @param buffer The @ref Buffer to bind to the slot.
+    /// @param slot The slot to bind to.
+    /// @param offset The offset into the @ref Buffer to start from.
     auto bind_vertex_buffer(
         const BufferHandle buffer,
         const u32 slot,
         const u32 offset
     ) noexcept -> void;
 
-    /**
-     * @brief Binds an index buffer to the current pass.
-     * @note There may only be a single index buffer bound at a time.
-     * @param buffer The index buffer to bind.
-     * @param index_format The format of the indices (e.g., u8, u16, u32).
-     */
+    /// @brief Binds an index buffer to the current pass.
+    /// @note There may only be a single index buffer bound at a time.
+    /// @param buffer The index buffer to bind.
+    /// @param index_format The format of the indices (e.g., u8, u16, u32).
     auto bind_index_buffer(
         const BufferHandle buffer,
         const IndexFormat index_format
     ) noexcept -> void;
 
-    /**
-     * @brief Binds a Uniform Buffer to the given slot.
-     * @param buffer The @ref Buffer to bind to the slot.
-     * @param slot The slot to bind to.
-     */
+    /// @brief Binds a Uniform Buffer to the given slot.
+    /// @param buffer The @ref Buffer to bind to the slot.
+    /// @param slot The slot to bind to.
     auto bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept
         -> void;
 
-    /**
-     * @brief Binds a sub range of a Uniform Buffer to the given slot.
-     * @param buffer The @ref Buffer to bind to the slot.
-     * @param slot The slot to bind to.
-     * @param offset The offset into the buffer to start from.
-     * @param size The size of the sub range to bind.
-     */
+    /// @brief Binds a sub range of a Uniform Buffer to the given slot.
+    /// @param buffer The @ref Buffer to bind to the slot.
+    /// @param slot The slot to bind to.
+    /// @param offset The offset into the buffer to start from.
+    /// @param size The size of the sub range to bind.
     auto bind_uniform_buffer_range(
         const BufferHandle buffer,
         const u32 slot,
@@ -309,72 +274,58 @@ public:
         const usize size
     ) noexcept -> void;
 
-    /**
-     * @brief Binds a Shader Storage Buffer to the given slot.
-     * @param buffer The @ref Buffer to bind to the slot.
-     * @param slot The slot to bind to.
-     */
+    /// @brief Binds a Shader Storage Buffer to the given slot.
+    /// @param buffer The @ref Buffer to bind to the slot.
+    /// @param slot The slot to bind to.
     auto bind_shader_storage_buffer(
         const BufferHandle buffer,
         const u32 slot
     ) noexcept -> void;
 
-    /**
-     * @brief Binds an @ref Image to the given slot for sampled access.
-     * @param image The @ref Image to bind to the slot.
-     * @param sampler The @ref Sampler to access the @ref Image through.
-     * @param slot The slot to bind to.
-     */
+    /// @brief Binds an @ref Image to the given slot for sampled access.
+    /// @param image The @ref Image to bind to the slot.
+    /// @param sampler The @ref Sampler to access the @ref Image through.
+    /// @param slot The slot to bind to.
     auto bind_sampled_image(
         const ImageHandle image,
         const SamplerHandle sampler,
         const u32 slot
     ) noexcept -> void;
 
-    /**
-     * @brief Binds an @ref Image to the given slot for direct access.
-     * @param image The @ref Image to bind to the slot.
-     * @param access The access permissions the shader will have.
-     * @param slot The slot to bind to.
-     */
+    /// @brief Binds an @ref Image to the given slot for direct access.
+    /// @param image The @ref Image to bind to the slot.
+    /// @param access The access permissions the shader will have.
+    /// @param slot The slot to bind to.
     auto bind_storage_image(
         const ImageHandle image,
         const AccessKind access,
         const u32 slot
     ) noexcept -> void;
 
-    /**
-     * @brief Begins recording query information.
-     * @param handle The @ref Query to begin recording information into.
-     */
+    /// @brief Begins recording query information.
+    /// @param handle The @ref Query to begin recording information into.
     auto begin_query(const QueryHandle handle) noexcept -> void;
 
-    /**
-     * @brief Ends recording query information.
-     * @param handle The @ref Query to end recording information into.
-     */
+    /// @brief Ends recording query information.
+    /// @param handle The @ref Query to end recording information into.
     auto end_query(const QueryHandle handle) noexcept -> void;
 
-    /**
-     * @brief Draws from the currently bound vertex buffer(s) non indexed.
-     * @param primitive_topology The way to draw the points as.
-     * @param start The first vertex to draw.
-     * @param count The amount of vertices starting from the first to draw.
-     */
+    /// @brief Draws from the currently bound vertex buffer(s) non indexed.
+    /// @param primitive_topology The way to draw the points as.
+    /// @param start The first vertex to draw.
+    /// @param count The amount of vertices starting from the first to draw.
     auto draw_arrays(
         const PrimitiveTopology primitive_topology,
         const u32 start,
         const u32 count
     ) noexcept -> void;
 
-    /**
-     * @brief Draws from the currently bound vertex buffer(s) using the
-     * currently bound index buffer.
-     * @param primitive_topology The way to draw the points as.
-     * @param index_count The amount of indices to draw.
-     * @param first_index The offset (in indices) into the index buffer to start
-     * from.
-     */
+    /// @brief Draws from the currently bound vertex buffer(s) using the
+    /// currently bound index buffer.
+    /// @param primitive_topology The way to draw the points as.
+    /// @param index_count The amount of indices to draw.
+    /// @param first_index The offset (in indices) into the index buffer to start
+    /// from.
     auto draw_indexed(
         const PrimitiveTopology primitive_topology,
         const u32 index_count,

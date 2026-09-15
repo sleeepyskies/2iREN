@@ -9,11 +9,11 @@ namespace siren {
 struct QueryKind {
     enum Value {
         None = 0,
-        /** @brief Counts the number of samples that passed depth/stencil tests. */
+        /// @brief Counts the number of samples that passed depth/stencil tests.
         SamplesPassed,
-        /** @brief Checks whether any sample passed depth/stencil tests. */
+        /// @brief Checks whether any sample passed depth/stencil tests.
         AnySamplesPassed,
-        /** @brief Measures GPU time elapsed between query begin and end. */
+        /// @brief Measures GPU time elapsed between query begin and end.
         TimeElapsed,
     } value;
 
