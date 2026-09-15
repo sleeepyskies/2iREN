@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Metal/MTL4PipelineState.hpp>
 #include <Metal/MTLPixelFormat.hpp>
 #include <Metal/MTLRenderCommandEncoder.hpp>
 #include <Metal/MTLRenderPass.hpp>
@@ -33,8 +34,7 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
 
             case DataType::Int64:
             case DataType::UInt64:
-            case DataType::Float64:
-                PANIC("64-bit vertex attributes are not supported by metal.");
+            case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
     } else if (component.size == 2) {
         switch (component.type) {
@@ -51,8 +51,7 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
 
             case DataType::Int64:
             case DataType::UInt64:
-            case DataType::Float64:
-                PANIC("64-bit vertex attributes are not supported by metal.");
+            case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
     } else if (component.size == 3) {
         switch (component.type) {
@@ -69,8 +68,7 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
 
             case DataType::Int64:
             case DataType::UInt64:
-            case DataType::Float64:
-                PANIC("64-bit vertex attributes are not supported by metal.");
+            case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
     } else if (component.size == 4) {
         switch (component.type) {
@@ -87,21 +85,18 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
 
             case DataType::Int64:
             case DataType::UInt64:
-            case DataType::Float64:
-                PANIC("64-bit vertex attributes are not supported by metal.");
+            case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
     }
 
     PANIC("invalid vertex format.");
 }
 
-constexpr auto primtive_topology(const PrimitiveTopology topology)
-    -> MTL::PrimitiveTopologyClass {
+constexpr auto primtive_topology(const PrimitiveTopology topology) -> MTL::PrimitiveTopologyClass {
     switch (topology) {
         case PrimitiveTopology::Points: return MTL::PrimitiveTopologyClassPoint;
         case PrimitiveTopology::Lines: return MTL::PrimitiveTopologyClassLine;
-        case PrimitiveTopology::Triangles:
-            return MTL::PrimitiveTopologyClassTriangle;
+        case PrimitiveTopology::Triangles: return MTL::PrimitiveTopologyClassTriangle;
 
         case PrimitiveTopology::TriangleStrip:
         case PrimitiveTopology::TriangleFan:
@@ -110,15 +105,13 @@ constexpr auto primtive_topology(const PrimitiveTopology topology)
     }
 }
 
-constexpr auto primitive_type(const PrimitiveTopology topology)
-    -> MTL::PrimitiveType {
+constexpr auto primitive_type(const PrimitiveTopology topology) -> MTL::PrimitiveType {
     switch (topology) {
         case PrimitiveTopology::Points: return MTL::PrimitiveTypePoint;
         case PrimitiveTopology::Lines: return MTL::PrimitiveTypeLine;
         case PrimitiveTopology::Triangles: return MTL::PrimitiveTypeTriangle;
 
-        case PrimitiveTopology::TriangleStrip:
-            return MTL::PrimitiveTypeTriangleStrip;
+        case PrimitiveTopology::TriangleStrip: return MTL::PrimitiveTypeTriangleStrip;
         case PrimitiveTopology::LineStrip: return MTL::PrimitiveTypeLineStrip;
         case PrimitiveTopology::TriangleFan:
             PANIC("metal does not support the rquested primtive type");
@@ -134,11 +127,9 @@ constexpr auto image_format(const MTL::PixelFormat format) -> ImageFormat {
         case MTL::PixelFormatRGBA8Uint: return ImageFormat::RGBA8;
         case MTL::PixelFormatRGBA8Unorm_sRGB: return ImageFormat::sRGBA8;
         case MTL::PixelFormatRGBA16Float: return ImageFormat::RGBA16f;
-        case MTL::PixelFormatDepth24Unorm_Stencil8:
-            return ImageFormat::Depth24Stencil8;
+        case MTL::PixelFormatDepth24Unorm_Stencil8: return ImageFormat::Depth24Stencil8;
         case MTL::PixelFormatDepth32Float: return ImageFormat::Depth32f;
-        default:
-            PANIC("unknown metal pixel format {}", std::to_underlying(format));
+        default: PANIC("unknown metal pixel format {}", std::to_underlying(format));
     }
 }
 
@@ -147,6 +138,55 @@ constexpr auto load_action(const BeginOperation& operation) -> MTL::LoadAction {
         case BeginOperation::Clear: return MTL::LoadActionClear;
         case BeginOperation::Preserve: return MTL::LoadActionLoad;
         case BeginOperation::Fuckit: return MTL::LoadActionDontCare;
+    }
+}
+
+[[nodiscard]]
+constexpr auto blend_operation(const BlendFunction function) -> MTL::BlendOperation {
+    switch (function) {
+        case BlendFunction::Add: return MTL::BlendOperationAdd;
+        case BlendFunction::Subtract: return MTL::BlendOperationSubtract;
+        case BlendFunction::ReverseSubtract: return MTL::BlendOperationReverseSubtract;
+        case BlendFunction::Min: return MTL::BlendOperationMin;
+        case BlendFunction::Max: return MTL::BlendOperationMax;
+    }
+}
+
+[[nodiscard]]
+constexpr auto blending_state(const AlphaMode mode) -> MTL4::BlendState {
+    switch (mode) {
+        case AlphaMode::Opaque: return MTL4::BlendStateDisabled;
+        case AlphaMode::Blend: return MTL4::BlendStateEnabled;
+    }
+}
+
+[[nodiscard]]
+constexpr auto blend_factor(const BlendFactor factor) -> MTL::BlendFactor {
+    switch (factor) {
+        case BlendFactor::Zero: return MTL::BlendFactorZero;
+        case BlendFactor::One: return MTL::BlendFactorOne;
+        case BlendFactor::SourceAlpha: return MTL::BlendFactorSourceAlpha;
+        case BlendFactor::DestinationAlpha: return MTL::BlendFactorDestinationAlpha;
+        case BlendFactor::OneMinusSourceAlpha: return MTL::BlendFactorOneMinusSourceAlpha;
+        case BlendFactor::OneMinusDestinationAlpha: return MTL::BlendFactorDestinationAlpha;
+    }
+}
+
+[[nodiscard]]
+constexpr auto pixel_format(const ImageFormat format) -> MTL::PixelFormat {
+    switch (format) {
+        case ImageFormat::Unknown: return MTL::PixelFormatInvalid;
+        case ImageFormat::R8: return MTL::PixelFormatR8Uint;
+        case ImageFormat::R32UI: return MTL::PixelFormatR32Uint;
+        case ImageFormat::RG32f: return MTL::PixelFormatRG32Float;
+        case ImageFormat::RGB8: return MTL::PixelFormatRGB;
+        case ImageFormat::sRGB8: return MTL::PixelFormatInvalid;
+        case ImageFormat::RGBA8: return MTL::PixelFormatInvalid;
+        case ImageFormat::sRGBA8: return MTL::PixelFormatInvalid;
+        case ImageFormat::RGB16f: return MTL::PixelFormatInvalid;
+        case ImageFormat::RGBA16f: return MTL::PixelFormatInvalid;
+        case ImageFormat::Depth24Stencil8: return MTL::PixelFormatInvalid;
+        case ImageFormat::Depth32f: return MTL::PixelFormatInvalid;
     }
 }
 

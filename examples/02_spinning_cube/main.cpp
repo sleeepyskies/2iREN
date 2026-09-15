@@ -21,6 +21,40 @@ struct UboData {
     Mat4x4f transform;
 };
 
+#ifdef SIREN_MACOS
+const auto shader_source = R"(
+#include <metal_stdlib>
+using namespace metal;
+
+struct VertexOut {
+    float4 position [[position]];
+};
+
+struct VertexIn {
+    float3 position [[attribute(0)]];
+};
+
+auto vmain(VertexIn in [[stage_in]]) -> VertexOut {
+
+}
+
+auto fmain(VertexOut in [[stage_in]]) -> float4 {
+
+}
+
+
+)";
+const ShaderData vertex_shader{
+    .label  = std::nullopt,
+    .source = shader_source,
+    .entry  = "vmain",
+};
+const ShaderData fragment_shader{
+    .label  = std::nullopt,
+    .source = shader_source,
+    .entry  = "fmain",
+};
+#else
 const ShaderData vertex_shader{
     .label  = std::nullopt,
     .source = R"(
@@ -46,11 +80,13 @@ const ShaderData fragment_shader{.label = std::nullopt, .source = R"(
         void main() {
             FragColor = vec4(v_pos + 0.5, 1.0);
         })"};
+#endif
 
 const std::unordered_map<ShaderStage, ShaderData> shaders = {
     {ShaderStage::Vertex, vertex_shader},
     {ShaderStage::Fragment, fragment_shader},
 };
+
 const auto vertices = ByteBuffer{
     Vertex{-0.5f, -0.5f, 0.5f},
     Vertex{0.5f, -0.5f, 0.5f},
@@ -73,7 +109,6 @@ const auto indices = ByteBuffer::make<u32>({
 });
 
 int main() {
-    // init siren
     auto ctx    = Context::make({
         .debug = true,
         .level = log::Level::Trace,
@@ -81,16 +116,11 @@ int main() {
     auto window = ctx.make_window({.title = "Example 02"});
 
     const auto device    = ctx.make_device();
-    const auto swapchain = device->make_swapchain(
-        window,
-        {
-            .vsync = true,
-        }
-    );
+    const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
     const auto vertex_buffer = device->make_buffer(
         {
-            .label = "cube_buffer",
+            .label = "Cube Vertices",
             .size  = vertices.size_bytes(),
             .usage = BufferUsage::Static,
         },
@@ -98,19 +128,19 @@ int main() {
     );
     const auto index_buffer = device->make_buffer(
         {
-            .label = "cube_indices",
+            .label = "Cube Indicies",
             .size  = indices.size_bytes(),
             .usage = BufferUsage::Static,
         },
         indices.view()
     );
     const auto uniform_buffer = device->make_buffer({
-        .label = "uniform_buffer",
+        .label = "Uniform Buffer",
         .size  = sizeof(UboData),
         .usage = BufferUsage::Dynamic,
     });
     const auto layout =
-        LayoutBuilder::create().add(Attribute::Position, 3, DataType::Float32).finish();
+        LayoutBuilder::make().add(Attribute::Position, 3, DataType::Float32).finish();
 
     const auto shader   = device->make_shader({
         .label  = std::nullopt,

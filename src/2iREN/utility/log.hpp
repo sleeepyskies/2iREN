@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: what warning flag to disable this one?
+// do not remove this include!!
 #include "2iREN/core/format.hpp"
 
 #include <chrono>
@@ -74,22 +76,18 @@ constexpr auto strip_path(const std::string_view path) -> std::string_view {
 }
 } // namespace impl
 
-/**
- * @brief Inits the siren logger with the provided level.
- * @param lvl The desired log level.
- */
+/// @brief Inits the siren logger with the provided level.
+/// @param lvl The desired log level.
 inline auto initialize(const Level lvl) -> void {
     impl::level = lvl;
 }
 
-/**
- * @brief Internal function to format and output log messages.
- * @param lvl The severity of the message.
- * @param color_code The terminal color code to print the message with.
- * @param loc The source code location of the log call.
- * @param fmt The format string.
- * @param args The type-erased format arguments.
- */
+/// @brief Internal function to format and output log messages.
+/// @param lvl The severity of the message.
+/// @param color_code The terminal color code to print the message with.
+/// @param loc The source code location of the log call.
+/// @param fmt The format string.
+/// @param args The type-erased format arguments.
 inline void log(
     const Level lvl,
     const u32 color_code,
@@ -139,39 +137,29 @@ struct LogMessage {
         log(level_val, color_code, msg.sl, msg.fmt.get(), std::make_format_args(args...));         \
     }
 
-/**
- * @brief Logs a message at the Level::Trace level.
- * @param msg Message wrapper.
- * @param args Variadic arguments to be formatted.
- */
+/// @brief Logs a message at the Level::Trace level.
+/// @param msg Message wrapper.
+/// @param args Variadic arguments to be formatted.
 LOG_FUNCTION(trace, Level::Trace, 90)
 
-/**
- * @brief Logs a message at the Level::Debug level.
- * @param msg Message wrapper.
- * @param args Variadic arguments to be formatted.
- */
+/// @brief Logs a message at the Level::Debug level.
+/// @param msg Message wrapper.
+/// @param args Variadic arguments to be formatted.
 LOG_FUNCTION(debug, Level::Debug, 34)
 
-/**
- * @brief Logs a message at the Level::Info level.
- * @param msg Message wrapper.
- * @param args Variadic arguments to be formatted.
- */
+/// @brief Logs a message at the Level::Info level.
+/// @param msg Message wrapper.
+/// @param args Variadic arguments to be formatted.
 LOG_FUNCTION(info, Level::Info, 32)
 
-/**
- * @brief Logs a message at the Level::Warn level.
- * @param msg Message wrapper.
- * @param args Variadic arguments to be formatted.
- */
+/// @brief Logs a message at the Level::Warn level.
+/// @param msg Message wrapper.
+/// @param args Variadic arguments to be formatted.
 LOG_FUNCTION(warn, Level::Warn, 33)
 
-/**
- * @brief Logs a message at the Level::Error level.
- * @param msg Message wrapper.
- * @param args Variadic arguments to be formatted.
- */
+/// @brief Logs a message at the Level::Error level.
+/// @param msg Message wrapper.
+/// @param args Variadic arguments to be formatted.
 LOG_FUNCTION(error, Level::Error, 31)
 
 #undef LOG_FUNCTION

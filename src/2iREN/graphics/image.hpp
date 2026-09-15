@@ -9,35 +9,30 @@
 #include "2iREN/math/extent.hpp"
 
 namespace siren {
-/** @brief Defines the amount of dimensions an @ref Image may have. */
+
+/// @brief Defines the amount of dimensions an @ref Image may have.
 enum class ImageDimension { D1, D2, D3, Cube };
 
 class ImageFormat {
 public:
     enum Value {
-        /** @brief Invalid or uninitialized format. */
+        /// @brief Invalid or uninitialized format.
         Unknown = 0,
-        /** @brief 1-channel 8-bit R. */
+        /// @brief 1-channel 8-bit R.
         R8,
-        /** @brief 1-channel 32-bit R. */
+        /// @brief 1-channel 32-bit R.
         R32UI,
-        /** @brief 2-channel 32-bit float HDR RG. */
+        /// @brief 2-channel 32-bit float HDR RG.
         RG32f,
-        /** @brief 3-channel 8-bit linear RGB. */
-        RGB8,
-        /** @brief 3-channel 8-bit sRGB. */
-        sRGB8,
-        /** @brief 4-channel 8-bit linear RGBA. */
+        /// @brief 4-channel 8-bit linear RGBA.
         RGBA8,
-        /** @brief 4-channel 8-bit sRGB. */
+        /// @brief 4-channel 8-bit sRGB.
         sRGBA8,
-        /** @brief 3-channel 16-bit float HDR RGB. */
-        RGB16f,
-        /** @brief 4-channel 16-bit float HDR RGB. */
+        /// @brief 4-channel 16-bit float HDR RGB.
         RGBA16f,
-        /** @brief Depth-stencil format (24-bit depth, 8-bit stencil). */
+        /// @brief Depth-stencil format (24-bit depth, 8-bit stencil).
         Depth24Stencil8,
-        /** @brief Depth buffer format (32-bit depth). */
+        /// @brief Depth buffer format (32-bit depth).
         Depth32f,
     } value;
 
@@ -48,15 +43,12 @@ public:
         return value;
     }
 
-    /** @brief Stringifies the given ImageFormat. */
+    /// @brief Stringifies the given ImageFormat.
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
         switch (value) {
             case R8: return "R8";
-            case RGB8: return "RGB8";
-            case sRGB8: return "sRGB8";
             case RGBA8: return "RGBA8";
             case sRGBA8: return "sRGBA8";
-            case RGB16f: return "RGB16f";
             case RGBA16f: return "RGBA16f";
             case RG32f: return "RG32f";
             case Depth24Stencil8: return "Depth24Stencil8";
@@ -65,26 +57,21 @@ public:
 
             case Unknown: return "Unknown";
         }
-        UNREACHABLE();
     }
 
-    /** @brief Returns the number of bytes per pixel for this format. */
+    /// @brief Returns the number of bytes per pixel for this format.
     [[nodiscard]] constexpr auto bytes_per_pixel() const -> u32 {
         switch (value) {
             case Unknown: return 0;
             case R8: return 1;
-            case RGB8: return 3;
-            case sRGB8: return 3;
             case RGBA8: return 4;
             case sRGBA8: return 4;
-            case RGB16f: return 6;
             case RGBA16f: return 8;
             case RG32f: return 8;
             case Depth24Stencil8: return 4;
             case R32UI: return 4;
             case Depth32f: return 4;
         }
-        UNREACHABLE();
     }
 
     /// @brief Returns the number of components this format can hold.
@@ -99,11 +86,7 @@ public:
             case Depth24Stencil8:
             case RG32f: return 2;
 
-            case RGB16f:
-            case RGB8:
-            case sRGB8: return 3;
-
-            case RGBA8: return 4;
+            case RGBA8:
             case sRGBA8:
             case RGBA16f: return 4;
         }
@@ -113,21 +96,19 @@ public:
 
 /// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
-    /** @brief An optional label. Mainly used for debugging. */
+    /// @brief An optional label. Mainly used for debugging.
     std::optional<std::string> label = std::nullopt;
-    /** @brief The format of the image data (num channels/bytes per channel). */
+    /// @brief The format of the image data (num channels/bytes per channel).
     ImageFormat format;
-    /** @brief Extent of the image. */
+    /// @brief Extent of the image.
     Extent3u extent;
-    /** @brief The dimensionality of the image. */
+    /// @brief The dimensionality of the image.
     ImageDimension dimension;
-    /** @brief How many mip map levels to generate. */
+    /// @brief How many mip map levels to generate.
     u32 mipmap_levels;
 };
 
-/**
- * @brief A gpu resource representing image data.
- */
+/// @brief A gpu resource representing image data.
 class Image final : public RenderResource<Image> {
     using Base = RenderResource<Image>;
 
@@ -137,13 +118,15 @@ public:
     Image(Image&& other) noexcept;
     Image& operator=(Image&& other) noexcept;
 
-    /** @brief Clears the image with the provided color. */
+    /// @brief Clears the image with the provided color.
     auto clear(const Rgba color) const -> void;
 
-    /** @brief Clears the image with the provided value. */
+    /// @brief Clears the image with the provided value.
     auto clear(const u32 value) const -> void;
 
-    /** @brief Returns the descriptor of this Image. */
-    [[nodiscard]] auto descriptor() const noexcept -> const ImageDescriptor&;
+    /// @brief Returns the descriptor of this Image.
+    [[nodiscard]]
+    auto descriptor() const noexcept -> const ImageDescriptor&;
 };
+
 } // namespace siren

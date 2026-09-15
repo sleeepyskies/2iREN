@@ -5,10 +5,8 @@
 #include "2iREN/core/base.hpp"
 
 namespace siren {
-/**
- * @enum Attribute
- * @brief Identifies the semantic purpose of a shader attribute.
- */
+
+/// @brief Identifies the semantic purpose of a shader attribute.
 enum class Attribute : u8 {
     Position,
     Normal,
@@ -17,10 +15,8 @@ enum class Attribute : u8 {
     Texture,
 };
 
-/**
- * @brief Simple enum like class representing a data type, whilst providing some
- * extra functionality.
- */
+/// @brief Simple enum like class representing a data type, whilst providing some
+/// extra functionality.
 struct DataType {
     enum Value {
         Int8,
@@ -47,64 +43,45 @@ struct DataType {
     [[nodiscard]] constexpr auto to_string() const -> std::string_view;
 };
 
-/**
- * @brief Represents a single vertex component inside a buffer.
- */
+/// @brief Represents a single vertex component inside a buffer.
 struct Component {
-    /** @brief The datatype of this vertex attribute */
+    /// @brief The datatype of this vertex attribute.
     DataType type;
-    /** @brief The number of components per vertex attribute */
+    /// @brief The number of components per vertex attribute.
     u32 size;
-    /** @brief The byte offset of the first vertex attribute into the whole
-     * buffer. */
+    /// @brief The byte offset of the first vertex attribute into the whole buffer.
     usize offset;
-    /** @brief The location this attribute is bound to. */
+    /// @brief The location this attribute is bound to.
     usize location;
-    /** @brief The attribute of this component. */
+    /// @brief The attribute of this component.
     Attribute attribute;
 };
 
-/** @brief Describes the layout of a vertex buffer. */
+/// @brief Describes the layout of a vertex buffer.
 struct Layout {
-    /** @brief The various components within this buffer. */
+    /// @brief The various components within this buffer.
     std::vector<Component> components;
-    /**
-     * @brief The total stride of a single vertex inside the buffer.
-     * This is also equal to the size of a single vertex.
-     */
+    /// @brief The total stride of a single vertex inside the buffer.
+    /// This is also equal to the size of a single vertex.
     usize stride;
 };
 
-/**
- * @class LayoutBuilder
- * @brief Utility class for building a @ref VertexLayout.
- */
+/// @brief Utility class for building a @ref VertexLayout.
 class LayoutBuilder {
 public:
-    /**
-     * @brief Entry function for creating a @ref VertexLayout.
-     * @return A newly created @ref VertexLayoutBuilder.
-     */
-    [[nodiscard]] static auto create() noexcept -> LayoutBuilder;
+    /// @brief Entry function for creating a @ref VertexLayout.
+    /// @return A newly created @ref VertexLayoutBuilder.
+    [[nodiscard]] static auto make() noexcept -> LayoutBuilder;
 
-    /** @brief Finishes the construction and returns a @ref VertexLayout
-     * instance. */
+    /// @brief Finishes the construction and returns a @ref VertexLayout instance.
     [[nodiscard]] auto finish() -> Layout;
 
-    /**
-     * @param attribute The @ref Attribute to add.
-     * @param count The number of components
-     * @param type The datatype of the attributes components.
-     * Example:
-     * @code
-     * add(VertexAttribute::Position, 3, DataType::Float32)
-     * @endcode
-     * This creates a new element within the layout of a vec3f representing
-     * position.
-     * @return A reference to the builder.
-     */
-    [[nodiscard]] auto add(Attribute attribute, u32 count, DataType type)
-        -> LayoutBuilder&;
+    /// @brief Adds a new component to the vertex layout.
+    /// @param attribute The @ref Attribute to add.
+    /// @param count The number of components
+    /// @param type The datatype of the attributes components.
+    /// @return A reference to the builder.
+    [[nodiscard]] auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
 
 private:
     LayoutBuilder() = default;
@@ -113,34 +90,18 @@ private:
     usize m_offset{0};
 };
 
-/**
- * @brief The default vertex layout of 2iREN. This is a temp solution, but
- * provides some consistency when writing shaders.
- */
-const auto DEFAULT_VERTEX_LAYOUT =
-    LayoutBuilder::create()
-        .add(Attribute::Position, 4, DataType::Float32)
-        .add(Attribute::Normal, 4, DataType::Float32)
-        .add(Attribute::Color, 4, DataType::Float32)
-        .add(Attribute::Texture, 2, DataType::Float32)
-        .add(Attribute::Tangent, 4, DataType::Float32)
-        .finish();
+/// @brief The default vertex layout of 2iREN. This is a temp solution, but
+/// provides some consistency when writing shaders.
+const auto DEFAULT_VERTEX_LAYOUT = LayoutBuilder::make()
+                                       .add(Attribute::Position, 4, DataType::Float32)
+                                       .add(Attribute::Normal, 4, DataType::Float32)
+                                       .add(Attribute::Color, 4, DataType::Float32)
+                                       .add(Attribute::Texture, 2, DataType::Float32)
+                                       .add(Attribute::Tangent, 4, DataType::Float32)
+                                       .finish();
 
-/**
- * @brief A minimal default vertex layout for 2iREN.
- */
-const auto MINIMAL_VERTEX_LAYOUT =
-    LayoutBuilder::create()
-        .add(Attribute::Position, 4, DataType::Float32)
-        .add(Attribute::Normal, 4, DataType::Float32)
-        .add(Attribute::Texture, 2, DataType::Float32)
-        .finish();
-
-/**
- * @brief A simple reusable layout for fullscreen shaders.
- */
+/// @brief A simple reusable layout for fullscreen shaders.
 const auto FULLSCREEN_VERTEX_LAYOUT =
-    LayoutBuilder::create()
-        .add(Attribute::Texture, 2, DataType::Float32)
-        .finish();
+    LayoutBuilder::make().add(Attribute::Texture, 2, DataType::Float32).finish();
+
 } // namespace siren

@@ -7,6 +7,7 @@
 #include <QuartzCore/QuartzCore.hpp>
 
 #include <cstddef>
+#include <version>
 
 #include "2iREN/graphics/backend/metal/command_executor.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -115,7 +116,8 @@ auto MetalDevice::make_buffer(
             encoder->endEncoding();
 
             cmdbuffer->commit();
-            cmdbuffer->waitUntilCompleted(); // keep buffer alive before we can delete it
+            cmdbuffer->waitUntilCompleted(); // keep buffer alive before we can
+                                             // delete it
 
             break;
         }
@@ -251,10 +253,39 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         renderpipeline_descriptor->setLabel(metal::utf8_string(*descriptor.label).get());
     }
 
-    // TODO: TEMP SOLUTION WE HAVE TO HANDLE CORRECLTY
-    renderpipeline_descriptor->colorAttachments()->object(0)->setPixelFormat(
-        MTL::PixelFormatBGRA8Unorm
-    );
+    // color attachments
+    for (usize i = 0; i < descriptor.attachments.size(); i++) {
+        const auto& attachment      = descriptor.attachments[i];
+        auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
+
+        attachment_descriptor->setAlphaBlendOperation(
+            metal::blend_operation(attachment.alpha_blend.function)
+        );
+        attachment_descriptor->setBlendingState(metal::blending_state(attachment.alpha_mode));
+
+        attachment_descriptor->setDestinationAlphaBlendFactor(
+            metal::blend_factor(attachment.alpha_blend.dest_factor)
+        );
+
+        attachment_descriptor->setSourceAlphaBlendFactor(
+            metal::blend_factor(attachment.alpha_blend.source_factor)
+        );
+
+        attachment_descriptor->setDestinationRGBBlendFactor(
+            metal::blend_factor(attachment.color_blend.dest_factor)
+        );
+        attachment_descriptor->setSourceRGBBlendFactor(
+            metal::blend_factor(attachment.color_blend.source_factor)
+        );
+
+        attachment_descriptor->setPixelFormat(metal::pixel_format(attachment.format));
+        attachment_descriptor->setRgbBlendOperation(
+            metal::blend_operation(attachment.color_blend.function)
+        );
+        attachment_descriptor->setWriteMask(TODO);
+    }
+
+    // depth desciption can be done during the render pass.
 
     // vertex buffer layout
     {

@@ -44,7 +44,9 @@ constexpr auto DataType::to_string() const -> std::string_view {
     }
 }
 
-auto LayoutBuilder::create() noexcept -> LayoutBuilder { return LayoutBuilder{}; }
+auto LayoutBuilder::make() noexcept -> LayoutBuilder {
+    return LayoutBuilder{};
+}
 
 auto LayoutBuilder::finish() -> Layout {
     return Layout{
@@ -53,7 +55,8 @@ auto LayoutBuilder::finish() -> Layout {
     };
 }
 
-auto LayoutBuilder::add(const Attribute attribute, const u32 count, const DataType type) -> LayoutBuilder& {
+auto LayoutBuilder::add(const Attribute attribute, const u32 count, const DataType type)
+    -> LayoutBuilder& {
     const Component component{
         .type      = type,
         .size      = count,

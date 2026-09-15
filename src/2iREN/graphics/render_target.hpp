@@ -20,20 +20,6 @@ enum class BeginOperation : u8 {
 };
 
 /**
- * @brief A single color attachment in a @ref RenderPass. Describes what should
- * be drawn to, and how this should be initialized.
- */
-struct ColorAttachment {
-    /** @brief The handle of the actual @ref Image that will be drawn to. */
-    ImageHandle image;
-    /** @brief What action to perform before drawing to this target. */
-    BeginOperation begin_operation;
-    /** @brief The color to clear the target with, if the @ref BeginOperation is
-     * Clear. */
-    Rgba clear_color;
-};
-
-/**
  * @brief A single depth + stencil in a @ref RenderPass. Describes what should
  * be drawn to, and how this should be initialized.
  */
@@ -50,16 +36,11 @@ struct DepthStencilAttachment {
     i32 clear_stencil;
 };
 
-/// @brief Simple alias for a vector of color attachments.
-using ColorAttachments = std::vector<ColorAttachment>;
-
 /**
  * @struct RenderTarget
  * @brief Describes a target for a render pass.
  */
 struct RenderTarget {
-    /** @brief All color attachments of this target. May have size 0. */
-    ColorAttachments colors = {};
     /** @brief Optional depth + stencil attachment. */
     std::optional<DepthStencilAttachment> depth_stencil = std::nullopt;
     /** @brief Whether to treat this attachment as sRGB color space. @todo This

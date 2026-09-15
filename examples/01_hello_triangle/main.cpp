@@ -30,14 +30,14 @@ struct VertexIn {
     float4 color [[attribute(1)]];
 };
 
-vertex VertexOut vmain(VertexIn in [[stage_in]]) {
+vertex auto vmain(VertexIn in [[stage_in]]) -> VertexOut {
     VertexOut out;
     out.position = float4(in.position, 1.0);
     out.color = in.color;
     return out;
 }
 
-fragment float4 fmain(VertexOut in [[stage_in]]){
+fragment auto fmain(VertexOut in [[stage_in]]) -> float4 {
     return in.color;
 }
 )";
@@ -108,7 +108,7 @@ auto main() -> i32 {
         },
         vertices.view()
     );
-    const auto layout = LayoutBuilder::create()
+    const auto layout = LayoutBuilder::make()
                             .add(Attribute::Position, 3, DataType::Float32)
                             .add(Attribute::Color, 4, DataType::Float32)
                             .finish();

@@ -4,44 +4,39 @@
 #include <string>
 
 #include "2iREN/graphics/fwd.hpp"
+#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 
 namespace siren {
-/**
- * @brief Represents the drawing mode. Aka how points are interpreted and how
- * lines are drawn between them
- */
+
+/// @brief Represents the drawing mode. Aka how points are interpreted and how
+/// lines are drawn between them
 enum class PrimitiveTopology {
-    /** @brief Draw vertices as points. */
+    /// @brief Draw vertices as points.
     Points,
-    /** @brief Every pair of vertices is treated as a line (1-2, 3-4, etc...).
-     */
+    /// @brief Every pair of vertices is treated as a line.
     Lines,
-    /** @brief Chain draw vertices as lines (1-2-3-4-5...) */
+    /// @brief Chain draw vertices as lines.
     LineStrip,
-    /** @brief Every triple of vertices is treated as a triangle (1-2-3, 4-5-6,
-       etc...) */
+    /// @brief Every triple of vertices is treated as a triangle.
     Triangles,
-    /** @brief Vertices connected in a ribbon (0-1-2, 0-2-3, etc...) */
+    /// @brief Vertices connected in a ribbon.
     TriangleStrip,
-    /** @brief First vertex anchors (0-1-2, 0-2-3, 0-3-4, etc...) */
+    /// @brief First vertex anchors.
     TriangleFan,
 };
 
-/** @brief Defines how the renderer determines a pixels' transparency. */
+/// @brief Defines how the renderer determines a pixels' transparency.
 enum class AlphaMode {
-    ///  @brief Surface is fully solid. Depth always written to the z-buffer. */
+    /// @brief Surface is fully solid. Depth always written to the z-buffer.
     Opaque,
     /// @brief Semi-transparent. Colors from behind can show through.
     Blend,
-    /// @brief Surface is either fully transparent or fully opaque based on a
-    /// threshold.
-    Mask,
 };
 
 ///  @brief The function that determines if a fragment will pass the depth test.
 enum class DepthFunction {
-    /// @brief Always pass
+    /// @brief Always pass.
     Always,
     /// @brief Never pass.
     Never,
@@ -59,39 +54,37 @@ enum class DepthFunction {
     NotEqual,
 };
 
-/**
- * @brief Defines the function to apply to two alpha values when blending.
- * Aka for: alpha1 . alpha2
- * This will define the behavior of '.'.
- */
+/// @brief Defines the function to apply to two alpha values when blending.
+/// Aka for: alpha1 . alpha2
+/// This will define the behavior of '.'.
 enum class BlendFunction {
-    /** @brief Adds together the two alpha values. */
+    /// @brief Adds together the two alpha values.
     Add,
-    /** @brief Subtracts the second alpha value from the first. */
+    /// @brief Subtracts the second alpha value from the first.
     Subtract,
-    /** @brief Subtracts the first alpha value from the second. */
+    /// @brief Subtracts the first alpha value from the second.
     ReverseSubtract,
-    /** @brief Takes the minimum of both alpha values. Note this ignores @ref
-       BlendFactor */
+    /// @brief Takes the minimum of both alpha values. Note this ignores @ref
+    /// BlendFactor.
     Min,
-    /** @brief Takes the maximum of both alpha values. Note this ignores @ref
-       BlendFactor */
+    /// @brief Takes the maximum of both alpha values. Note this ignores @ref
+    /// BlendFactor.
     Max,
 };
 
 /// @brief Defines what weights to multiply with the
 enum class BlendFactor {
-    /** @brief Multiplies all values with 0. */
+    /// @brief Multiplies all values with 0.
     Zero,
-    /** @brief Multiplies all values with 1. */
+    /// @brief Multiplies all values with 1.
     One,
-    /** @brief Multiplies with source alpha. */
+    /// @brief Multiplies with source alpha.
     SourceAlpha,
-    /** @brief Multiplies with destination alpha. */
+    /// @brief Multiplies with destination alpha.
     DestinationAlpha,
-    /** @brief Multiplies with (1 - source alpha). */
+    /// @brief Multiplies with (1 - source alpha).
     OneMinusSourceAlpha,
-    /** @brief Multiplies with (1 - destination alpha). */
+    /// @brief Multiplies with (1 - destination alpha).
     OneMinusDestinationAlpha,
 };
 
@@ -99,31 +92,42 @@ enum class BlendFactor {
 struct BlendDescription {
     /// @brief Describes what function to use to blend 2 values together.
     BlendFunction function = BlendFunction::Add;
-    /** @brief The @ref BlendFactor to affect the source. */
+    /// @brief The @ref BlendFactor to affect the source.
     BlendFactor source_factor = BlendFactor::SourceAlpha;
-    /** @brief The @ref BlendFactor to affect the destination. */
+    /// @brief The @ref BlendFactor to affect the destination.
     BlendFactor dest_factor = BlendFactor::OneMinusSourceAlpha;
 };
+
+/// @brief Represents a single color attachment.
+struct ColorAttachment {
+    /// @brief The format of the individual pixels of the image.
+    ImageFormat format;
+    /// @brief Determines if pixels can be transparent.
+    AlphaMode alpha_mode;
+    /// @brief Describes how to blend rgb values. Used only when
+    /// AlphaMode::Blend.
+    BlendDescription color_blend;
+    /// @brief Describes how to blend alpha values. Used only when
+    /// AlphaMode::Blend.
+    BlendDescription alpha_blend;
+};
+
+/// @brief Simple alias for a vector of color attachments.
+using ColorAttachments = std::vector<ColorAttachment>;
 
 /// @brief A colletion of parameters used to describe how a @ref
 /// GraphicsPipeline should behave.
 struct GraphicsPipelineDescriptor {
     /// @brief An optional label for the @ref GraphicsPipeline.
     std::optional<std::string> label = std::nullopt;
-    /// @brief How the vertices are structured. @see LayoutBuilder.
-    Layout layout = DEFAULT_VERTEX_LAYOUT;
     /// @brief The shader to use.
     ShaderHandle shader;
-    /// @brief Surface transparency type
-    AlphaMode alpha_mode = AlphaMode::Opaque;
+    /// @brief How the vertices are structured. @see LayoutBuilder.
+    Layout layout;
+    /// @brief The structure of the color attachments this pipeline may access.
+    ColorAttachments attachments;
     /// @brief Depth function.
     DepthFunction depth_function = DepthFunction::Less;
-    /// @brief Describes how to blend color values. Only used if alpha_mode ==
-    /// AlphaMode::Blend.
-    BlendDescription color_blend = {};
-    /// @brief Describes how to blend alpha values. Only used if alpha_mode ==
-    /// AlphaMode::Blend.
-    BlendDescription alpha_blend = {};
     /// @brief Whether back face is culled.
     bool back_face_culling = true;
     /// @brief Whether to perform the depth test.
@@ -132,23 +136,21 @@ struct GraphicsPipelineDescriptor {
     bool depth_write = true;
 };
 
-/**
- * @brief The GraphicsPipeline encapsulates the vertex layout of a buffer, as
- * well as any fixed functions state.
- */
+/// @brief A 2iREN API agnostic GraphicsPipeline. Encapsulates render state
+/// into a single object.
 class GraphicsPipeline final : public RenderResource<GraphicsPipeline> {
     using Base = RenderResource<GraphicsPipeline>;
 
 public:
+    /// @brief Creates a new 2iREN GraphicsPipeline.
+    /// @warning Should only be called by the @ref Device!
     explicit GraphicsPipeline(Device* device, GraphicsPipelineHandle handle);
     ~GraphicsPipeline();
 
     GraphicsPipeline(GraphicsPipeline&& other) noexcept;
     GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;
 
-    /** @brief Returns the @ref GraphicsPipelineDescriptor used to create this
-     * GraphicsPipeline. */
-    [[nodiscard]] auto descriptor() const noexcept
-        -> const GraphicsPipelineDescriptor&;
+    /// @brief Returns the @ref GraphicsPipelineDescriptor of this object.
+    [[nodiscard]] auto descriptor() const noexcept -> const GraphicsPipelineDescriptor&;
 };
 } // namespace siren
