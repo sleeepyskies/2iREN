@@ -51,11 +51,9 @@ auto LayoutBuilder::finish() -> Layout {
     };
 }
 
-auto LayoutBuilder::add(const Attribute attribute, const u32 count, const DataType type)
-    -> LayoutBuilder& {
-    m_components.emplace_back(type, count, m_offset, m_components.size(), attribute);
+auto LayoutBuilder::add(const DataType type, const u32 count) -> LayoutBuilder& {
+    m_components.emplace_back(type, count, m_offset, m_components.size());
     m_offset += type.size() * count;
-
     return *this;
 }
 
