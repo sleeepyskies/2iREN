@@ -6,9 +6,12 @@
 #include "2iREN/core/base.hpp"
 #include "2iREN/utility/log.hpp"
 
-namespace siren::gl {
+namespace siren::opengl {
 
-static auto source_to_string(const GLenum source) -> std::string {
+namespace {
+
+[[nodiscard]]
+auto source_to_string(const GLenum source) -> std::string_view {
     switch (source) {
         case GL_DEBUG_SOURCE_API: return "API";
         case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
@@ -20,7 +23,8 @@ static auto source_to_string(const GLenum source) -> std::string {
     }
 }
 
-static auto type_to_string(const GLenum type) -> std::string {
+[[nodiscard]]
+auto type_to_string(const GLenum type) -> std::string_view {
     switch (type) {
         case GL_DEBUG_TYPE_ERROR: return "ERROR";
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED BEHAVIOR";
@@ -33,7 +37,8 @@ static auto type_to_string(const GLenum type) -> std::string {
     }
 }
 
-static auto severity_to_string(const GLenum severity) -> std::string {
+[[nodiscard]]
+auto severity_to_string(const GLenum severity) -> std::string_view {
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
         case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
@@ -42,6 +47,8 @@ static auto severity_to_string(const GLenum severity) -> std::string {
         default: return "UNKNOWN";
     }
 }
+
+} // namespace
 
 auto debug_callback(
     const GLenum source,
@@ -86,4 +93,4 @@ auto debug_callback(
     }
 }
 
-} // namespace siren::gl
+} // namespace siren::opengl

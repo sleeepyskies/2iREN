@@ -6,17 +6,9 @@
 
 namespace siren {
 
-/// @brief Identifies the semantic purpose of a shader attribute.
-enum class Attribute : u8 {
-    Position,
-    Normal,
-    Color,
-    Tangent,
-    Texture,
-};
-
 /// @brief Simple enum like class representing a data type, whilst providing some
 /// extra functionality.
+/// TODO: this shouldnt be in this file, should be it's own file or something.
 struct DataType {
     enum Value {
         Int8,
@@ -41,6 +33,15 @@ struct DataType {
     [[nodiscard]] constexpr auto size() const -> usize;
     /// @brief Returns the string representation of this value.
     [[nodiscard]] constexpr auto to_string() const -> std::string_view;
+};
+
+/// @brief Identifies the semantic purpose of a shader attribute.
+enum class Attribute : u8 {
+    Position,
+    Normal,
+    Color,
+    Tangent,
+    Texture,
 };
 
 /// @brief Represents a single vertex component inside a buffer.
@@ -69,23 +70,25 @@ struct Layout {
 /// @brief Utility class for building a @ref VertexLayout.
 class LayoutBuilder {
 public:
-    /// @brief Entry function for creating a @ref VertexLayout.
-    /// @return A newly created @ref VertexLayoutBuilder.
-    [[nodiscard]] static auto make() noexcept -> LayoutBuilder;
+    /// @brief Instantiates a new LayoutBuilder.
+    [[nodiscard]]
+    static constexpr auto make() noexcept -> LayoutBuilder {
+        return LayoutBuilder{};
+    }
 
     /// @brief Finishes the construction and returns a @ref VertexLayout instance.
-    [[nodiscard]] auto finish() -> Layout;
+    [[nodiscard]]
+    auto finish() -> Layout;
 
     /// @brief Adds a new component to the vertex layout.
     /// @param attribute The @ref Attribute to add.
     /// @param count The number of components
     /// @param type The datatype of the attributes components.
     /// @return A reference to the builder.
-    [[nodiscard]] auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
+    [[nodiscard]]
+    auto add(Attribute attribute, u32 count, DataType type) -> LayoutBuilder&;
 
 private:
-    LayoutBuilder() = default;
-
     std::vector<Component> m_components{};
     usize m_offset{0};
 };

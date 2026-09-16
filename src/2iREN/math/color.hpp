@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cmath>
 #include <format>
 
 #include "2iREN/core/base.hpp"
+#include "2iREN/math/bounded.hpp"
 
 namespace siren {
 
@@ -20,6 +22,21 @@ struct Rgba {
     /// @brief Constructs a new RGBA color provided the given values.
     constexpr Rgba(const f32 r, const f32 g, const f32 b, const f32 a) noexcept :
         r(r), g(g), b(b), a(a) { }
+
+    /// @brief The paramter 't' used for the lerp equation.
+    using LerpT = BoundedF32<0.f, 1.f, ClampBoundsPolicy>;
+
+    /// @brief Mixes two Rgba colors together using linear iterpolation.
+    [[nodiscard]]
+    static constexpr auto lerp(const Rgba& left, const Rgba& right, const LerpT t = 0.5f) noexcept
+        -> Rgba {
+        return Rgba{
+            std::lerp(left.r, right.r, t),
+            std::lerp(left.g, right.g, t),
+            std::lerp(left.b, right.b, t),
+            std::lerp(left.a, right.a, t),
+        };
+    }
 
     [[nodiscard]]
     auto operator==(const Rgba&) const noexcept -> bool = default;

@@ -1,9 +1,9 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/shader.hpp"
 #include "2iREN/core/context.hpp"
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/layout.hpp"
-#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/window/window.hpp"
 
@@ -21,20 +21,12 @@ const ByteBuffer vertices{
 };
 
 int main() {
-    auto ctx    = Context::make({
-        .debug = true,
-        .level = log::Level::Trace,
-    });
-    auto window = ctx.make_window({.title = "Example 03"});
-    auto device = ctx.make_device();
-    AssetServer server{*device};
+    auto       ctx       = Context::make({.level = log::Level::Trace});
+    auto       window    = ctx.make_window({.title = "Example 01"});
+    const auto device    = ctx.make_device();
+    const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
-    const auto swapchain = device->make_swapchain(
-        window,
-        {
-            .vsync = true,
-        }
-    );
+    AssetServer server{*device};
 
     const auto buffer = device->make_buffer(
         {
@@ -81,7 +73,7 @@ int main() {
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
+        device->render_pass({.target = target}, [&](RenderCommandRecorder& pass) -> void {
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(buffer.handle(), 0, 0);
             pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);

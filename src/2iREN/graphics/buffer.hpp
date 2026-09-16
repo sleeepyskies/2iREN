@@ -44,8 +44,8 @@ public:
 /// @todo pass in the data as a separate buffer in the device->create_buffer(),
 /// or just remove entirely
 struct BufferDescriptor {
-    /// @brief An optional label. Mainly useful for debugging.
-    std::optional<std::string> label = std::nullopt;
+    /// @brief An optional label.
+    Label label = std::nullopt;
     /// @brief The initial size of the buffer in bytes.
     usize size;
     /// @brief The intended use of the buffer.

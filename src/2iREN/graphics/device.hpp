@@ -2,9 +2,9 @@
 
 #include <functional>
 
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/limits.hpp"
-#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/statistics.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
 
@@ -27,7 +27,7 @@ public:
     /// BufferDescriptor.
     [[nodiscard]]
     virtual auto make_buffer(
-        const BufferDescriptor& descriptor,
+        const BufferDescriptor&       descriptor,
         std::optional<ByteBufferView> initial = std::nullopt
     ) -> Buffer = 0;
 
@@ -58,7 +58,7 @@ public:
     virtual auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain = 0;
 
-    /// @brief Creates and returns a new @ref Query given.
+    /// @brief Creates and returns a new @ref Query.
     [[nodiscard]]
     virtual auto make_query(const QueryDescriptor& descriptor) -> Query = 0;
 
@@ -114,23 +114,18 @@ public:
     [[nodiscard]]
     virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
 
-    /// @brief Returns a recorder to record render commands into.
+    /// @brief Returns a new command recorder.
     [[nodiscard]]
-    virtual auto render_pass_recorder(const RenderPassDescriptor& descriptor) const noexcept
-        -> RenderPassRecorder {
-        return RenderPassRecorder{descriptor};
+    virtual auto make_command_recorder() const noexcept -> CommandRecorder {
+        return CommandRecorder{this};
     };
 
-    /// @brief Submits a @ref RenderPass for execution.
-    virtual auto submit(RenderPass&& pass) -> void = 0;
+    /// @brief Submits a list of 2iREN commands to be translated for the
+    /// backend and for exection on the GPU.
+    virtual auto submit(CommandList&& cmds) -> void = 0;
 
-    /// @brief Records and submits a render pass.
-    template <typename Function>
-        requires(std::is_invocable_v<Function, RenderPassRecorder&>)
-    auto render_pass(const RenderPassDescriptor& descriptor, Function&& func) noexcept -> void {
-        auto recorder = render_pass_recorder(descriptor);
-        std::invoke(func, recorder);
-        submit(recorder.finish());
+    auto submit(CommandRecorder&& cmds) -> void {
+        submit(std::move(cmds).finish());
     }
 
     /// @brief Uploads data to an image.

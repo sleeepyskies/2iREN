@@ -25,7 +25,8 @@ struct QueryKind {
 };
 
 struct QueryDescriptor {
-    std::optional<std::string_view> label = std::nullopt;
+    /// @brief An optional label.
+    Label label = std::nullopt;
     QueryKind kind;
 };
 

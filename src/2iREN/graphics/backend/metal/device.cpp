@@ -16,11 +16,11 @@
 #include "2iREN/graphics/backend/metal/adapter.hpp"
 #include "2iREN/graphics/backend/metal/mappings.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/limits.hpp"
 #include "2iREN/graphics/query.hpp"
-#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
@@ -71,6 +71,8 @@ MetalDevice::MetalDevice() {
     m_cmd_queue = metal::transfer_ptr(m_device->newCommandQueue());
 
     m_limits = fetch_limits(m_device.get());
+
+    log::info("metal device created.");
 }
 
 MetalDevice::~MetalDevice() { }
@@ -80,7 +82,7 @@ auto MetalDevice::wait_idle() const noexcept -> void {
 }
 
 auto MetalDevice::make_buffer(
-    const BufferDescriptor& descriptor,
+    const BufferDescriptor&       descriptor,
     std::optional<ByteBufferView> initial
 ) -> Buffer {
     if (initial.has_value()) {
@@ -91,7 +93,7 @@ auto MetalDevice::make_buffer(
     }
 
     const auto autorelease = metal::AutoRelease{};
-    auto buffer            = (NS::SharedPtr<MTL::Buffer>)nullptr;
+    auto       buffer      = (NS::SharedPtr<MTL::Buffer>)nullptr;
 
     switch (descriptor.usage) {
         // for Static buffers, we must create a staging buffer, then blit its
@@ -106,9 +108,9 @@ auto MetalDevice::make_buffer(
             );
 
             // TODO: make this its own function?
-            auto* cmdbuffer     = m_cmd_queue->commandBuffer();
-            auto blitdescriptor = metal::transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
-            auto* encoder       = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
+            auto* cmdbuffer      = m_cmd_queue->commandBuffer();
+            auto  blitdescriptor = metal::transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
+            auto* encoder        = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
 
             encoder->copyFromBuffer(staging.get(), 0, buffer.get(), 0, initial->size());
             encoder->endEncoding();
@@ -143,12 +145,13 @@ auto MetalDevice::make_buffer(
     const auto handle =
         m_state.buffers.reserve_link(std::move(buffer), BufferDescriptor{descriptor});
 
-    log::trace("buffer created {}", handle);
+    log::trace("created buffer {}", handle);
     return Buffer{this, handle};
 }
 
 auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
     m_state.buffers.fetch_release(handle);
+    log::trace("destroyed buffer {}", handle);
 }
 
 auto MetalDevice::make_image(const ImageDescriptor& descriptor) -> Image {
@@ -225,19 +228,19 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     layer->setDisplaySyncEnabled(descriptor.vsync);
 
     const auto handle = m_state.swapchains.reserve_link(layer, MetalSwapchainDetails{descriptor});
-    auto glfw         = window.native_handle();
+    auto       glfw   = window.native_handle();
     metal::connect_to_window(glfw, layer);
 
     // TODO: do we want to supply an image format? this does not handle color
     // space mapping for us
 
-    log::trace("swapchain created {}", handle);
+    log::trace("created swapchain {}", handle);
     return Swapchain{this, handle};
 }
 
 auto MetalDevice::destroy_swapchain(SwapchainHandle handle) -> void {
     m_state.swapchains.release(handle);
-    log::trace("swapchain destroyed {}", handle);
+    log::trace("destroyed swapchain {}", handle);
 }
 
 auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
@@ -252,35 +255,34 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
     }
 
     // color attachments
-    for (usize i = 0; i < descriptor.attachments.size(); i++) {
-        const auto& attachment      = descriptor.attachments[i];
+    for (usize i = 0; i < descriptor.color_attachments.size(); i++) {
+        const auto& colortarget     = descriptor.color_attachments[i];
         auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
 
         attachment_descriptor->setAlphaBlendOperation(
-            metal::blend_operation(attachment.alpha_blend.function)
+            metal::blend_operation(colortarget.alpha_blend.function)
         );
-        attachment_descriptor->setBlendingState(metal::blending_state(attachment.alpha_mode));
+        attachment_descriptor->setBlendingState(metal::blending_state(colortarget.alpha_mode));
 
         attachment_descriptor->setDestinationAlphaBlendFactor(
-            metal::blend_factor(attachment.alpha_blend.dest_factor)
+            metal::blend_factor(colortarget.alpha_blend.dest_factor)
         );
 
         attachment_descriptor->setSourceAlphaBlendFactor(
-            metal::blend_factor(attachment.alpha_blend.source_factor)
+            metal::blend_factor(colortarget.alpha_blend.source_factor)
         );
 
         attachment_descriptor->setDestinationRGBBlendFactor(
-            metal::blend_factor(attachment.color_blend.dest_factor)
+            metal::blend_factor(colortarget.color_blend.dest_factor)
         );
         attachment_descriptor->setSourceRGBBlendFactor(
-            metal::blend_factor(attachment.color_blend.source_factor)
+            metal::blend_factor(colortarget.color_blend.source_factor)
         );
 
-        attachment_descriptor->setPixelFormat(metal::pixel_format(attachment.format));
+        attachment_descriptor->setPixelFormat(metal::pixel_format(colortarget.format));
         attachment_descriptor->setRgbBlendOperation(
-            metal::blend_operation(attachment.color_blend.function)
+            metal::blend_operation(colortarget.color_blend.function)
         );
-        attachment_descriptor->setWriteMask(TODO);
     }
 
     // depth desciption can be done during the render pass.
@@ -307,7 +309,9 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
 
     // link shader
     {
-        auto* library           = m_state.shaders.fetch(descriptor.shader);
+        // TODO: should we migrate code to the more complex MTL4 api?
+
+        auto*       library     = m_state.shaders.fetch(descriptor.shader);
         const auto& shader_desc = m_state.shaders.details(descriptor.shader).descriptor;
 
         auto vertexfn = metal::transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
@@ -351,7 +355,7 @@ auto MetalDevice::destroy_query(QueryHandle handle) -> void {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::submit(RenderPass&& pass) -> void {
+auto MetalDevice::submit(CommandList&& cmds) -> void {
     const auto autorelease = metal::AutoRelease{};
 
     if (m_cmd_buffer.get() == nullptr) {
@@ -359,7 +363,7 @@ auto MetalDevice::submit(RenderPass&& pass) -> void {
     }
 
     auto executor = MetalCommandExecutor{this->m_state, m_cmd_buffer};
-    executor.execute(std::move(pass));
+    executor.execute(std::move(cmds));
 
     m_statistics += executor.statistics();
 }

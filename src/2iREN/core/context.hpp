@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "2iREN/graphics/backend.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -12,8 +12,6 @@ struct WindowDescriptor;
 
 /// @brief Configuration parameters used to create a @ref Context instance.
 struct ContextDescriptor {
-    /// @brief Enables additional debug output from the graphics backend.
-    bool debug;
     /// @brief Sets the minimum log severity level emitted by the framework.
     log::Level level;
 };
@@ -49,6 +47,5 @@ public:
 
 private:
     explicit Context(const ContextDescriptor& descriptor);
-    Backend m_backend;
 };
 } // namespace siren

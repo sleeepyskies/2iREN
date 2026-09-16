@@ -53,6 +53,8 @@ enum class ImageCompareFn {
 
 /// @brief Describes the ImageSampler for creation.
 struct SamplerDescriptor {
+    /// @brief An optional label.
+    Label label = std::nullopt;
     /// @brief Tells the gpu how to filter when the source image is smaller.
     ImageFilterMode min_filter = ImageFilterMode::Nearest;
     /// @brief Tells the gpu how to filter when the source image is larger.

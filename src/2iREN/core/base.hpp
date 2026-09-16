@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <ranges>
+#include <string>
 
 namespace siren {
 
@@ -10,7 +12,7 @@ namespace siren {
 #define UNIMPLEMENTED() PANIC("Not implemented")
 
 /// @brief An unsigned 8-bit integer, aka a byte
-using u8 = std::uint8_t;
+using u8  = std::uint8_t;
 /// @brief An unsigned 16-bit integer
 using u16 = std::uint16_t;
 /// @brief An unsigned 32-bit integer
@@ -19,7 +21,7 @@ using u32 = std::uint32_t;
 using u64 = std::uint64_t;
 
 /// @brief A signed 8-bit integer
-using i8 = std::int8_t;
+using i8  = std::int8_t;
 /// @brief A signed 16-bit integer
 using i16 = std::int16_t;
 /// @brief A signed 32-bit integer
@@ -34,6 +36,12 @@ using f64 = double;
 
 /// @brief An unsigned integer capable of holding the largest memory address.
 using usize = std::size_t;
+
+/// @brief An optional label.
+using Label = std::optional<std::string>;
+
+/// @brief Lists the possible backend api implementations.
+enum class Backend { OpenGL, Metal };
 
 /// @brief Creates a range.
 /// @param end The exclusive end point of the range.

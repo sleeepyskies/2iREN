@@ -2,22 +2,24 @@ Language: Cpp
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: BlockIndent
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: false
-AlignOperands: false
+AlignConsecutiveAssignments: AcrossComments
+AlignConsecutiveDeclarations: AcrossComments
+AlignOperands: DontAlign
 AlignTrailingComments: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
 AlwaysBreakTemplateDeclarations: Yes
 BreakAfterReturnType: None
 PenaltyReturnTypeOnItsOwnLine: 100000
-BinPackArguments: false
 AllowAllParametersOfDeclarationOnNextLine: false
-BinPackParameters: false
+PackParameters:
+  BinPack: OnePerLine
+PackArguments:
+  BinPack: OnePerLine
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
-  AfterControlStatement: false
+  AfterControlStatement: Never
   AfterEnum: false
   AfterFunction: false
   AfterNamespace: false
@@ -55,10 +57,8 @@ InsertNewlineAtEOF: true
 MacroBlockBegin: ""
 MacroBlockEnd: ""
 PointerAlignment: Left
-SpaceInEmptyParentheses: false
-SpacesInAngles: false
+SpacesInAngles: Never
 SpaceInEmptyBraces: Always
 SpacesInConditionalStatement: false
 SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
 TabWidth: 4

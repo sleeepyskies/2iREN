@@ -20,26 +20,26 @@ namespace siren {
 
 struct MetalShaderDetails {
     ShaderDescriptor descriptor;
-    MTL4::Compiler* compiler;
+    MTL4::Compiler*  compiler;
 };
 
 struct MetalSwapchainDetails {
     /// @brief The original descriptor of the object.
-    SwapchainDescriptor descriptor;
+    SwapchainDescriptor        descriptor;
     /// @brief The drawable retrieved via the MetalLayer.
-    CA::MetalDrawable* drawable = nullptr;
+    CA::MetalDrawable*         drawable = nullptr;
     /// @brief The image wrapper of the next swapchain image. Is reset after
     /// each call to present.
-    std::optional<ImageHandle> image = std::nullopt;
+    std::optional<ImageHandle> image    = std::nullopt;
 };
 
 struct MetalDeviceState {
-    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers = {};
-    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails> swapchains = {};
-    RenderResourceTable<MTL::Library*, Shader, MetalShaderDetails> shaders            = {};
+    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers    = {};
+    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails>    swapchains = {};
+    RenderResourceTable<MTL::Library*, Shader, MetalShaderDetails>            shaders    = {};
     RenderResourceTable<MTL::RenderPipelineState*, GraphicsPipeline, GraphicsPipelineDescriptor>
-        pipelines                                                     = {};
-    RenderResourceTable<MTL::Texture*, Image, ImageDescriptor> images = {};
+                                                               pipelines = {};
+    RenderResourceTable<MTL::Texture*, Image, ImageDescriptor> images    = {};
 };
 
 class MetalDevice final : public Device {
@@ -107,7 +107,7 @@ public:
     [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
-    auto submit(RenderPass&& pass) -> void override;
+    auto submit(CommandList&& cmds) -> void override;
 
     auto upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
         -> void override;
@@ -143,13 +143,13 @@ public:
     auto wait_idle() const noexcept -> void override;
 
 private:
-    MetalDeviceState m_state                       = {};
-    NS::SharedPtr<MTL::Device> m_device            = nullptr;
-    NS::SharedPtr<MTL::CommandQueue> m_cmd_queue   = nullptr;
-    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer = nullptr;
-    metal::AutoRelease m_autorelease               = {};
-    Limits m_limits                                = {};
-    Statistics m_statistics                        = {};
+    MetalDeviceState                  m_state       = {};
+    NS::SharedPtr<MTL::Device>        m_device      = nullptr;
+    NS::SharedPtr<MTL::CommandQueue>  m_cmd_queue   = nullptr;
+    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer  = nullptr;
+    metal::AutoRelease                m_autorelease = {};
+    Limits                            m_limits      = {};
+    Statistics                        m_statistics  = {};
 };
 
 } // namespace siren

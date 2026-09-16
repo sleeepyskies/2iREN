@@ -99,7 +99,7 @@ struct BlendDescription {
 };
 
 /// @brief Represents a single color attachment.
-struct ColorAttachment {
+struct GraphicsPipelineColorAttachment {
     /// @brief The format of the individual pixels of the image.
     ImageFormat format;
     /// @brief Determines if pixels can be transparent.
@@ -113,27 +113,19 @@ struct ColorAttachment {
 };
 
 /// @brief Simple alias for a vector of color attachments.
-using ColorAttachments = std::vector<ColorAttachment>;
+using GraphicsPipelineColorAttachments = std::vector<GraphicsPipelineColorAttachment>;
 
 /// @brief A colletion of parameters used to describe how a @ref
 /// GraphicsPipeline should behave.
 struct GraphicsPipelineDescriptor {
-    /// @brief An optional label for the @ref GraphicsPipeline.
-    std::optional<std::string> label = std::nullopt;
+    /// @brief An optional label.
+    Label label = std::nullopt;
     /// @brief The shader to use.
     ShaderHandle shader;
     /// @brief How the vertices are structured. @see LayoutBuilder.
     Layout layout;
     /// @brief The structure of the color attachments this pipeline may access.
-    ColorAttachments attachments;
-    /// @brief Depth function.
-    DepthFunction depth_function = DepthFunction::Less;
-    /// @brief Whether back face is culled.
-    bool back_face_culling = true;
-    /// @brief Whether to perform the depth test.
-    bool depth_test = true;
-    /// @brief Whether to write the depth buffer.
-    bool depth_write = true;
+    GraphicsPipelineColorAttachments color_attachments;
 };
 
 /// @brief A 2iREN API agnostic GraphicsPipeline. Encapsulates render state

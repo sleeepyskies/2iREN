@@ -1,6 +1,6 @@
 target_sources(2iREN PRIVATE
     layout.cpp
-    render_command.cpp
+    commands.cpp
 
     buffer.cpp
     graphics_pipeline.cpp

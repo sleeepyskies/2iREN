@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 
-#include "2iREN/core/assert.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/math/color.hpp"
 #include "2iREN/math/extent.hpp"
@@ -13,6 +12,17 @@ namespace siren {
 /// @brief Defines the amount of dimensions an @ref Image may have.
 enum class ImageDimension { D1, D2, D3, Cube };
 
+[[nodiscard]]
+constexpr auto to_string(const ImageDimension dimension) -> std::string_view {
+    switch (dimension) {
+        case ImageDimension::D1: return "D1";
+        case ImageDimension::D2: return "D2";
+        case ImageDimension::D3: return "D3";
+        case ImageDimension::Cube: return "Cube";
+    }
+}
+
+/// @brief Represents the per pixel format of an image.
 class ImageFormat {
 public:
     enum Value {
@@ -90,14 +100,13 @@ public:
             case sRGBA8:
             case RGBA16f: return 4;
         }
-        UNREACHABLE();
     }
 };
 
 /// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
-    /// @brief An optional label. Mainly used for debugging.
-    std::optional<std::string> label = std::nullopt;
+    /// @brief An optional label.
+    Label label = std::nullopt;
     /// @brief The format of the image data (num channels/bytes per channel).
     ImageFormat format;
     /// @brief Extent of the image.
@@ -120,7 +129,6 @@ public:
 
     /// @brief Clears the image with the provided color.
     auto clear(const Rgba color) const -> void;
-
     /// @brief Clears the image with the provided value.
     auto clear(const u32 value) const -> void;
 

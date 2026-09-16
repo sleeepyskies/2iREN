@@ -2,7 +2,7 @@
 
 #include <glad/gl.h>
 
-namespace siren::gl {
+namespace siren::opengl {
 
 /// @brief Callback that links OpenGL messages to 2iREN's logging system.
 auto debug_callback(
@@ -15,4 +15,4 @@ auto debug_callback(
     const void* userParam
 ) -> void;
 
-} // namespace siren::gl
+} // namespace siren::opengl

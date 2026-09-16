@@ -3,7 +3,6 @@
 #include <functional>
 
 #include "2iREN/core/base.hpp"
-#include "2iREN/graphics/backend.hpp"
 #include "2iREN/math/bounded.hpp"
 #include "2iREN/math/extent.hpp"
 #include "2iREN/math/point2.hpp"
@@ -124,31 +123,13 @@ private:
     friend class Context;
     Window(const WindowDescriptor& descriptor, const Backend backend);
 
-    static auto glfw_key_callback(
-        GLFWwindow* window,
-        i32 key,
-        i32 scancode,
-        i32 action,
-        i32 mods
-    ) -> void;
-    static auto glfw_mouse_button_callback(
-        GLFWwindow* window,
-        i32 button,
-        i32 action,
-        i32 mods
-    ) -> void;
-    static auto glfw_mouse_move_callback(GLFWwindow* window, f64 xpos, f64 ypos)
+    static auto glfw_key_callback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods)
         -> void;
-    static auto glfw_scroll_callback(
-        GLFWwindow* window,
-        f64 xoffset,
-        f64 yoffset
-    ) -> void;
-    static auto glfw_framebuffer_resize_callback(
-        GLFWwindow* window,
-        i32 width,
-        i32 height
-    ) -> void;
+    static auto glfw_mouse_button_callback(GLFWwindow* window, i32 button, i32 action, i32 mods)
+        -> void;
+    static auto glfw_mouse_move_callback(GLFWwindow* window, f64 xpos, f64 ypos) -> void;
+    static auto glfw_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset) -> void;
+    static auto glfw_framebuffer_resize_callback(GLFWwindow* window, i32 width, i32 height) -> void;
 
     GLFWwindow* m_handle = nullptr;
     Input m_input;

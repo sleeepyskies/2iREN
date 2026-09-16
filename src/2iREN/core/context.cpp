@@ -81,10 +81,8 @@ Context::~Context() {
 
 auto Context::make_device() -> std::unique_ptr<Device> {
 #if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
-    m_backend = Backend::OpenGL;
     return std::make_unique<OpenGLDevice>();
 #elifdef SIREN_MACOS
-    m_backend = Backend::Metal;
     return std::make_unique<MetalDevice>();
 #endif
 }
@@ -93,6 +91,11 @@ auto Context::make_window(const WindowDescriptor& descriptor) const -> Window {
     static bool called = false;
     ASSERT(!called, "a window has already been created");
     called = true;
-    return Window{descriptor, m_backend};
+
+#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+    return Window{descriptor, Backend::OpenGL};
+#elifdef SIREN_MACOS
+    return Window{descriptor, Backend::Metal};
+#endif
 }
 } // namespace siren

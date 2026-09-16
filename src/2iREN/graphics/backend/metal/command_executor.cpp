@@ -1,31 +1,50 @@
 #include "command_executor.hpp"
 
-#include <Foundation/NSSharedPtr.hpp>
-#include <Metal/MTLCommandBuffer.hpp>
-#include <Metal/MTLCommandQueue.hpp>
+#include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
+#include <QuartzCore/QuartzCore.hpp>
 
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/metal/device.hpp"
 #include "2iREN/graphics/backend/metal/mappings.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
-#include "2iREN/graphics/render_command.hpp"
-#include "2iREN/graphics/statistics.hpp"
+#include "2iREN/graphics/commands.hpp"
 
 namespace siren {
 
 MetalCommandExecutor::MetalCommandExecutor(
-    MetalDeviceState& state,
+    MetalDeviceState&                 state,
     NS::SharedPtr<MTL::CommandBuffer> cmd_buffer
 ) : m_state(state), m_cmd_buffer(cmd_buffer) { }
 
-auto MetalCommandExecutor::execute(RenderPass&& pass) -> void {
-    auto& descriptor = pass.descriptor;
-    auto& cmds       = pass.commands;
+auto MetalCommandExecutor::execute(CommandList&& cmds) -> void {
+    for (auto&& pass : cmds.passes) {
+        switch (pass.kind) {
+            case CommandList::Pass::Kind::Render: {
+                execute_render_pass(
+                    std::move(pass.descriptor.render_descriptor),
+                    cmds.command_view(pass.command_range)
+                );
+                break;
+            }
+            case CommandList::Pass::Kind::Transfer: {
+                execute_transfer_pass(
+                    std::move(pass.descriptor.transfer_descriptor),
+                    cmds.command_view(pass.command_range)
+                );
+                break;
+            }
+        }
+    }
+}
 
-    // setup target
+auto MetalCommandExecutor::execute_render_pass(
+    RenderPassDescriptor&&         descriptor,
+    const std::span<const Command> cmds
+) -> void {
     auto desc = metal::transfer_ptr(MTL::RenderPassDescriptor::alloc()->init());
 
+    // setup color attachments
     for (usize i = 0; i < descriptor.target.colors.size(); i++) {
         auto& attachment     = descriptor.target.colors[i];
         auto* mtl_attachment = desc->colorAttachments()->object(i);
@@ -69,15 +88,15 @@ auto MetalCommandExecutor::execute(RenderPass&& pass) -> void {
 
     for (const auto& cmd : cmds) {
         switch (cmd.type) {
-            case RenderCommandType::BindGraphicsPipeline: {
+            case CommandKind::BindGraphicsPipeline: {
                 bind_graphics_pipeline(cmd.as<BindGraphicsPipeline>());
                 break;
             }
-            case RenderCommandType::BindVertexBuffer: {
+            case CommandKind::BindVertexBuffer: {
                 bind_vertex_buffer(cmd.as<BindVertexBuffer>());
                 break;
             }
-            case RenderCommandType::DrawArrays: {
+            case CommandKind::DrawArrays: {
                 draw_arrays(cmd.as<DrawArrays>());
                 break;
             }
@@ -86,6 +105,13 @@ auto MetalCommandExecutor::execute(RenderPass&& pass) -> void {
     }
 
     m_cmd_encoder->endEncoding();
+}
+
+auto MetalCommandExecutor::execute_transfer_pass(
+    [[maybe_unused]] TransferPassDescriptor&&       descriptor,
+    [[maybe_unused]] const std::span<const Command> cmds
+) -> void {
+    /// TODO: impl
 }
 
 auto MetalCommandExecutor::bind_graphics_pipeline(
@@ -104,10 +130,6 @@ auto MetalCommandExecutor::draw_arrays(const DrawArrays& draw_arrays) -> void {
     m_cmd_encoder->drawPrimitives(
         metal::primitive_type(draw_arrays.primitive_topology), draw_arrays.start, draw_arrays.count
     );
-}
-
-auto MetalCommandExecutor::statistics() const -> const Statistics& {
-    return m_statistics;
 }
 
 }; // namespace siren

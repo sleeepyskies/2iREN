@@ -44,10 +44,6 @@ constexpr auto DataType::to_string() const -> std::string_view {
     }
 }
 
-auto LayoutBuilder::make() noexcept -> LayoutBuilder {
-    return LayoutBuilder{};
-}
-
 auto LayoutBuilder::finish() -> Layout {
     return Layout{
         .components = std::move(m_components),
@@ -57,16 +53,7 @@ auto LayoutBuilder::finish() -> Layout {
 
 auto LayoutBuilder::add(const Attribute attribute, const u32 count, const DataType type)
     -> LayoutBuilder& {
-    const Component component{
-        .type      = type,
-        .size      = count,
-        .offset    = m_offset,
-        .location  = m_components.size(),
-        .attribute = attribute,
-    };
-
-    m_components.push_back(component);
-
+    m_components.emplace_back(type, count, m_offset, m_components.size(), attribute);
     m_offset += type.size() * count;
 
     return *this;

@@ -8,6 +8,7 @@
 #include "2iREN/utility/string.hpp"
 
 namespace siren {
+
 /// @brief Represents the various possible shader stages
 struct ShaderStage {
     enum Value { Vertex, Fragment, Geometry, Compute, Task, Mesh } value;
@@ -31,8 +32,7 @@ struct ShaderStage {
     }
 
     [[nodiscard]]
-    static auto from_string(const std::string_view str)
-        -> std::optional<ShaderStage> {
+    static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
         const std::string lower = string::tolower(str);
 
         if (lower == "vertex") {
@@ -71,8 +71,7 @@ struct ShaderData {
 
 template <>
 struct std::hash<siren::ShaderStage> {
-    auto operator()(const siren::ShaderStage& stage) const noexcept
-        -> siren::usize {
+    auto operator()(const siren::ShaderStage& stage) const noexcept -> siren::usize {
         return static_cast<siren::usize>(stage.value);
     }
 };
@@ -81,8 +80,8 @@ namespace siren {
 
 /// @brief Describes a @ref Shader to be created.
 struct ShaderDescriptor {
-    /// @brief The optional label of the shader.
-    std::optional<std::string> label;
+    /// @brief An optional label.
+    Label label = std::nullopt;
     /// @brief The shader code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };

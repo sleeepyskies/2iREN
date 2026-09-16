@@ -9,10 +9,10 @@
 #include <Metal/MTLVertexDescriptor.hpp>
 #include <utility>
 
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
-#include "2iREN/graphics/render_target.hpp"
 
 namespace siren::metal {
 
@@ -179,11 +179,8 @@ constexpr auto pixel_format(const ImageFormat format) -> MTL::PixelFormat {
         case ImageFormat::R8: return MTL::PixelFormatR8Uint;
         case ImageFormat::R32UI: return MTL::PixelFormatR32Uint;
         case ImageFormat::RG32f: return MTL::PixelFormatRG32Float;
-        case ImageFormat::RGB8: return MTL::PixelFormatRGB;
-        case ImageFormat::sRGB8: return MTL::PixelFormatInvalid;
         case ImageFormat::RGBA8: return MTL::PixelFormatInvalid;
         case ImageFormat::sRGBA8: return MTL::PixelFormatInvalid;
-        case ImageFormat::RGB16f: return MTL::PixelFormatInvalid;
         case ImageFormat::RGBA16f: return MTL::PixelFormatInvalid;
         case ImageFormat::Depth24Stencil8: return MTL::PixelFormatInvalid;
         case ImageFormat::Depth32f: return MTL::PixelFormatInvalid;

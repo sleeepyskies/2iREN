@@ -1,37 +1,40 @@
-#include "render_command.hpp"
+#include "commands.hpp"
+
+#include "2iREN/graphics/device.hpp"
 
 namespace siren {
 
-RenderPassRecorder::RenderPassRecorder(
-    const RenderPassDescriptor& descriptor,
-    const usize size_hint
-) : m_descriptor(descriptor) {
-    m_commands.reserve(size_hint);
+RenderCommandRecorder::RenderCommandRecorder(const Device* device) {
+    // TODO: query device for limits, then create ararys/vectos instead of maps
+    // for the actuve bindsings
+    [[maybe_unused]] const auto& limits = device->limits();
+
+    // TODO: what size is best to allocate up front?
+    m_commands.reserve(32);
 }
 
-auto RenderPassRecorder::bind_graphics_pipeline(
-    const GraphicsPipelineHandle pipeline_handle
-) noexcept -> void {
-    if (pipeline_handle == m_active_pipeline) {
+auto RenderCommandRecorder::bind_graphics_pipeline(const GraphicsPipelineHandle pipeline) noexcept
+    -> void {
+    if (pipeline == m_active_pipeline) {
         return;
     }
+    m_active_pipeline = pipeline;
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
-                {.bind_graphics_pipeline =
-                     {.pipeline_handle = pipeline_handle}},
-            .type = RenderCommandType::BindGraphicsPipeline
+                {
+                    .bind_graphics_pipeline = {.pipeline_handle = pipeline},
+                },
+            .type = CommandKind::BindGraphicsPipeline
         }
     );
-
-    m_active_pipeline = pipeline_handle;
 }
 
-auto RenderPassRecorder::bind_vertex_buffer(
+auto RenderCommandRecorder::bind_vertex_buffer(
     const BufferHandle buffer,
-    const u32 slot,
-    const u32 offset
+    const u32          slot,
+    const u32          offset
 ) noexcept -> void {
     const auto& it = m_active_vertex_buffers.find(slot);
     if (it != m_active_vertex_buffers.end() && it->second == buffer) {
@@ -39,7 +42,7 @@ auto RenderPassRecorder::bind_vertex_buffer(
     }
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_vertex_buffer =
@@ -49,55 +52,48 @@ auto RenderPassRecorder::bind_vertex_buffer(
                             .offset        = offset,
                         },
                 },
-            .type = RenderCommandType::BindVertexBuffer,
+            .type = CommandKind::BindVertexBuffer,
         }
     );
 
     m_active_vertex_buffers[slot] = buffer;
 }
 
-auto RenderPassRecorder::bind_index_buffer(
+auto RenderCommandRecorder::bind_index_buffer(
     const BufferHandle buffer,
-    const IndexFormat index_format
+    const IndexFormat  index_format
 ) noexcept -> void {
     if (m_active_index_buffer.has_value()) {
         const auto& active = m_active_index_buffer.value();
-        if (active.index_buffer
-            == buffer
-            && active.index_format
-            == index_format) {
+        if (active.index_buffer == buffer && active.index_format == index_format) {
             return;
         }
     }
 
-    const BindIndexBuffer cmd{
-        .index_buffer = buffer, .index_format = index_format
-    };
+    const BindIndexBuffer cmd{.index_buffer = buffer, .index_format = index_format};
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_index_buffer = cmd,
                 },
-            .type = RenderCommandType::BindIndexBuffer
+            .type = CommandKind::BindIndexBuffer
         }
     );
 
     m_active_index_buffer = cmd;
 }
 
-auto RenderPassRecorder::bind_uniform_buffer(
-    const BufferHandle buffer,
-    const u32 slot
-) noexcept -> void {
+auto RenderCommandRecorder::bind_uniform_buffer(const BufferHandle buffer, const u32 slot) noexcept
+    -> void {
     const auto& it = m_active_uniform_buffers.find(slot);
     if (it != m_active_vertex_buffers.end() && it->second == buffer) {
         return;
     }
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_uniform_buffer =
@@ -106,22 +102,22 @@ auto RenderPassRecorder::bind_uniform_buffer(
                             .slot           = slot,
                         },
                 },
-            .type = RenderCommandType::BindUniformBuffer,
+            .type = CommandKind::BindUniformBuffer,
         }
     );
 
     m_active_uniform_buffers[slot] = buffer;
 }
 
-auto RenderPassRecorder::bind_uniform_buffer_range(
+auto RenderCommandRecorder::bind_uniform_buffer_range(
     const BufferHandle buffer,
-    const u32 slot,
-    const usize offset,
-    const usize size
+    const u32          slot,
+    const usize        offset,
+    const usize        size
 ) noexcept -> void {
-    // todo: check we dont bind same buffer and range twice in a row
+    // TODO: check we dont bind same buffer and range twice in a row
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_uniform_buffer_range =
@@ -132,16 +128,16 @@ auto RenderPassRecorder::bind_uniform_buffer_range(
                             .size           = size,
                         },
                 },
-            .type = RenderCommandType::BindUniformBufferRange,
+            .type = CommandKind::BindUniformBufferRange,
         }
     );
 
     m_active_uniform_buffers[slot] = buffer;
 }
 
-auto RenderPassRecorder::bind_shader_storage_buffer(
+auto RenderCommandRecorder::bind_shader_storage_buffer(
     const BufferHandle buffer,
-    const u32 slot
+    const u32          slot
 ) noexcept -> void {
     const auto& it = m_active_shader_storage_buffers.find(slot);
     if (it != m_active_shader_storage_buffers.end() && it->second == buffer) {
@@ -149,7 +145,7 @@ auto RenderPassRecorder::bind_shader_storage_buffer(
     }
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_shader_storage_buffer =
@@ -158,17 +154,17 @@ auto RenderPassRecorder::bind_shader_storage_buffer(
                             .slot                  = slot,
                         },
                 },
-            .type = RenderCommandType::BindShaderStorageBuffer,
+            .type = CommandKind::BindShaderStorageBuffer,
         }
     );
 
     m_active_shader_storage_buffers[slot] = buffer;
 }
 
-auto RenderPassRecorder::bind_sampled_image(
-    const ImageHandle image,
+auto RenderCommandRecorder::bind_sampled_image(
+    const ImageHandle   image,
     const SamplerHandle sampler,
-    const u32 slot
+    const u32           slot
 ) noexcept -> void {
     const auto& it = m_sampled_images.find(slot);
     if (it != m_sampled_images.end() && it->second == image) {
@@ -176,7 +172,7 @@ auto RenderPassRecorder::bind_sampled_image(
     }
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_sampled_image =
@@ -186,17 +182,17 @@ auto RenderPassRecorder::bind_sampled_image(
                             .slot    = slot,
                         },
                 },
-            .type = RenderCommandType::BindSampledImage,
+            .type = CommandKind::BindSampledImage,
         }
     );
 
     m_sampled_images[slot] = image;
 }
 
-auto RenderPassRecorder::bind_storage_image(
+auto RenderCommandRecorder::bind_storage_image(
     const ImageHandle image,
-    const AccessKind access,
-    const u32 slot
+    const AccessKind  access,
+    const u32         slot
 ) noexcept -> void {
     const auto& it = m_storage_images.find(slot);
     if (it != m_storage_images.end() && it->second == image) {
@@ -204,7 +200,7 @@ auto RenderPassRecorder::bind_storage_image(
     }
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .bind_storage_image =
@@ -214,45 +210,41 @@ auto RenderPassRecorder::bind_storage_image(
                             .access = access,
                         },
                 },
-            .type = RenderCommandType::BindStorageImage,
+            .type = CommandKind::BindStorageImage,
         }
     );
 
     m_storage_images[slot] = image;
 }
 
-auto RenderPassRecorder::begin_query(const QueryHandle handle) noexcept
-    -> void {
+auto RenderCommandRecorder::begin_query(const QueryHandle handle) noexcept -> void {
     m_commands.emplace_back(
-        RenderCommand{
-            .command = {.begin_query = {.query = handle}},
-            .type    = RenderCommandType::BeginQuery
-        }
+        Command{.command = {.begin_query = {.query = handle}}, .type = CommandKind::BeginQuery}
     );
 }
 
-auto RenderPassRecorder::end_query(const QueryHandle handle) noexcept -> void {
+auto RenderCommandRecorder::end_query(const QueryHandle handle) noexcept -> void {
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command = {.end_query = {.query = handle}},
-            .type    = RenderCommandType::EndQuery,
+            .type    = CommandKind::EndQuery,
         }
     );
 }
 
-auto RenderPassRecorder::draw_arrays(
+auto RenderCommandRecorder::draw_arrays(
     const PrimitiveTopology primitive_topology,
-    const u32 start,
-    const u32 count
+    const u32               start,
+    const u32               count
 ) noexcept -> void {
     ASSERT(
         m_active_pipeline.is_valid(),
         "there is no pipeline bound, cannot call "
-        "RenderPassRecorder::draw_arrays."
+        "RenderCommandRecorder::draw_arrays."
     );
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .draw_arrays =
@@ -262,35 +254,34 @@ auto RenderPassRecorder::draw_arrays(
                             .count              = count,
                         },
                 },
-            .type = RenderCommandType::DrawArrays
+            .type = CommandKind::DrawArrays
         }
     );
 }
 
-auto RenderPassRecorder::draw_indexed(
+auto RenderCommandRecorder::draw_indexed(
     const PrimitiveTopology primitive_topology,
-    const u32 index_count,
-    const u32 first_index
+    const u32               index_count,
+    const u32               first_index
 ) noexcept -> void {
     ASSERT(
         m_active_pipeline.is_valid(),
         "there is no pipeline bound, cannot call "
-        "RenderPassRecorder::draw_indexed."
+        "RenderCommandRecorder::draw_indexed."
     );
     ASSERT(
-        m_active_index_buffer.has_value()
-            && m_active_index_buffer.value().index_buffer.is_valid(),
+        m_active_index_buffer.has_value() && m_active_index_buffer.value().index_buffer.is_valid(),
         "there is no index buffer bound, cannot call "
-        "RenderPassRecorder::draw_indexed."
+        "RenderCommandRecorder::draw_indexed."
     );
     ASSERT(
         m_active_vertex_buffers.size() > 0,
         "there are no vertex buffers bound, cannot call "
-        "RenderPassRecorder::draw_indexed."
+        "RenderCommandRecorder::draw_indexed."
     );
 
     m_commands.emplace_back(
-        RenderCommand{
+        Command{
             .command =
                 {
                     .draw_indexed =
@@ -300,12 +291,68 @@ auto RenderPassRecorder::draw_indexed(
                             .index_count        = index_count,
                         },
                 },
-            .type = RenderCommandType::DrawIndexed,
+            .type = CommandKind::DrawIndexed,
         }
     );
 }
 
-auto RenderPassRecorder::finish() -> RenderPass {
-    return RenderPass{m_descriptor, std::move(m_commands)};
+auto RenderCommandRecorder::finish() && -> Commands {
+    // TODO: could we perform some more optimizations here on the commands?
+    // maybe this can be toggled or something with a compile flag,
+    // but reordering commands coul be useful here, or maybe just costly??
+    return std::move(m_commands);
 }
+
+TransferCommandRecorder::TransferCommandRecorder([[maybe_unused]] const Device* device) { }
+
+auto TransferCommandRecorder::finish() && -> Commands {
+    // TODO: could we perform some more optimizations here on the commands?
+    // maybe this can be toggled or something with a compile flag,
+    // but reordering commands coul be useful here, or maybe just costly??
+    return std::move(m_commands);
+}
+
+CommandRecorder::CommandRecorder(const Device* device) : m_device(device) { }
+
+auto CommandRecorder::render_pass(
+    const RenderPassDescriptor& descriptor,
+    RenderPassFunction&&        function
+) -> void {
+    auto recorder = RenderCommandRecorder{m_device};
+
+    std::invoke(function, recorder);
+
+    const auto start = m_commands.size();
+
+    m_commands.append_range(std::move(recorder).finish());
+
+    const auto end = m_commands.size() - 1;
+
+    m_passes.emplace_back(descriptor, Range<usize>{start, end});
+}
+
+auto CommandRecorder::transfer_pass(
+    const TransferPassDescriptor& descriptor,
+    TransferPassFunction&&        function
+) -> void {
+    auto recorder = TransferCommandRecorder{m_device};
+
+    std::invoke(function, recorder);
+
+    const auto start = m_commands.size();
+
+    m_commands.append_range(std::move(recorder).finish());
+
+    const auto end = m_commands.size() - 1;
+
+    m_passes.emplace_back(descriptor, Range<usize>{start, end});
+}
+
+auto CommandRecorder::finish() && -> CommandList {
+    return CommandList{
+        .passes   = std::move(m_passes),
+        .commands = std::move(m_commands),
+    };
+}
+
 } // namespace siren

@@ -22,7 +22,7 @@ struct UboData {
 };
 
 #ifdef SIREN_MACOS
-const auto shader_source = R"(
+const auto       shader_source = R"(
 #include <metal_stdlib>
 using namespace metal;
 
@@ -109,12 +109,8 @@ const auto indices = ByteBuffer::make<u32>({
 });
 
 int main() {
-    auto ctx    = Context::make({
-        .debug = true,
-        .level = log::Level::Trace,
-    });
-    auto window = ctx.make_window({.title = "Example 02"});
-
+    auto       ctx       = Context::make({.level = log::Level::Trace});
+    auto       window    = ctx.make_window({.title = "Example 02"});
     const auto device    = ctx.make_device();
     const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
@@ -142,19 +138,20 @@ int main() {
     const auto layout =
         LayoutBuilder::make().add(Attribute::Position, 3, DataType::Float32).finish();
 
-    const auto shader   = device->make_shader({
-        .label  = std::nullopt,
-        .source = shaders,
-    });
+    const auto shader = device->make_shader({.label = std::nullopt, .source = shaders});
+
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = std::nullopt,
-        .layout            = layout,
+        .label             = "Cube Pipeline",
         .shader            = shader.handle(),
-        .alpha_mode        = AlphaMode::Opaque,
-        .depth_function    = DepthFunction::Less,
-        .back_face_culling = true,
-        .depth_test        = true,
-        .depth_write       = true,
+        .layout            = layout,
+        .color_attachments = GraphicsPipelineColorAttachments{
+            GraphicsPipelineColorAttachment{
+                .format      = ImageFormat::RGBA8,
+                .alpha_mode  = AlphaMode::Opaque,
+                .color_blend = BlendDescription{},
+                .alpha_blend = BlendDescription{},
+            },
+        },
     });
 
     const auto color = device->make_image({
@@ -163,19 +160,9 @@ int main() {
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
     });
-    const RenderTarget target{
-        .colors =
-            {
-                {
-                    .image           = color.handle(),
-                    .begin_operation = BeginOperation::Clear,
-                    .clear_color     = Rgba::BLACK(),
-                },
-            },
-        .depth_stencil = std::nullopt
-    };
 
-    u32 count = 0;
+    const auto quarter_angle = Degrees{45}.to_radians();
+    u32        count         = 0;
     log::info("starting main loop");
     while (!window.should_close()) {
         window.poll_events();
@@ -184,24 +171,45 @@ int main() {
             Mat4x4f::IDENTITY(), Degrees{count * 0.1f}.to_radians(), Vec3f{0.5f, 1.0f, 0.0f}
         );
         const auto view = Mat4x4f::translate(Mat4x4f::IDENTITY(), Vec3f{0.0f, 0.0f, -2.0f});
-        const auto proj =
-            Mat4x4f::perspective(Degrees{45}.to_radians(), window.aspect(), 0.1f, 10.f);
-        const UboData ubodata{proj * view * model};
-        ByteBuffer ubo{ubodata};
+        const auto proj = Mat4x4f::perspective(quarter_angle, window.aspect(), 0.1f, 10.f);
+        const auto data = ByteBuffer{UboData{proj * view * model}};
 
-        uniform_buffer.upload(ubo.view(), 0);
+        uniform_buffer.upload(data.view(), 0);
 
-        device->render_pass({.target = target}, [&](RenderPassRecorder& pass) -> void {
-            pass.bind_graphics_pipeline(pipeline.handle());
-            pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
-            pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
-            pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
-            pass.draw_indexed(PrimitiveTopology::Triangles, indices.size_as<u32>(), 0);
-        });
+        auto backbuffer = swapchain.next_image();
 
-        device->blit_to_image(target.colors[0].image, swapchain.next_image());
+        auto cmds = device->make_command_recorder();
 
-        device->present(swapchain.handle());
+        cmds.render_pass(
+            RenderPassDescriptor{
+                .label = "Cube Pass",
+                .target =
+                    RenderTarget{
+                        .colors =
+                            {
+                                RenderPassColorAttachment{
+                                    .image           = backbuffer,
+                                    .clear_color     = siren::Rgba::ZERO(),
+                                    .begin_operation = BeginOperation::Clear,
+                                    .end_operation   = EndOperation::None,
+                                },
+                            },
+                        .depth_stencil = std::nullopt,
+                    },
+            },
+            [&](RenderCommandRecorder& pass) -> void {
+                pass.bind_graphics_pipeline(pipeline.handle());
+                pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
+                pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
+                pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
+                pass.draw_indexed(PrimitiveTopology::Triangles, indices.size_as<u32>(), 0);
+            }
+        );
+
+        device->submit(std::move(cmds));
+
+        swapchain.present();
+
         count++;
     }
 

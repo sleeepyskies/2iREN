@@ -76,7 +76,7 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 
 [[nodiscard]] static auto determine_format(
     const TextureLoader::ConfigType& cfg,
-    const std::string& ext
+    const std::string&               ext
 ) -> ImageFormat {
     if (cfg.format) {
         return *cfg.format;
@@ -89,7 +89,7 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 
     if (std::ranges::contains(filetypes::HDR, ext)) {
         log::trace("guessing extension {} image has format hdr16.", ext);
-        return ImageFormat::RGB16f;
+        return ImageFormat::RGBA16f;
     }
 
     log::trace("could not guess image format.");
@@ -98,13 +98,10 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
 
 [[maybe_unused]] [[nodiscard]] static auto determine_srgb(const ImageFormat format) -> bool {
     switch (format) {
-        case ImageFormat::sRGB8:
         case ImageFormat::sRGBA8: return true;
 
         case ImageFormat::R8:
-        case ImageFormat::RGB8:
         case ImageFormat::RGBA8:
-        case ImageFormat::RGB16f:
         case ImageFormat::RG32f:
         case ImageFormat::Depth24Stencil8:
         case ImageFormat::Unknown: return false;
@@ -135,10 +132,10 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
 
     const auto format = determine_format(*config, ctx.path().extension());
 
-    i32 width = 0, height = 0, channels = 0;
-    u8* data          = stbi_load(path->c_str(), &width, &height, &channels, 0);
+    i32        width = 0, height = 0, channels = 0;
+    u8*        data   = stbi_load(path->c_str(), &width, &height, &channels, 0);
     const auto extent = Extent3u{width, height, 1};
-    const u32 mipmap_levels =
+    const u32  mipmap_levels =
         config->generate_mipmap_levels ? calc_mipmap_levels(width, height) : 1;
     if (!data) {
         log::warn("could not load, reason: {}", stbi_failure_reason());
@@ -168,7 +165,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
     const auto tname    = config.name.value_or(ctx.path().filename());
     const auto map_name = std::format("{}_CubeMap", tname);
 
-    i32 width = 0, height = 0, channels = 0, size = 0;
+    i32                                             width = 0, height = 0, channels = 0, size = 0;
     std::vector<std::pair<std::string, ByteBuffer>> faces = {
         {std::string(keys::PX), {}},
         {std::string(keys::NX), {}},
