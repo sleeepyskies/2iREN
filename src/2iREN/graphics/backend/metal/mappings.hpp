@@ -9,6 +9,7 @@
 #include <Metal/MTLVertexDescriptor.hpp>
 #include <utility>
 
+#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -115,6 +116,14 @@ constexpr auto primitive_type(const PrimitiveTopology topology) -> MTL::Primitiv
         case PrimitiveTopology::LineStrip: return MTL::PrimitiveTypeLineStrip;
         case PrimitiveTopology::TriangleFan:
             PANIC("metal does not support the rquested primtive type");
+    }
+}
+
+constexpr auto index_type(const IndexFormat format) -> MTL::IndexType {
+    switch (format) {
+        case IndexFormat::UInt16: return MTL::IndexType::IndexTypeUInt16;
+        case IndexFormat::UInt32: return MTL::IndexType::IndexTypeUInt32; break;
+        case IndexFormat::UInt8: PANIC("UInt8 index type not supported on metal.");
     }
 }
 

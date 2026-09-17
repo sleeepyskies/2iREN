@@ -1,5 +1,6 @@
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
@@ -21,7 +22,7 @@ struct UboData {
 };
 
 #ifdef SIREN_MACOS
-const auto       shader_source = R"(
+const auto shader_source = R"(
 #include <metal_stdlib>
 using namespace metal;
 
@@ -33,26 +34,35 @@ struct VertexIn {
     float3 position [[attribute(0)]];
 };
 
-auto vmain(VertexIn in [[stage_in]]) -> VertexOut {
+struct Uniforms {
+    float4x4 transform;
+};
 
+auto vertex vmain(
+    VertexIn in [[stage_in]],
+    constant Uniforms& uniforms [[buffer(1)]]
+) -> VertexOut {
+    return VertexOut {
+        uniforms.transform * float4(in.position, 1.0)
+    };
 }
 
-auto fmain(VertexOut in [[stage_in]]) -> float4 {
-
+auto fragment fmain(VertexOut in [[stage_in]]) -> float4 {
+    return in.position / 2;
 }
 )";
-const ShaderData vertex_shader{
+const auto vertex_shader = ShaderData{
     .label  = std::nullopt,
     .source = shader_source,
     .entry  = "vmain",
 };
-const ShaderData fragment_shader{
+const auto fragment_shader = ShaderData{
     .label  = std::nullopt,
     .source = shader_source,
     .entry  = "fmain",
 };
 #else
-const ShaderData vertex_shader{
+const auto vertex_shader = ShaderData{
     .label  = std::nullopt,
     .source = R"(
         #version 460
@@ -68,7 +78,9 @@ const ShaderData vertex_shader{
             v_pos = a_pos;
         })",
 };
-const ShaderData fragment_shader{.label = std::nullopt, .source = R"(
+const auto fragment_shader = ShaderData{
+    .label  = std::nullopt,
+    .source = R"(
         #version 460
         layout(location = 0) in vec3 v_pos;
 
@@ -76,7 +88,8 @@ const ShaderData fragment_shader{.label = std::nullopt, .source = R"(
 
         void main() {
             FragColor = vec4(v_pos + 0.5, 1.0);
-        })"};
+        })",
+};
 #endif
 
 const std::unordered_map<ShaderStage, ShaderData> shaders = {
@@ -159,15 +172,17 @@ auto main() -> i32 {
         const auto model = Mat4x4f::rotate(
             Mat4x4f::IDENTITY(), Degrees{count * 0.1f}.to_radians(), Vec3f{0.5f, 1.0f, 0.0f}
         );
-        const auto view = Mat4x4f::translate(Mat4x4f::IDENTITY(), Vec3f{0.0f, 0.0f, -2.0f});
+        const auto view = Mat4x4f::translate(Mat4x4f::IDENTITY(), Vec3f{0.0f, 0.0f, 5.0f});
         const auto proj = Mat4x4f::perspective(quarter_angle, window.aspect(), 0.1f, 10.f);
         const auto data = ByteBuffer{UboData{proj * view * model}};
-
-        uniform_buffer.upload(data.view(), 0);
 
         auto backbuffer = swapchain.next_image();
 
         auto cmds = device->make_command_recorder();
+
+        cmds.transfer_pass({}, [&](TransferCommandRecorder& transfer) {
+            transfer.upload_to_buffer(uniform_buffer.handle(), data.view(), 0);
+        });
 
         cmds.render_pass(
             RenderPassDescriptor{
@@ -186,7 +201,7 @@ auto main() -> i32 {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
                 pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
-                pass.bind_uniform_buffer(uniform_buffer.handle(), 0);
+                pass.bind_uniform_buffer(uniform_buffer.handle(), 1);
                 pass.draw_indexed(PrimitiveTopology::Triangles, indices.size_as<u32>(), 0);
             }
         );

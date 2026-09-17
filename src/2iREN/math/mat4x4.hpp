@@ -133,8 +133,8 @@ struct Mat4x4 {
     /// amount in radians.
     [[nodiscard]]
     static constexpr auto rotate(
-        const Mat4x4& matrix,
-        const Radians radians,
+        const Mat4x4&  matrix,
+        const Radians  radians,
         const Vec3<T>& axis
     ) noexcept -> Mat4x4 {
         const auto axislen = axis.length();
@@ -171,12 +171,12 @@ struct Mat4x4 {
 
     [[nodiscard]]
     static constexpr auto perspective(
-        const Radians fov,
+        const Radians            fov,
         const NonZeroPositiveF32 aspect_ratio,
         const NonZeroPositiveF32 nearplane,
         const NonZeroPositiveF32 farplane
     ) noexcept -> Mat4x4 {
-        const auto halftan = static_cast<Type>(std::tan(fov.value / 2));
+        const auto halftan = static_cast<Type>(std::tan(fov.value / Type{2}));
         const auto aspect  = static_cast<Type>(aspect_ratio.get());
         const auto near    = static_cast<Type>(nearplane.get());
         const auto far     = static_cast<Type>(farplane.get());
@@ -186,9 +186,15 @@ struct Mat4x4 {
 
         mat[0][0] = Type{1} / (aspect * halftan);
         mat[1][1] = Type{1} / halftan;
-        mat[2][2] = -(far + near) / (far - near);
-        mat[2][3] = Type{-1};
-        mat[3][2] = -(Type{2} * far * near) / (far - near);
+
+        // for right handed coor system
+        // mat[2][2] = -(far + near) / (far - near);
+        // mat[2][3] = Type{-1};
+        // mat[3][2] = -(Type{2} * far * near) / (far - near);
+        // for left handed coord system
+        mat[2][2] = far / (far - near);
+        mat[2][3] = Type{1};
+        mat[3][2] = -(far * near) / (far - near);
 
         return mat;
     }
@@ -197,7 +203,7 @@ struct Mat4x4 {
     static constexpr auto translate(const Mat4x4& matrix, const Vec3<T>& amount) noexcept
         -> Mat4x4 {
         // clang-format off
-        const Mat4x4 translation{{
+        const auto translation = Mat4x4{{
             Type{1}, Type{0}, Type{0}, Type{0},
             Type{0}, Type{1}, Type{0}, Type{0},
             Type{0}, Type{0}, Type{1}, Type{0},

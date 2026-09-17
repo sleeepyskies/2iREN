@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
 
@@ -303,7 +304,30 @@ auto RenderCommandRecorder::finish() && -> Commands {
     return std::move(m_commands);
 }
 
-TransferCommandRecorder::TransferCommandRecorder([[maybe_unused]] const Device* device) { }
+TransferCommandRecorder::TransferCommandRecorder([[maybe_unused]] const Device* device) {
+    m_commands.reserve(8);
+}
+
+auto TransferCommandRecorder::upload_to_buffer(
+    const BufferHandle   buffer,
+    const ByteBufferView data,
+    const u32            offset
+) -> void {
+    m_commands.emplace_back(
+        Command{
+            .command =
+                {
+                    .upload_to_buffer =
+                        {
+                            .buffer = buffer,
+                            .data   = data,
+                            .offset = offset,
+                        },
+                },
+            .type = CommandKind::UploadToBuffer,
+        }
+    );
+}
 
 auto TransferCommandRecorder::finish() && -> Commands {
     // TODO: could we perform some more optimizations here on the commands?

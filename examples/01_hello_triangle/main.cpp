@@ -11,7 +11,7 @@
 using namespace siren;
 
 struct Vertex {
-    f32 x, y, z;
+    f32 x, y;
     f32 r, g, b, a;
 };
 
@@ -26,13 +26,13 @@ struct VertexOut {
 };
 
 struct VertexIn {
-    float3 position [[attribute(0)]];
+    float2 position [[attribute(0)]];
     float4 color [[attribute(1)]];
 };
 
 vertex auto vmain(VertexIn in [[stage_in]]) -> VertexOut {
     VertexOut out;
-    out.position = float4(in.position, 1.0);
+    out.position = float4(in.position, 0.0, 1.0);
     out.color = in.color;
     return out;
 }
@@ -62,7 +62,7 @@ const ShaderData vertex_shader{
         layout(location = 0) out vec4 v_color;
 
         void main() {
-            gl_Position = vec4(a_pos, 1.0);
+            gl_Position = vec4(a_pos, 0.0, 1.0);
             v_color = a_color;
         })",
 };
@@ -85,10 +85,10 @@ const std::unordered_map<ShaderStage, ShaderData> shaders = {
     {ShaderStage::Fragment, fragment_shader},
 };
 
-const ByteBuffer vertices{
-    Vertex{0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
-    Vertex{-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
-    Vertex{0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f},
+const auto vertices = ByteBuffer{
+    Vertex{0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f},
+    Vertex{-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f},
+    Vertex{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f},
 };
 
 auto main() -> i32 {
@@ -106,7 +106,7 @@ auto main() -> i32 {
         vertices.view()
     );
     const auto layout =
-        LayoutBuilder::make().add(DataType::Float32, 3).add(DataType::Float32, 4).finish();
+        LayoutBuilder::make().add(DataType::Float32, 2).add(DataType::Float32, 4).finish();
 
     const auto shader = device->make_shader({.label = "Triangle Shader", .source = shaders});
 

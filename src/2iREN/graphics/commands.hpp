@@ -9,6 +9,7 @@
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/math/range.hpp"
+#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/identifier.hpp"
 
 namespace siren {
@@ -120,7 +121,7 @@ enum class CommandKind : u8 {
     EndQuery,
 
     // TRANSFER COMMANDS
-
+    UploadToBuffer,
 };
 
 /// @brief Indicates a @ref GraphicsPipeline bind. Sets all of its state.
@@ -231,6 +232,17 @@ struct DrawIndexed {
     u32               index_count;
 };
 
+/// @brief Uploads data to a buffer.
+struct UploadToBuffer {
+    /// @brief The buffer to upload data to.
+    BufferHandle   buffer;
+    /// @brief A non owning view of the data to upload.
+    /// @warning The caller must ensure this data remains alive!
+    ByteBufferView data;
+    /// @brief The offset into the destination buffer to start uploading at.
+    u32            offset;
+};
+
 /// @brief Encapsulates a GPU command.
 struct Command {
     union {
@@ -249,6 +261,7 @@ struct Command {
         DrawIndexed             draw_indexed;
 
         // TRANSFER COMMANDS
+        UploadToBuffer upload_to_buffer;
     } command;
 
     CommandKind type;
@@ -257,6 +270,7 @@ struct Command {
     /// Crashes on fail.
     template <typename Command>
     constexpr auto as() const -> const Command& {
+        // REDNER COMMANDS
         if constexpr (std::is_same_v<Command, BindGraphicsPipeline>) {
             return command.bind_graphics_pipeline;
         } else if constexpr (std::is_same_v<Command, BindVertexBuffer>) {
@@ -281,6 +295,9 @@ struct Command {
             return command.draw_arrays;
         } else if constexpr (std::is_same_v<Command, DrawIndexed>) {
             return command.draw_indexed;
+            // TRANSFER COMMANDS
+        } else if constexpr (std::is_same_v<Command, UploadToBuffer>) {
+            return command.upload_to_buffer;
         } else {
             static_assert(false, "Invalid Render Command type");
             PANIC("Invalid Render Command. Cannot cast correctly");
@@ -412,12 +429,25 @@ private:
     std::optional<BindIndexBuffer>        m_active_index_buffer;
 };
 
+/// @brief Handles recording any data trnasferal commands into a command list.
+/// @warning Most commands make use of non owning views into CPU buffers.
+/// Therefore the called should make sure to keep the CPU data alive until the
+/// corresponding CommandList in which this will record commands into has been
+/// submitted.
 class TransferCommandRecorder {
     friend class CommandRecorder;
 
     explicit TransferCommandRecorder(const Device* device);
 
 public:
+    /// @brief Uploads data from the provided buffer view into a GPU buffer.
+    /// @param data A non owning view of the CPU data to upload to the GPU.
+    /// @param offset The offset in bytes into the GPU buffer from which the data
+    /// will be uploaded.
+    /// @warning The @param `data` must be kept alive until the command list
+    /// has been submit!
+    auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, u32 offset) -> void;
+
 private:
     /// @brief Consumes this TransferCommandRecorder and returns the collected
     /// commands.
@@ -485,7 +515,11 @@ struct CommandList {
     std::vector<Command> commands;
 };
 
+/// @brief A function passed into the @ref RenderCommandRecorder that
+/// will record commands to.
 using RenderPassFunction   = std::function<void(RenderCommandRecorder&)>;
+/// @brief A function passed into the @ref TransferCommandRecorder that
+/// will record commands to.
 using TransferPassFunction = std::function<void(TransferCommandRecorder&)>;
 
 class CommandRecorder {

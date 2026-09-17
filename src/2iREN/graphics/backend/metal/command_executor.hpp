@@ -1,9 +1,14 @@
 #pragma once
 
-#include <Metal/Metal.hpp>
+#include <Metal/MTLRenderCommandEncoder.hpp>
+#include <optional>
 #include <span>
 
+#include <Metal/MTLCommandBuffer.hpp>
+
+#include "2iREN/graphics/backend/metal/fwd.hpp"
 #include "2iREN/graphics/command_executor.hpp"
+#include "2iREN/graphics/commands.hpp"
 
 namespace siren {
 
@@ -23,14 +28,25 @@ private:
         const std::span<const Command> cmds
     ) -> void;
 
-    auto bind_graphics_pipeline(const BindGraphicsPipeline&) -> void;
-    auto bind_vertex_buffer(const BindVertexBuffer&) -> void;
-    auto draw_arrays(const DrawArrays&) -> void;
+    // RENDER COMMANDS
+    auto bind_graphics_pipeline(MTL::RenderCommandEncoder*, const BindGraphicsPipeline&) -> void;
+    auto bind_vertex_buffer(MTL::RenderCommandEncoder*, const BindVertexBuffer&) -> void;
+    auto bind_index_buffer(const BindIndexBuffer&) -> void;
+    auto bind_uniform_buffer(MTL::RenderCommandEncoder*, const BindUniformBuffer&) -> void;
+
+    auto draw_arrays(MTL::RenderCommandEncoder*, const DrawArrays&) -> void;
+    auto draw_indexed(MTL::RenderCommandEncoder*, const DrawIndexed&) -> void;
+
+    // TRANSFER COMMANDS
+    auto upload_to_buffer(MTL::BlitCommandEncoder*, const UploadToBuffer&) -> void;
 
 private:
-    MetalDeviceState&                        m_state;
-    NS::SharedPtr<MTL::CommandBuffer>        m_cmd_buffer  = nullptr;
-    NS::SharedPtr<MTL::RenderCommandEncoder> m_cmd_encoder = nullptr;
+    MetalDeviceState&                 m_state;
+    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer = nullptr;
+
+    struct Bindings {
+        std::optional<BindIndexBuffer> index_buffer = std::nullopt;
+    } m_bindings = {};
 };
 
 } // namespace siren

@@ -31,8 +31,7 @@ struct Vec3 {
 
     constexpr Vec3() : Vec3(Type{}) { }
     constexpr explicit Vec3(const Type xyz) : x(xyz), y(xyz), z(xyz) { }
-    constexpr Vec3(const Type x, const Type y, const Type z) :
-        x(x), y(y), z(z) { }
+    constexpr Vec3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) { }
 
     template <typename S>
         requires(std::is_convertible_v<S, Type>)
@@ -41,8 +40,7 @@ struct Vec3 {
     template <typename S>
         requires(std::is_convertible_v<S, Type>)
     constexpr Vec3(const S x, const S y, const S z) :
-        Vec3(static_cast<Type>(x), static_cast<Type>(y), static_cast<Type>(z)) {
-    }
+        Vec3(static_cast<Type>(x), static_cast<Type>(y), static_cast<Type>(z)) { }
 
     [[nodiscard]]
     static constexpr auto make(const Type* ptr) -> Vec3 {
@@ -72,13 +70,36 @@ struct Vec3 {
     static constexpr auto MAX() noexcept -> Vec3 {
         return Vec3{std::numeric_limits<Type>::max()};
     }
+
+    /// @brief Defines the up unit vector of 2iREN's coordinate system.
     [[nodiscard]]
     static constexpr auto UP() noexcept -> Vec3 {
         return Vec3{0, 1, 0};
     }
+    /// @brief Defines the down unit vector of 2iREN's coordinate system.
+    [[nodiscard]]
+    static constexpr auto DOWN() noexcept -> Vec3 {
+        return Vec3{0, -1, 0};
+    }
+    /// @brief Defines the left unit vector of 2iREN's coordinate system.
+    [[nodiscard]]
+    static constexpr auto LEFT() noexcept -> Vec3 {
+        return Vec3{-1, 1, 0};
+    }
+    /// @brief Defines the right unit vector of 2iREN's coordinate system.
     [[nodiscard]]
     static constexpr auto RIGHT() noexcept -> Vec3 {
         return Vec3{1, 0, 0};
+    }
+    /// @brief Defines the backward unit vector of 2iREN's coordinate system.
+    [[nodiscard]]
+    static constexpr auto BACKWARD() noexcept -> Vec3 {
+        return Vec3{0, 0, -1};
+    }
+    /// @brief Defines the forward unit vector of 2iREN's coordinate system.
+    [[nodiscard]]
+    static constexpr auto FORWARD() noexcept -> Vec3 {
+        return Vec3{0, 0, 1};
     }
 
     [[nodiscard]]
