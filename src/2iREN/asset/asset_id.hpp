@@ -2,11 +2,12 @@
 
 #include <format>
 
+#include "2iREN/asset/fwd.hpp"
 #include "2iREN/utility/identifier.hpp"
 #include "2iREN/utility/type_info.hpp"
-#include "2iREN/asset/fwd.hpp"
 
 namespace siren {
+
 /// @brief Identifier for assets. Contains additional data such as a unique id, an index,
 /// as well as type information.
 struct AssetId final : Identifier<AssetId> {
@@ -21,10 +22,12 @@ struct AssetId final : Identifier<AssetId> {
     /// @param gen The generation of this identifier.
     /// @param type The type of this identifier.
     AssetId(const IndexType index, const GenerationType gen, const TypeID type) :
-        Identifier(index, gen, type) {}
+        Identifier(index, gen, type) { }
 
     /// @brief Constructs a new invalid AssetID.
-    static constexpr auto invalid() noexcept -> AssetId { return AssetId{}; }
+    static constexpr auto invalid() noexcept -> AssetId {
+        return AssetId{};
+    }
 
     AssetId(const AssetId&)            = default;
     AssetId& operator=(const AssetId&) = default;
@@ -39,7 +42,9 @@ struct AssetId final : Identifier<AssetId> {
     }
 
     /// @brief Returns the TypeID of this AssetID.
-    [[nodiscard]] constexpr auto type() const noexcept -> TypeID { return meta(); }
+    [[nodiscard]] constexpr auto type() const noexcept -> TypeID {
+        return meta();
+    }
 
     [[nodiscard]] constexpr auto to_string() const -> std::string {
         return std::format(
@@ -50,16 +55,21 @@ struct AssetId final : Identifier<AssetId> {
 private:
     AssetId() = default;
 };
+
 } // namespace siren
 
 template <>
 struct std::hash<siren::AssetId> {
-    auto operator()(const siren::AssetId& id) const noexcept -> siren::usize { return id.hash(); }
+    auto operator()(const siren::AssetId& id) const noexcept -> siren::usize {
+        return id.hash();
+    }
 };
 
 template <>
 struct std::formatter<siren::AssetId> {
-    constexpr auto parse(std::format_parse_context& context) const { return context.begin(); }
+    constexpr auto parse(std::format_parse_context& context) const {
+        return context.begin();
+    }
 
     template <typename FormatContext>
     auto format(const siren::AssetId& id, FormatContext& context) const {

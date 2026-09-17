@@ -9,6 +9,7 @@
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/math/range.hpp"
+#include "2iREN/utility/identifier.hpp"
 
 namespace siren {
 
@@ -22,8 +23,14 @@ enum class BeginOperation : u8 {
     Fuckit,
 };
 
-/// TODO: what values do we want here?
-enum class EndOperation : u8 { None };
+/// @brief Indicates the operation to perform for an attachment at the end
+/// of a pass.
+enum class EndOperation : u8 {
+    /// @brief Stores the the rendered contents into the image.
+    Store,
+    /// @brief The image may be replaced with arbitrary data.
+    Fuckit,
+};
 
 /// @brief Describes a single color attachment within the context of a
 /// render pass.
@@ -467,7 +474,9 @@ struct CommandList {
     /// @brief Returns a view over the commands within the provided range.
     [[nodiscard]]
     auto command_view(const Range<usize>& range) -> std::span<const Command> {
-        return std::span(commands).subspan(range.begin, range.end);
+        // [0, 1, 2, 3, 4, 5]
+        // we do view(2, 4)
+        return std::span(commands).subspan(range.begin, range.end - range.begin);
     }
 
     /// @brief List of passes describing how to group the commands.

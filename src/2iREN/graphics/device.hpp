@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/limits.hpp"
@@ -13,8 +11,6 @@ namespace siren {
 class Window;
 
 using ClearValue = std::variant<Rgba, u32>;
-
-using OverlayFunction = std::function<void()>;
 
 /// @brief The Device manages the lifetime of @ref RenderResource objects.
 /// Furthermore, it is the primary entry point for all interactions with the
@@ -34,7 +30,10 @@ public:
     /// @brief Creates and returns a new @ref Image given an @ref
     /// ImageDescriptor.
     [[nodiscard]]
-    virtual auto make_image(const ImageDescriptor& descriptor) -> Image = 0;
+    virtual auto make_image(
+        const ImageDescriptor&        descriptor,
+        std::optional<ByteBufferView> initial = std::nullopt
+    ) -> Image = 0;
 
     /// @brief Creates and returns a new @ref Image given an @ref
     /// ImageDescriptor.
@@ -110,6 +109,10 @@ public:
     virtual auto swapchain_descriptor(SwapchainHandle handle) const
         -> const SwapchainDescriptor& = 0;
 
+    /// @brief Returns information about the swapchain.
+    [[nodiscard]]
+    virtual auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo = 0;
+
     /// @brief Returns the @ref QueryDescriptor associated with this handle.
     [[nodiscard]]
     virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
@@ -124,33 +127,21 @@ public:
     /// backend and for exection on the GPU.
     virtual auto submit(CommandList&& cmds) -> void = 0;
 
+    /// @brief Submits a list of 2iREN commands to be translated for the
+    /// backend and for exection on the GPU.
     auto submit(CommandRecorder&& cmds) -> void {
         submit(std::move(cmds).finish());
     }
 
-    /// @brief Uploads data to an image.
-    virtual auto upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
-        -> void = 0;
+    /// @brief Presents the back buffer of the given swapchain to the screen.
+    /// @note Does not guarantee that work using the backbuffer is completed
+    /// before presenting.
+    virtual auto present(SwapchainHandle handle) -> void = 0;
 
-    /// @brief Uploads data to a buffer.
-    virtual auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, usize offset) const
-        -> void = 0;
-
-    /// @brief Clears all pixels of an image using the provided value.
-    virtual auto clear_image(ImageHandle image, ClearValue clearvalue) const -> void = 0;
-
-    /// @brief Copies the content of an @ref Image to another @ref Image. @note
-    /// Assumes source and destination have the same size.
-    virtual auto blit_to_image(ImageHandle source, ImageHandle destination) const -> void = 0;
-
-    /// @brief Reads the image data into a buffer and returns it. @warning May
-    /// stall the thread until task is complete.
-    [[nodiscard]]
-    virtual auto read_image(ImageHandle image) const -> std::vector<u8> = 0;
-
-    /// @brief Presents the back buffer of the given swapchain to the screen and
-    /// also executes a custom overlay function.
-    virtual auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) -> void = 0;
+    /// @brief Presents the back buffer of the given swapchain to the screen.
+    /// Furthremore, the backbuffer will only be presented once the provided
+    /// work has been completed by the GPU.
+    virtual auto present(SwapchainHandle handle, CommandList&& cmds) -> void = 0;
 
     /// @brief Returns the next @ref Image target managed by this framebuffer to
     /// render to.
@@ -175,16 +166,24 @@ public:
     /// @brief Ends a conditionally rendered scope.
     virtual auto end_conditional_render() const -> void = 0;
 
+    /// @brief Blocks until the device has finished all tasks.
+    virtual auto wait_idle() const noexcept -> void = 0;
+
     /// @brief Returns the hardware limits of the current backend.
     [[nodiscard]]
-    virtual auto limits() const -> const Limits& = 0;
+    auto limits() const -> const Limits& {
+        return m_limits;
+    }
 
     /// @brief Returns the accumulated rendering statistics since the last time
     /// this function was called.
     [[nodiscard]]
-    virtual auto statistics() const -> Statistics = 0;
+    auto statistics() const -> Statistics {
+        return std::exchange(m_statistics, {});
+    }
 
-    /// @brief Blocks until the device has finished all tasks.
-    virtual auto wait_idle() const noexcept -> void = 0;
+protected:
+    mutable Limits     m_limits     = {};
+    mutable Statistics m_statistics = {};
 };
 } // namespace siren

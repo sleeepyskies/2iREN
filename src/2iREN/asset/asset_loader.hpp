@@ -30,8 +30,10 @@ public:
         NoConfig,
     } value;
 
-    constexpr AssetErrorCode(const Value v) : value(v) {}
-    constexpr operator Value() const { return value; }
+    constexpr AssetErrorCode(const Value v) : value(v) { }
+    constexpr operator Value() const {
+        return value;
+    }
 
     /// @brief Stringifies the given AssetErrorCode.
     [[nodiscard]] constexpr auto to_string() const -> std::string_view {
@@ -52,11 +54,11 @@ using AssetLoadError = std::expected<void, AssetErrorCode>;
 
 template <typename T>
 struct LoaderTraits {
-    struct Config {};
+    struct Config { };
 };
 
 struct AssetLoaderBase {
-    virtual ~AssetLoaderBase() = default;
+    virtual ~AssetLoaderBase()                                                     = default;
     /// @brief Returns a list of file extensions this loader can load.
     [[nodiscard]] virtual auto extensions() const -> std::vector<std::string_view> = 0;
 };

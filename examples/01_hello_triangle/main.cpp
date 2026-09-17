@@ -105,23 +105,21 @@ auto main() -> i32 {
         },
         vertices.view()
     );
-    const auto layout = LayoutBuilder::make()
-                            .add(Attribute::Position, 3, DataType::Float32)
-                            .add(Attribute::Color, 4, DataType::Float32)
-                            .finish();
+    const auto layout =
+        LayoutBuilder::make().add(DataType::Float32, 3).add(DataType::Float32, 4).finish();
 
     const auto shader = device->make_shader({.label = "Triangle Shader", .source = shaders});
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = "Triagle Pipeline",
+        .label             = "Triangle Pipeline",
         .shader            = shader.handle(),
         .layout            = layout,
         .color_attachments = GraphicsPipelineColorAttachments{
             GraphicsPipelineColorAttachment{
-                .format      = ImageFormat::RGBA8,
+                .format      = swapchain.info().image_format,
                 .alpha_mode  = AlphaMode::Opaque,
-                .color_blend = BlendDescription{},
-                .alpha_blend = BlendDescription{},
+                .color_blend = {},
+                .alpha_blend = {},
             },
         },
     });
@@ -142,9 +140,9 @@ auto main() -> i32 {
                             {
                                 RenderPassColorAttachment{
                                     .image           = backbuffer,
-                                    .clear_color     = Rgba::lerp(Rgba::BLUE(), Rgba::RED()),
+                                    .clear_color     = Rgba::lerp(Rgba::WHITE(), Rgba::BLACK()),
                                     .begin_operation = BeginOperation::Clear,
-                                    .end_operation   = EndOperation::None,
+                                    .end_operation   = EndOperation::Store,
                                 },
                             },
                         .depth_stencil = std::nullopt,
@@ -157,9 +155,7 @@ auto main() -> i32 {
             }
         );
 
-        device->submit(std::move(cmds));
-
-        swapchain.present();
+        swapchain.present(std::move(cmds).finish());
     }
 
     return 0;

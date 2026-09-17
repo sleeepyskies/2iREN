@@ -53,9 +53,9 @@ auto MetalCommandExecutor::execute_render_pass(
         const auto& rgba = attachment.clear_color;
 
         mtl_attachment->setTexture(mtl_texture);
-        mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
         mtl_attachment->setClearColor(MTL::ClearColor::Make(rgba.r, rgba.g, rgba.b, rgba.a));
-        mtl_attachment->setStoreAction(MTL::StoreActionStore); // TODO: idk bro
+        mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
+        mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
     }
 
     if (descriptor.target.depth_stencil) {
@@ -68,7 +68,7 @@ auto MetalCommandExecutor::execute_render_pass(
             mtl_attachment->setTexture(mtl_texture);
             mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
             mtl_attachment->setClearDepth(attachment.clear_depth);
-            mtl_attachment->setStoreAction(MTL::StoreActionStore); // TODO: idk bro
+            mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
         }
 
         // setup stencil
@@ -80,7 +80,7 @@ auto MetalCommandExecutor::execute_render_pass(
             mtl_attachment->setTexture(mtl_texture);
             mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
             mtl_attachment->setClearStencil(attachment.clear_stencil);
-            mtl_attachment->setStoreAction(MTL::StoreActionStore); // TODO: idk bro
+            mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
         }
     }
 

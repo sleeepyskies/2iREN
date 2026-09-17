@@ -39,23 +39,6 @@ namespace siren {
 // ============================================================================
 
 [[maybe_unused]]
-static auto gltf_attribute_to_siren(const cgltf_attribute_type attribute) -> Attribute {
-    switch (attribute) {
-        case cgltf_attribute_type_position: return Attribute::Position;
-        case cgltf_attribute_type_normal: return Attribute::Normal;
-        case cgltf_attribute_type_tangent: return Attribute::Tangent;
-        case cgltf_attribute_type_texcoord: return Attribute::Texture;
-        case cgltf_attribute_type_color: return Attribute::Color;
-        case cgltf_attribute_type_joints:
-        case cgltf_attribute_type_weights:
-        case cgltf_attribute_type_custom: PANIC("Unsupported cgltf attribute type encountered.");
-        case cgltf_attribute_type_invalid:
-        case cgltf_attribute_type_max_enum:
-        default: UNREACHABLE();
-    }
-}
-
-[[maybe_unused]]
 static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFormat {
     switch (type) {
         case cgltf_component_type_r_8u: return IndexFormat::UInt8;
@@ -231,16 +214,19 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             const u32 mipmap_levels = 1 + static_cast<u32>(std::floor(std::log2(max_dim)));
 
             // todo: add name?
-            auto img = ctx.device().make_image({
-                .label         = std::nullopt,
-                .format        = format,
-                .extent        = extent,
-                .dimension     = ImageDimension::D2,
-                .mipmap_levels = mipmap_levels,
-            });
 
             auto bytebuffer = ByteBuffer{std::span(image_data, img_data_size)};
-            ctx.device().upload_to_image(img.handle(), bytebuffer.view(), 0);
+
+            auto img = ctx.device().make_image(
+                {
+                    .label         = std::nullopt,
+                    .format        = format,
+                    .extent        = extent,
+                    .dimension     = ImageDimension::D2,
+                    .mipmap_levels = mipmap_levels,
+                },
+                bytebuffer.view()
+            );
 
             handle = ctx.add_labeled_asset<Texture>(
                 name, std::make_unique<Texture>(name, std::move(img), std::move(sampler))

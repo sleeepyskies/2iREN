@@ -4,9 +4,8 @@
 
 namespace siren {
 
-/// @struct Asset
 /// @brief Tag struct to identify assets. Should be inherited from by assets.
-struct Asset {};
+struct Asset { };
 
 /// @brief Ensures that A is derived from Asset.
 template <typename A>

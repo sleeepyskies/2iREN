@@ -6,7 +6,6 @@
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/math/angle.hpp"
-#include "2iREN/math/extent.hpp"
 #include "2iREN/math/mat4x4.hpp"
 #include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/window/window.hpp"
@@ -41,8 +40,6 @@ auto vmain(VertexIn in [[stage_in]]) -> VertexOut {
 auto fmain(VertexOut in [[stage_in]]) -> float4 {
 
 }
-
-
 )";
 const ShaderData vertex_shader{
     .label  = std::nullopt,
@@ -108,7 +105,7 @@ const auto indices = ByteBuffer::make<u32>({
     // clang-format on
 });
 
-int main() {
+auto main() -> i32 {
     auto       ctx       = Context::make({.level = log::Level::Trace});
     auto       window    = ctx.make_window({.title = "Example 02"});
     const auto device    = ctx.make_device();
@@ -135,8 +132,7 @@ int main() {
         .size  = sizeof(UboData),
         .usage = BufferUsage::Dynamic,
     });
-    const auto layout =
-        LayoutBuilder::make().add(Attribute::Position, 3, DataType::Float32).finish();
+    const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();
 
     const auto shader = device->make_shader({.label = std::nullopt, .source = shaders});
 
@@ -154,16 +150,9 @@ int main() {
         },
     });
 
-    const auto color = device->make_image({
-        .format        = ImageFormat::RGBA8,
-        .extent        = window.extent().to_extent3(),
-        .dimension     = ImageDimension::D2,
-        .mipmap_levels = 1,
-    });
-
     const auto quarter_angle = Degrees{45}.to_radians();
     u32        count         = 0;
-    log::info("starting main loop");
+
     while (!window.should_close()) {
         window.poll_events();
 
@@ -185,17 +174,13 @@ int main() {
                 .label = "Cube Pass",
                 .target =
                     RenderTarget{
-                        .colors =
-                            {
-                                RenderPassColorAttachment{
-                                    .image           = backbuffer,
-                                    .clear_color     = siren::Rgba::ZERO(),
-                                    .begin_operation = BeginOperation::Clear,
-                                    .end_operation   = EndOperation::None,
-                                },
-                            },
-                        .depth_stencil = std::nullopt,
-                    },
+                        .colors = {RenderPassColorAttachment{
+                            .image           = backbuffer,
+                            .clear_color     = siren::Rgba::ZERO(),
+                            .begin_operation = BeginOperation::Clear,
+                            .end_operation   = EndOperation::Store,
+                        }}
+                    }
             },
             [&](RenderCommandRecorder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
@@ -206,9 +191,7 @@ int main() {
             }
         );
 
-        device->submit(std::move(cmds));
-
-        swapchain.present();
+        swapchain.present(std::move(cmds).finish());
 
         count++;
     }

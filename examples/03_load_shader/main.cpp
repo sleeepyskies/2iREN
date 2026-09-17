@@ -36,10 +36,8 @@ int main() {
         },
         vertices.view()
     );
-    const auto layout = LayoutBuilder::make()
-                            .add(Attribute::Position, 3, DataType::Float32)
-                            .add(Attribute::Color, 4, DataType::Float32)
-                            .finish();
+    const auto layout =
+        LayoutBuilder::make().add(DataType::Float32, 3).add(DataType::Float32, 4).finish();
 
     const auto shaderh =
         server.load<ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
@@ -47,14 +45,17 @@ int main() {
     auto* shader_asset = server.get<ShaderAsset>(shaderh);
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = std::nullopt,
-        .layout            = layout,
+        .label             = "Load Shader Pipeline",
         .shader            = shader_asset->shader.handle(),
-        .alpha_mode        = AlphaMode::Opaque,
-        .depth_function    = DepthFunction::Less,
-        .back_face_culling = true,
-        .depth_test        = true,
-        .depth_write       = true,
+        .layout            = layout,
+        .color_attachments = GraphicsPipelineColorAttachments{
+            GraphicsPipelineColorAttachment{
+                .format      = ImageFormat::RGBA8,
+                .alpha_mode  = AlphaMode::Opaque,
+                .color_blend = BlendDescription{},
+                .alpha_blend = BlendDescription{},
+            },
+        },
     });
 
     const RenderTarget target{
@@ -62,8 +63,8 @@ int main() {
             {
                 {
                     .image           = swapchain.next_image(),
-                    .begin_operation = BeginOperation::Clear,
                     .clear_color     = Rgba::BLACK(),
+                    .begin_operation = BeginOperation::Clear,
                 },
             },
         .depth_stencil = std::nullopt
@@ -73,7 +74,9 @@ int main() {
     while (!window.should_close()) {
         window.poll_events();
 
-        device->render_pass({.target = target}, [&](RenderCommandRecorder& pass) -> void {
+        auto cmds = device->make_command_recorder();
+
+        cmds.render_pass({.target = target}, [&](RenderCommandRecorder& pass) -> void {
             pass.bind_graphics_pipeline(pipeline.handle());
             pass.bind_vertex_buffer(buffer.handle(), 0, 0);
             pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);

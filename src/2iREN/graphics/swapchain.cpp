@@ -30,6 +30,10 @@ auto Swapchain::descriptor() const -> const SwapchainDescriptor& {
     return m_device->swapchain_descriptor(m_handle);
 }
 
+auto Swapchain::info() const -> SwapchainInfo {
+    return m_device->swapchain_info(m_handle);
+}
+
 auto Swapchain::next_image() const -> ImageHandle {
     return m_device->acquire_next_swapchain_image(m_handle);
 }
@@ -38,8 +42,8 @@ auto Swapchain::present() const -> void {
     m_device->present(m_handle);
 }
 
-auto Swapchain::present_overlay(OverlayFunction&& overlay) const -> void {
-    m_device->present(m_handle, std::move(overlay));
+auto Swapchain::present(CommandList&& cmds) const -> void {
+    m_device->present(m_handle, std::move(cmds));
 }
 
 } // namespace siren

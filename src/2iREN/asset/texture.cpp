@@ -142,16 +142,17 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     }
     const usize data_size = width * height * channels;
 
-    auto image = ctx.device().make_image({
-        .label         = iname,
-        .format        = format,
-        .extent        = extent,
-        .dimension     = ImageDimension::D2,
-        .mipmap_levels = mipmap_levels,
-    });
-
     auto bytebuffer = ByteBuffer{std::span(data, data_size)};
-    ctx.device().upload_to_image(image.handle(), bytebuffer.view(), 0);
+    auto image      = ctx.device().make_image(
+        {
+            .label         = iname,
+            .format        = format,
+            .extent        = extent,
+            .dimension     = ImageDimension::D2,
+            .mipmap_levels = mipmap_levels,
+        },
+        bytebuffer.view()
+    );
 
     stbi_image_free(data);
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config->sampler)));
@@ -225,7 +226,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
 
     for (u32 i = 0; i < faces.size(); i++) {
         auto& [key, databuffer] = faces[i];
-        ctx.device().upload_to_image(image.handle(), databuffer.view(), i);
+        image.upload(databuffer.view(), i);
     }
 
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config.sampler)));

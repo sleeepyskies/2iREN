@@ -26,6 +26,7 @@ using ShaderHandle = ResourceHandle<Shader>;
 
 class Swapchain;
 struct SwapchainDescriptor;
+struct SwapchainInfo;
 using SwapchainHandle = ResourceHandle<Swapchain>;
 
 class Query;

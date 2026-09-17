@@ -1,5 +1,6 @@
 #include "image.hpp"
 
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
 
 namespace siren {
@@ -25,15 +26,11 @@ Image& Image::operator=(Image&& other) noexcept {
     return *this;
 }
 
-auto Image::clear(const Rgba color) const -> void {
-    m_device->clear_image(m_handle, color);
-}
-
-auto Image::clear(const u32 value) const -> void {
-    m_device->clear_image(m_handle, value);
-}
-
 auto Image::descriptor() const noexcept -> const ImageDescriptor& {
     return m_device->image_descriptor(m_handle);
+}
+
+auto Image::upload(const ByteBufferView, u32) -> void {
+    UNIMPLEMENTED();
 }
 } // namespace siren

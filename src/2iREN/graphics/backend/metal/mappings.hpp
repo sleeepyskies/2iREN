@@ -141,6 +141,13 @@ constexpr auto load_action(const BeginOperation& operation) -> MTL::LoadAction {
     }
 }
 
+constexpr auto store_action(const EndOperation& operation) -> MTL::StoreAction {
+    switch (operation) {
+        case EndOperation::Store: return MTL::StoreActionStore;
+        case EndOperation::Fuckit: return MTL::StoreActionDontCare;
+    }
+}
+
 [[nodiscard]]
 constexpr auto blend_operation(const BlendFunction function) -> MTL::BlendOperation {
     switch (function) {
@@ -179,11 +186,11 @@ constexpr auto pixel_format(const ImageFormat format) -> MTL::PixelFormat {
         case ImageFormat::R8: return MTL::PixelFormatR8Uint;
         case ImageFormat::R32UI: return MTL::PixelFormatR32Uint;
         case ImageFormat::RG32f: return MTL::PixelFormatRG32Float;
-        case ImageFormat::RGBA8: return MTL::PixelFormatInvalid;
-        case ImageFormat::sRGBA8: return MTL::PixelFormatInvalid;
-        case ImageFormat::RGBA16f: return MTL::PixelFormatInvalid;
-        case ImageFormat::Depth24Stencil8: return MTL::PixelFormatInvalid;
-        case ImageFormat::Depth32f: return MTL::PixelFormatInvalid;
+        case ImageFormat::RGBA8: return MTL::PixelFormatRGBA8Unorm;
+        case ImageFormat::sRGBA8: return MTL::PixelFormatRGBA8Unorm_sRGB;
+        case ImageFormat::RGBA16f: return MTL::PixelFormatRGBA16Float;
+        case ImageFormat::Depth24Stencil8: return MTL::PixelFormatDepth24Unorm_Stencil8;
+        case ImageFormat::Depth32f: return MTL::PixelFormatDepth32Float;
     }
 }
 

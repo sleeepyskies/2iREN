@@ -1,12 +1,11 @@
 #include "device.hpp"
 
 #include <Foundation/Foundation.hpp>
-#include <Metal/MTLCommandBuffer.hpp>
-#include <Metal/MTLPixelFormat.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
 #include <cstddef>
+#include <utility>
 #include <version>
 
 #include "2iREN/graphics/backend/metal/command_executor.hpp"
@@ -154,7 +153,10 @@ auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
     log::trace("destroyed buffer {}", handle);
 }
 
-auto MetalDevice::make_image(const ImageDescriptor& descriptor) -> Image {
+auto MetalDevice::make_image(
+    const ImageDescriptor&        descriptor,
+    std::optional<ByteBufferView> initial
+) -> Image {
     UNIMPLEMENTED();
 }
 
@@ -358,12 +360,12 @@ auto MetalDevice::destroy_query(QueryHandle handle) -> void {
 auto MetalDevice::submit(CommandList&& cmds) -> void {
     const auto autorelease = metal::AutoRelease{};
 
-    if (m_cmd_buffer.get() == nullptr) {
-        m_cmd_buffer = metal::retain_ptr(m_cmd_queue->commandBuffer());
-    }
+    auto cmd_buffer = metal::retain_ptr(m_cmd_queue->commandBuffer());
 
-    auto executor = MetalCommandExecutor{this->m_state, m_cmd_buffer};
+    auto executor = MetalCommandExecutor{this->m_state, cmd_buffer};
     executor.execute(std::move(cmds));
+
+    cmd_buffer->commit();
 
     m_statistics += executor.statistics();
 }
@@ -393,6 +395,16 @@ auto MetalDevice::swapchain_descriptor(SwapchainHandle handle) const -> const Sw
     return m_state.swapchains.details(handle).descriptor;
 }
 
+auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo {
+    const auto layer = m_state.swapchains.fetch(handle);
+
+    const auto pixel_format = layer->pixelFormat();
+
+    return SwapchainInfo{
+        .image_format = metal::image_format(pixel_format),
+    };
+}
+
 auto MetalDevice::query_descriptor(QueryHandle handle) const -> const QueryDescriptor& {
     UNIMPLEMENTED();
 }
@@ -402,20 +414,6 @@ auto MetalDevice::query_result(QueryHandle handle) const -> u64 {
 }
 
 auto MetalDevice::query_available(QueryHandle handle) const -> bool {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
-    -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::upload_to_buffer(BufferHandle buffer, ByteBufferView data, usize offset) const
-    -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::clear_image(ImageHandle image, ClearValue clearvalue) const -> void {
     UNIMPLEMENTED();
 }
 
@@ -436,8 +434,8 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
 
     auto* layer = m_state.swapchains.fetch(handle);
 
-    auto* drawable = layer->nextDrawable()->retain();
-    ASSERT_NOT_NULL(drawable, "could not fetch the next metal swapchain image.");
+    auto drawable = metal::retain_ptr(layer->nextDrawable());
+    auto texture  = drawable->texture();
 
     details.drawable = drawable;
     const auto size  = layer->drawableSize();
@@ -449,50 +447,52 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
             .format        = metal::image_format(layer->pixelFormat()),
             .extent        = Extent2u{size.width, size.height}.to_extent3(),
             .dimension     = ImageDimension::D2,
-            .mipmap_levels = 1,
+            .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
         }
     );
 
     return *details.image;
 }
 
-auto MetalDevice::present(SwapchainHandle handle, OverlayFunction&& overlay) -> void {
+auto MetalDevice::present(SwapchainHandle handle) -> void {
     auto& details  = m_state.swapchains.details(handle);
-    auto* drawable = details.drawable;
-    ASSERT_NOT_NULL(drawable, "cannot present swapchain, no drawable present.");
+    auto  drawable = details.drawable;
 
-    m_cmd_buffer->presentDrawable(drawable);
-    m_cmd_buffer->commit();
-    m_cmd_buffer->waitUntilCompleted();
-
-    ASSERT_NOT_NULL(m_cmd_buffer.get(), "cannot present swapchain, no command buffer exists.");
+    ASSERT_NOT_NULL(drawable.get(), "metal: cannot present swapchain, no drawable present.");
 
     if (details.drawable) {
         details.drawable->release();
     }
+    details.drawable = nullptr;
     if (details.image) {
         m_state.images.release(*details.image);
     }
+    details.image = std::nullopt;
+}
 
-    m_cmd_buffer     = nullptr;
-    details.drawable = nullptr;
+auto MetalDevice::present(SwapchainHandle handle, CommandList&& cmds) -> void {
+    const auto autorelease = metal::AutoRelease{};
+
+    auto& details  = m_state.swapchains.details(handle);
+    auto  drawable = details.drawable;
+
+    ASSERT_NOT_NULL(drawable.get(), "metal: cannot present swapchain, no drawable present.");
+
+    auto cmd_buffer = metal::retain_ptr(m_cmd_queue->commandBuffer());
+
+    auto executor = MetalCommandExecutor{this->m_state, cmd_buffer};
+    executor.execute(std::move(cmds));
+
+    cmd_buffer->presentDrawable(drawable.get());
+    cmd_buffer->commit();
+
+    m_statistics += executor.statistics();
+
+    if (details.image) {
+        m_state.images.release(*details.image);
+    }
     details.image    = std::nullopt;
-}
-
-auto MetalDevice::blit_to_image(ImageHandle source, ImageHandle destination) const -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::read_image(const ImageHandle image) const -> std::vector<u8> {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::limits() const -> const Limits& {
-    return m_limits;
-}
-
-auto MetalDevice::statistics() const -> Statistics {
-    return m_statistics;
+    details.drawable = nullptr;
 }
 
 } // namespace siren

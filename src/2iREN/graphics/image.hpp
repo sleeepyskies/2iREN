@@ -6,6 +6,7 @@
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/math/color.hpp"
 #include "2iREN/math/extent.hpp"
+#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
 
@@ -106,15 +107,15 @@ public:
 /// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
     /// @brief An optional label.
-    Label label = std::nullopt;
+    Label          label = std::nullopt;
     /// @brief The format of the image data (num channels/bytes per channel).
-    ImageFormat format;
+    ImageFormat    format;
     /// @brief Extent of the image.
-    Extent3u extent;
+    Extent3u       extent;
     /// @brief The dimensionality of the image.
     ImageDimension dimension;
     /// @brief How many mip map levels to generate.
-    u32 mipmap_levels;
+    u32            mipmap_levels;
 };
 
 /// @brief A gpu resource representing image data.
@@ -127,14 +128,12 @@ public:
     Image(Image&& other) noexcept;
     Image& operator=(Image&& other) noexcept;
 
-    /// @brief Clears the image with the provided color.
-    auto clear(const Rgba color) const -> void;
-    /// @brief Clears the image with the provided value.
-    auto clear(const u32 value) const -> void;
-
     /// @brief Returns the descriptor of this Image.
     [[nodiscard]]
     auto descriptor() const noexcept -> const ImageDescriptor&;
+
+    /// @brief Uploads data into the image at the given mipmap level.
+    auto upload(const ByteBufferView data, u32 level = 0) -> void;
 };
 
 } // namespace siren

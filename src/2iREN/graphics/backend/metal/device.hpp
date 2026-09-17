@@ -4,6 +4,7 @@
 
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
+#include <QuartzCore/QuartzCore.hpp>
 
 #include "2iREN/graphics/backend/metal/fwd.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
@@ -13,7 +14,6 @@
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/shader.hpp"
-#include "2iREN/graphics/statistics.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 
 namespace siren {
@@ -25,12 +25,12 @@ struct MetalShaderDetails {
 
 struct MetalSwapchainDetails {
     /// @brief The original descriptor of the object.
-    SwapchainDescriptor        descriptor;
+    SwapchainDescriptor              descriptor;
     /// @brief The drawable retrieved via the MetalLayer.
-    CA::MetalDrawable*         drawable = nullptr;
+    NS::SharedPtr<CA::MetalDrawable> drawable = nullptr;
     /// @brief The image wrapper of the next swapchain image. Is reset after
     /// each call to present.
-    std::optional<ImageHandle> image    = std::nullopt;
+    std::optional<ImageHandle>       image    = std::nullopt;
 };
 
 struct MetalDeviceState {
@@ -52,7 +52,8 @@ public:
         -> Buffer override;
 
     [[nodiscard]]
-    auto make_image(const ImageDescriptor& descriptor) -> Image override;
+    auto make_image(const ImageDescriptor& descriptor, std::optional<ByteBufferView> initial)
+        -> Image override;
 
     [[nodiscard]]
     auto make_sampler(const SamplerDescriptor& descriptor) -> Sampler override;
@@ -105,23 +106,16 @@ public:
     auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
 
     [[nodiscard]]
+    auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo override;
+
+    [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
     auto submit(CommandList&& cmds) -> void override;
 
-    auto upload_to_image(ImageHandle image, ByteBufferView data, usize layer) const
-        -> void override;
+    auto present(SwapchainHandle handle) -> void override;
 
-    auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, usize offset) const
-        -> void override;
-
-    auto clear_image(ImageHandle image, ClearValue clearvalue) const -> void override;
-
-    auto blit_to_image(ImageHandle source, ImageHandle destination) const -> void override;
-
-    auto read_image(ImageHandle image) const -> std::vector<u8> override;
-
-    auto present(SwapchainHandle handle, OverlayFunction&& overlay = nullptr) -> void override;
+    auto present(SwapchainHandle handle, CommandList&& cmds) -> void override;
 
     auto query_result(QueryHandle handle) const -> u64 override;
 
@@ -132,24 +126,18 @@ public:
     auto end_conditional_render() const -> void override;
 
     [[nodiscard]]
-    auto limits() const -> const Limits& override;
-
-    [[nodiscard]]
-    auto statistics() const -> Statistics override;
-
-    [[nodiscard]]
     auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle override;
 
     auto wait_idle() const noexcept -> void override;
 
 private:
-    MetalDeviceState                  m_state       = {};
-    NS::SharedPtr<MTL::Device>        m_device      = nullptr;
-    NS::SharedPtr<MTL::CommandQueue>  m_cmd_queue   = nullptr;
-    NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer  = nullptr;
-    metal::AutoRelease                m_autorelease = {};
-    Limits                            m_limits      = {};
-    Statistics                        m_statistics  = {};
+    MetalDeviceState m_state  = {};
+    Limits           m_limits = {};
+
+    NS::SharedPtr<MTL::Device>       m_device    = nullptr;
+    NS::SharedPtr<MTL::CommandQueue> m_cmd_queue = nullptr;
+
+    metal::AutoRelease m_autorelease = {};
 };
 
 } // namespace siren

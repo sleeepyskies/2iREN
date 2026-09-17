@@ -326,7 +326,7 @@ auto CommandRecorder::render_pass(
 
     m_commands.append_range(std::move(recorder).finish());
 
-    const auto end = m_commands.size() - 1;
+    const auto end = m_commands.size();
 
     m_passes.emplace_back(descriptor, Range<usize>{start, end});
 }
@@ -343,7 +343,7 @@ auto CommandRecorder::transfer_pass(
 
     m_commands.append_range(std::move(recorder).finish());
 
-    const auto end = m_commands.size() - 1;
+    const auto end = m_commands.size();
 
     m_passes.emplace_back(descriptor, Range<usize>{start, end});
 }
