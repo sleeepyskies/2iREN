@@ -5,10 +5,10 @@
 #include <stb_image.h>
 
 #include "2iREN/asset/asset_server.hpp"
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/defer.hpp"
 #include "2iREN/graphics/device.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/filesystem.hpp"
 
 /// For docs on GLTF see:

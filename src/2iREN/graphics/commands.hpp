@@ -4,12 +4,13 @@
 #include <memory>
 #include <unordered_map>
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/math/color.hpp"
 #include "2iREN/math/range.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/identifier.hpp"
 
 namespace siren {

@@ -9,6 +9,10 @@
 
 namespace siren {
 
+/// @brief Ensures that two types Left and Right are equal.
+template <typename Left, typename Right>
+concept IsSameType = std::is_same_v<Left, Right>;
+
 /// @brief Ensures that the type T is some numerical type.
 template <typename T>
 concept IsArithmetic = std::is_arithmetic_v<T>;
@@ -21,17 +25,17 @@ concept IsComparable = std::three_way_comparable<T>;
 template <typename T>
 concept IsReference = std::is_reference_v<T>;
 
-/// @brief Ensures a type is an enum.
+/// @brief Ensures a type is an enum class.
 /// @tparam E The type to check.
 template <typename E>
-concept IsEnum = std::is_enum_v<E>;
+concept IsEnum = std::is_scoped_enum_v<E>;
 
 /// @brief Ensures a type is an enum with a Max member for sizing.
 /// @tparam E The type to check.
 /// @note There is no guarantee that Max is actually the size of the enum,
 /// it is just a convention.
 template <typename E>
-concept IsSizedEnum = std::is_enum_v<E> && requires {
+concept IsSizedEnum = std::is_scoped_enum_v<E> && requires {
     { std::to_underlying(E::Max) } -> std::convertible_to<usize>;
 };
 

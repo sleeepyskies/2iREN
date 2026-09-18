@@ -29,7 +29,7 @@ template <typename Type>
 [[nodiscard]] constexpr std::string_view stripped_type_name() noexcept {
 #if defined SIREN_PRETTY_FUNCTION
     const std::string_view full_name{pretty_function<Type>()};
-    const auto first =
+    const auto             first =
         full_name.find_first_not_of(' ', full_name.find_first_of(SIREN_PRETTY_FUNCTION_PREFIX) + 1);
     return full_name.substr(first, full_name.find_last_of(SIREN_PRETTY_FUNCTION_SUFFIX) - first);
 #else

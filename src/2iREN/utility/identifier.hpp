@@ -36,13 +36,13 @@ template <typename T>
 class Identifier {
 protected:
     /// @brief The main storage type of the packed id.
-    using IdType = u64;
+    using IdType         = u64;
     /// @brief The type used for indexing.
-    using IndexType = u32;
+    using IndexType      = u32;
     /// @brief The type used for the generation of the id.
     using GenerationType = u16;
     /// @brief The type used for custom additional data.
-    using Meta = u16;
+    using Meta           = u16;
 
     static constexpr IdType INVALID_ID = std::numeric_limits<IdType>::max();
 
@@ -50,11 +50,8 @@ protected:
     IdType m_id = INVALID_ID;
 
     constexpr Identifier() noexcept = default;
-    constexpr Identifier(
-        const IndexType idx,
-        const GenerationType gen,
-        const Meta meta
-    ) noexcept : m_id(pack(idx, gen, meta)) { }
+    constexpr Identifier(const IndexType idx, const GenerationType gen, const Meta meta) noexcept :
+        m_id(pack(idx, gen, meta)) { }
 
 public:
     Identifier(const Identifier&)            = default;
@@ -101,8 +98,7 @@ public:
     }
 
     /// @brief Equality comparison based on the inner 64-bit value.
-    [[nodiscard]] friend bool operator==(const Identifier&, const Identifier&) =
-        default;
+    [[nodiscard]] friend bool operator==(const Identifier&, const Identifier&) = default;
 
     /// @brief Default to_string implementation for all Identifiers.
     constexpr auto to_string() const noexcept -> std::string {
@@ -110,11 +106,8 @@ public:
     }
 
 private:
-    static constexpr auto pack(
-        const IndexType idx,
-        const GenerationType gen,
-        const Meta meta
-    ) -> IdType {
+    static constexpr auto pack(const IndexType idx, const GenerationType gen, const Meta meta)
+        -> IdType {
         IdType id = 0;
         id += static_cast<IdType>(idx) << 32;
         id += static_cast<IdType>(gen) << 16;
@@ -139,8 +132,7 @@ inline NullIdentifier_t NullID{};
 
 template <typename T>
 struct std::hash<siren::Identifier<T>> {
-    auto operator()(const siren::Identifier<T>& id) const noexcept
-        -> siren::usize {
+    auto operator()(const siren::Identifier<T>& id) const noexcept -> siren::usize {
         return id.hash();
     }
 };

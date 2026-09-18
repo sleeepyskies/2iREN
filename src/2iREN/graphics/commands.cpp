@@ -1,7 +1,6 @@
 #include "commands.hpp"
 
 #include "2iREN/graphics/device.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
 

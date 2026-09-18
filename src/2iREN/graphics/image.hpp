@@ -1,12 +1,10 @@
 #pragma once
 
 #include <optional>
-#include <string>
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/math/color.hpp"
 #include "2iREN/math/extent.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
 

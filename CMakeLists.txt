@@ -31,6 +31,7 @@ include(cmake/dependencies.cmake)
 
 add_subdirectory(src/2iREN/asset)
 add_subdirectory(src/2iREN/concurrency)
+add_subdirectory(src/2iREN/container)
 add_subdirectory(src/2iREN/core)
 add_subdirectory(src/2iREN/graphics)
 add_subdirectory(src/2iREN/impl)

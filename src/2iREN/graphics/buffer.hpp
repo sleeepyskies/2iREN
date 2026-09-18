@@ -1,13 +1,15 @@
 #pragma once
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
+
 class ByteBuffer;
 
 /// @brief Defines the usage of a Buffer.
+/// TODO: this should use FlagSet instead.
 enum class BufferUsage {
     /// @brief Data is uploaded once and is thereafter read only.
     Static,
@@ -45,9 +47,9 @@ public:
 /// or just remove entirely
 struct BufferDescriptor {
     /// @brief An optional label.
-    Label label = std::nullopt;
+    Label       label = std::nullopt;
     /// @brief The initial size of the buffer in bytes.
-    usize size;
+    usize       size;
     /// @brief The intended use of the buffer.
     BufferUsage usage;
 };

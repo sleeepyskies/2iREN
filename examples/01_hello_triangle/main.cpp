@@ -101,7 +101,7 @@ auto main() -> i32 {
         {
             .label = "Vertex Buffer",
             .size  = vertices.size_bytes(),
-            .usage = BufferUsage::Static,
+            .usage = BufferUsageFlags::from(BufferUsage::Static),
         },
         vertices.view()
     );

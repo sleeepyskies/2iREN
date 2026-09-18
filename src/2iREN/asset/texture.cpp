@@ -5,9 +5,9 @@
 #include <yaml-cpp/yaml.h>
 
 #include "2iREN/asset/asset_server.hpp"
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/log.hpp"
 

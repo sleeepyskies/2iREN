@@ -89,11 +89,11 @@ inline auto initialize(const Level lvl) -> void {
 /// @param fmt The format string.
 /// @param args The type-erased format arguments.
 inline void log(
-    const Level lvl,
-    const u32 color_code,
+    const Level                 lvl,
+    const u32                   color_code,
     const std::source_location& loc,
-    const std::string_view fmt,
-    const std::format_args args
+    const std::string_view      fmt,
+    const std::format_args      args
 ) {
     if (lvl < impl::level) {
         return;
@@ -102,7 +102,7 @@ inline void log(
     const auto usermsg = std::vformat(fmt, args);
     const auto now =
         std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
-    const auto threadid = std::this_thread::get_id();
+    const auto        threadid = std::this_thread::get_id();
     const std::string locationstring =
         std::format("{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column());
 
@@ -122,11 +122,11 @@ inline void log(
 template <typename... Args>
 struct LogMessage {
     std::format_string<Args...> fmt;
-    std::source_location sl;
+    std::source_location        sl;
 
     template <typename T>
     consteval LogMessage(
-        const T& s,
+        const T&                   s,
         const std::source_location loc = std::source_location::current()
     ) : fmt(s), sl(loc) { }
 };
