@@ -125,7 +125,7 @@ auto ShaderLoader::load_msl(
     const auto base_dir = Path{ctx.path().full_path()}.parent_path();
 
     const auto vertex_name   = msl[keys::VERTEX].as<std::string>();
-    const auto fragment_name = msl[keys::VERTEX].as<std::string>();
+    const auto fragment_name = msl[keys::FRAGMENT].as<std::string>();
 
     const auto source = fetch_source_code(msl, base_dir);
 
