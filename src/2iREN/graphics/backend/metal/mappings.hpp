@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Metal/MTL4PipelineState.hpp>
+#include <Metal/MTLDepthStencil.hpp>
 #include <Metal/MTLPixelFormat.hpp>
 #include <Metal/MTLRenderCommandEncoder.hpp>
 #include <Metal/MTLRenderPass.hpp>
@@ -200,6 +201,29 @@ constexpr auto pixel_format(const ImageFormat format) -> MTL::PixelFormat {
         case ImageFormat::RGBA16f: return MTL::PixelFormatRGBA16Float;
         case ImageFormat::Depth24Stencil8: return MTL::PixelFormatDepth24Unorm_Stencil8;
         case ImageFormat::Depth32f: return MTL::PixelFormatDepth32Float;
+    }
+}
+
+[[nodiscard]]
+constexpr auto cull_mode(const CullMode mode) -> MTL::CullMode {
+    switch (mode) {
+        case CullMode::None: return MTL::CullModeNone;
+        case CullMode::Front: return MTL::CullModeFront;
+        case CullMode::Back: return MTL::CullModeBack;
+    }
+}
+
+[[nodiscard]]
+constexpr auto compare_function(const DepthFunction function) -> MTL::CompareFunction {
+    switch (function) {
+        case DepthFunction::Always: return MTL::CompareFunctionAlways;
+        case DepthFunction::Never: return MTL::CompareFunctionNever;
+        case DepthFunction::Less: return MTL::CompareFunctionLess;
+        case DepthFunction::Equal: return MTL::CompareFunctionEqual;
+        case DepthFunction::LessEqual: return MTL::CompareFunctionLessEqual;
+        case DepthFunction::Greater: return MTL::CompareFunctionGreater;
+        case DepthFunction::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
+        case DepthFunction::NotEqual: return MTL::CompareFunctionNotEqual;
     }
 }
 

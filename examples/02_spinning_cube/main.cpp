@@ -1,3 +1,4 @@
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
@@ -8,13 +9,12 @@
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/math/angle.hpp"
 #include "2iREN/math/mat4x4.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/window/window.hpp"
 
 using namespace siren;
 
 struct Vertex {
-    f32 x, y, z;
+    Vec3f pos;
 };
 
 struct UboData {
@@ -28,6 +28,7 @@ using namespace metal;
 
 struct VertexOut {
     float4 position [[position]];
+    float3 local_pos;
 };
 
 struct VertexIn {
@@ -43,12 +44,13 @@ auto vertex vmain(
     constant Uniforms& uniforms [[buffer(1)]]
 ) -> VertexOut {
     return VertexOut {
-        uniforms.transform * float4(in.position, 1.0)
+        uniforms.transform * float4(in.position, 1.0),
+        in.position,
     };
 }
 
 auto fragment fmain(VertexOut in [[stage_in]]) -> float4 {
-    return in.position / 2;
+    return float4(in.local_pos.xyz + 0.5, 1.0);
 }
 )";
 const auto vertex_shader = ShaderData{
@@ -98,14 +100,14 @@ const std::unordered_map<ShaderStage, ShaderData> shaders = {
 };
 
 const auto vertices = ByteBuffer{
-    Vertex{-0.5f, -0.5f, 0.5f},
-    Vertex{0.5f, -0.5f, 0.5f},
-    Vertex{0.5f, 0.5f, 0.5f},
-    Vertex{-0.5f, 0.5f, 0.5f},
-    Vertex{-0.5f, -0.5f, -0.5f},
-    Vertex{0.5f, -0.5f, -0.5f},
-    Vertex{0.5f, 0.5f, -0.5f},
-    Vertex{-0.5f, 0.5f, -0.5f},
+    Vertex{Vec3f{-0.5f, -0.5f, -0.5f}},
+    Vertex{Vec3f{0.5f, -0.5f, -0.5f}},
+    Vertex{Vec3f{0.5f, 0.5f, -0.5f}},
+    Vertex{Vec3f{-0.5f, 0.5f, -0.5f}},
+    Vertex{Vec3f{-0.5f, -0.5f, 0.5f}},
+    Vertex{Vec3f{0.5f, -0.5f, 0.5f}},
+    Vertex{Vec3f{0.5f, 0.5f, 0.5f}},
+    Vertex{Vec3f{-0.5f, 0.5f, 0.5f}},
 };
 const auto indices = ByteBuffer::make<u32>({
     // clang-format off
@@ -150,17 +152,26 @@ auto main() -> i32 {
     const auto shader = device->make_shader({.label = std::nullopt, .source = shaders});
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = "Cube Pipeline",
-        .shader            = shader.handle(),
-        .layout            = layout,
-        .color_attachments = GraphicsPipelineColorAttachments{
-            GraphicsPipelineColorAttachment{
-                .format      = ImageFormat::RGBA8,
-                .alpha_mode  = AlphaMode::Opaque,
-                .color_blend = BlendDescription{},
-                .alpha_blend = BlendDescription{},
+        .label    = "Cube Pipeline",
+        .shader   = shader.handle(),
+        .layout   = layout,
+        .topology = PrimitiveTopology::Triangles,
+        .colors =
+            ColorAttachmentDescriptors{
+                ColorAttachmentDescriptor{
+                    .format      = swapchain.info().image_format,
+                    .alpha_mode  = AlphaMode::Opaque,
+                    .color_blend = {},
+                    .alpha_blend = {},
+                },
             },
-        },
+        .depth_stencil =
+            DepthStencilAttachmentDescriptor{
+                .format         = ImageFormat::Depth32f,
+                .depth_function = DepthFunction::Less,
+                .depth_write    = true,
+            },
+        .cull_mode = CullMode::Back,
     });
 
     const auto quarter_angle = Degrees{45}.to_radians();
@@ -189,20 +200,24 @@ auto main() -> i32 {
                 .label = "Cube Pass",
                 .target =
                     RenderTarget{
-                        .colors = {RenderPassColorAttachment{
-                            .image           = backbuffer,
-                            .clear_color     = siren::Rgba::ZERO(),
-                            .begin_operation = BeginOperation::Clear,
-                            .end_operation   = EndOperation::Store,
-                        }}
-                    }
+                        .colors =
+                            {
+                                RenderPassColorAttachment{
+                                    .image           = backbuffer,
+                                    .clear_color     = siren::Rgba::BLACK(),
+                                    .begin_operation = BeginOperation::Clear,
+                                    .end_operation   = EndOperation::Store,
+                                },
+                            },
+                        .depth_stencil = std::nullopt,
+                    },
             },
             [&](RenderCommandRecorder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
                 pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
                 pass.bind_uniform_buffer(uniform_buffer.handle(), 1);
-                pass.draw_indexed(PrimitiveTopology::Triangles, indices.size_as<u32>(), 0);
+                pass.draw_indexed(indices.size_as<u32>(), 0);
             }
         );
 

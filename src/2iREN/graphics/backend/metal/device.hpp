@@ -34,10 +34,13 @@ struct MetalSwapchainDetails {
 };
 
 struct MetalDeviceState {
-    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers    = {};
-    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails>    swapchains = {};
-    RenderResourceTable<MTL::Library*, Shader, MetalShaderDetails>            shaders    = {};
-    RenderResourceTable<MTL::RenderPipelineState*, GraphicsPipeline, GraphicsPipelineDescriptor>
+    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor>    buffers    = {};
+    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails>       swapchains = {};
+    RenderResourceTable<NS::SharedPtr<MTL::Library>, Shader, MetalShaderDetails> shaders    = {};
+    RenderResourceTable<
+        NS::SharedPtr<MTL::RenderPipelineState>,
+        GraphicsPipeline,
+        GraphicsPipelineDescriptor>
                                                                pipelines = {};
     RenderResourceTable<MTL::Texture*, Image, ImageDescriptor> images    = {};
 };

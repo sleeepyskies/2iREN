@@ -1,22 +1,17 @@
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 #include "2iREN/utility/log.hpp"
 #include "2iREN/window/window.hpp"
 
 using namespace siren;
 
-struct Vertex {
-    f32 x, y;
-    f32 r, g, b, a;
-};
-
 #ifdef SIREN_MACOS
-const auto       shader_source = R"(
+const auto shader_source = R"(
 #include <metal_stdlib>
 using namespace metal;
 
@@ -41,12 +36,12 @@ fragment auto fmain(VertexOut in [[stage_in]]) -> float4 {
     return in.color;
 }
 )";
-const ShaderData vertex_shader{
+const auto vertex_shader = ShaderData{
     .label  = "Triangle Vertex Shader",
     .source = shader_source,
     .entry  = "vmain",
 };
-const ShaderData fragment_shader{
+const auto fragment_shader = ShaderData{
     .label  = "Triangle Fragment Shader",
     .source = shader_source,
     .entry  = "fmain",
@@ -85,10 +80,15 @@ const std::unordered_map<ShaderStage, ShaderData> shaders = {
     {ShaderStage::Fragment, fragment_shader},
 };
 
+struct Vertex {
+    Vec2f pos;
+    Rgba  color;
+};
+
 const auto vertices = ByteBuffer{
-    Vertex{0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f},
-    Vertex{-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f},
-    Vertex{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f},
+    Vertex{Vec2f{0.0f, 0.5f}, Rgba::RED()},
+    Vertex{Vec2f{-0.5f, -0.5f}, Rgba::BLUE()},
+    Vertex{Vec2f{0.5f, -0.5f}, Rgba::GREEN()},
 };
 
 auto main() -> i32 {
@@ -101,7 +101,7 @@ auto main() -> i32 {
         {
             .label = "Vertex Buffer",
             .size  = vertices.size_bytes(),
-            .usage = BufferUsageFlags::from(BufferUsage::Static),
+            .usage = BufferUsage::Static,
         },
         vertices.view()
     );
@@ -111,17 +111,21 @@ auto main() -> i32 {
     const auto shader = device->make_shader({.label = "Triangle Shader", .source = shaders});
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = "Triangle Pipeline",
-        .shader            = shader.handle(),
-        .layout            = layout,
-        .color_attachments = GraphicsPipelineColorAttachments{
-            GraphicsPipelineColorAttachment{
-                .format      = swapchain.info().image_format,
-                .alpha_mode  = AlphaMode::Opaque,
-                .color_blend = {},
-                .alpha_blend = {},
+        .label    = "Triangle Pipeline",
+        .shader   = shader.handle(),
+        .layout   = layout,
+        .topology = PrimitiveTopology::Triangles,
+        .colors =
+            ColorAttachmentDescriptors{
+                ColorAttachmentDescriptor{
+                    .format      = swapchain.info().image_format,
+                    .alpha_mode  = AlphaMode::Opaque,
+                    .color_blend = {},
+                    .alpha_blend = {},
+                },
             },
-        },
+        .depth_stencil = std::nullopt,
+        .cull_mode     = CullMode::Back,
     });
 
     while (!window.should_close()) {
@@ -140,7 +144,7 @@ auto main() -> i32 {
                             {
                                 RenderPassColorAttachment{
                                     .image           = backbuffer,
-                                    .clear_color     = Rgba::lerp(Rgba::WHITE(), Rgba::BLACK()),
+                                    .clear_color     = Rgba::lerp(Rgba::WHITE(), Rgba::RED()),
                                     .begin_operation = BeginOperation::Clear,
                                     .end_operation   = EndOperation::Store,
                                 },
@@ -151,7 +155,7 @@ auto main() -> i32 {
             [&](RenderCommandRecorder& pass) {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
+                pass.draw_arrays(0, 3);
             }
         );
 

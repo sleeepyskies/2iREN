@@ -2,6 +2,7 @@
 
 #include <Foundation/Foundation.hpp>
 #include <Metal/MTLBlitCommandEncoder.hpp>
+#include <Metal/MTLDepthStencil.hpp>
 #include <Metal/MTLRenderCommandEncoder.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
@@ -14,6 +15,7 @@
 #include "2iREN/graphics/backend/metal/util.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 
 namespace siren {
 
@@ -63,42 +65,35 @@ auto MetalCommandExecutor::execute_render_pass(
         mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
     }
 
+    // setup depth stencil
     if (descriptor.target.depth_stencil) {
-        // setup depth
-        {
-            auto& attachment     = *descriptor.target.depth_stencil;
-            auto* mtl_attachment = desc->depthAttachment();
-            auto* mtl_texture    = m_state.images.fetch(attachment.image);
+        auto& attachment  = *descriptor.target.depth_stencil;
+        auto* depth       = desc->depthAttachment();
+        auto* depth_txt   = m_state.images.fetch(attachment.image);
+        auto* stencil     = desc->stencilAttachment();
+        auto* stencil_txt = m_state.images.fetch(attachment.image);
 
-            mtl_attachment->setTexture(mtl_texture);
-            mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
-            mtl_attachment->setClearDepth(attachment.clear_depth);
-            mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
-        }
+        depth->setTexture(depth_txt);
+        depth->setLoadAction(metal::load_action(attachment.begin_operation));
+        depth->setClearDepth(attachment.clear_depth);
+        depth->setStoreAction(metal::store_action(attachment.end_operation));
 
-        // setup stencil
-        {
-            auto& attachment     = *descriptor.target.depth_stencil;
-            auto* mtl_attachment = desc->stencilAttachment();
-            auto* mtl_texture    = m_state.images.fetch(attachment.image);
-
-            mtl_attachment->setTexture(mtl_texture);
-            mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
-            mtl_attachment->setClearStencil(attachment.clear_stencil);
-            mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
-        }
+        stencil->setTexture(stencil_txt);
+        stencil->setLoadAction(metal::load_action(attachment.begin_operation));
+        stencil->setClearStencil(attachment.clear_stencil);
+        stencil->setStoreAction(metal::store_action(attachment.end_operation));
     }
 
-    auto cmd_encoder = m_cmd_buffer->renderCommandEncoder(desc.get());
+    auto encoder = m_cmd_buffer->renderCommandEncoder(desc.get());
 
     for (const auto& cmd : cmds) {
         switch (cmd.type) {
             case CommandKind::BindGraphicsPipeline: {
-                bind_graphics_pipeline(cmd_encoder, cmd.as<BindGraphicsPipeline>());
+                bind_graphics_pipeline(encoder, cmd.as<BindGraphicsPipeline>());
                 break;
             }
             case CommandKind::BindVertexBuffer: {
-                bind_vertex_buffer(cmd_encoder, cmd.as<BindVertexBuffer>());
+                bind_vertex_buffer(encoder, cmd.as<BindVertexBuffer>());
                 break;
             }
             case CommandKind::BindIndexBuffer: {
@@ -106,16 +101,16 @@ auto MetalCommandExecutor::execute_render_pass(
                 break;
             }
             case CommandKind::BindUniformBuffer: {
-                bind_uniform_buffer(cmd_encoder, cmd.as<BindUniformBuffer>());
+                bind_uniform_buffer(encoder, cmd.as<BindUniformBuffer>());
                 break;
             }
 
             case CommandKind::DrawArrays: {
-                draw_arrays(cmd_encoder, cmd.as<DrawArrays>());
+                draw_arrays(encoder, cmd.as<DrawArrays>());
                 break;
             }
             case CommandKind::DrawIndexed: {
-                draw_indexed(cmd_encoder, cmd.as<DrawIndexed>());
+                draw_indexed(encoder, cmd.as<DrawIndexed>());
                 break;
             }
 
@@ -125,7 +120,7 @@ auto MetalCommandExecutor::execute_render_pass(
 
     m_bindings = {};
 
-    cmd_encoder->endEncoding();
+    encoder->endEncoding();
 }
 
 auto MetalCommandExecutor::execute_transfer_pass(
@@ -151,8 +146,33 @@ auto MetalCommandExecutor::bind_graphics_pipeline(
     MTL::RenderCommandEncoder*  encoder,
     const BindGraphicsPipeline& bind_graphics_pipeline
 ) -> void {
-    auto* pipeline_state = m_state.pipelines.fetch(bind_graphics_pipeline.pipeline_handle);
+    const auto& descriptor = m_state.pipelines.details(bind_graphics_pipeline.pipeline_handle);
+    auto* pipeline_state   = m_state.pipelines.fetch(bind_graphics_pipeline.pipeline_handle).get();
     encoder->setRenderPipelineState(pipeline_state);
+
+    m_bindings.pipeline = descriptor;
+
+    // we set format, alpha mode, color and alpha blend during creation of the RenderPipelineState
+    // so for now we can skip
+
+    // depth stencil pipeline state
+    if (descriptor.depth_stencil.has_value()) {
+        // TODO: where do we set depth stencil pixel format? no way to set atm I think...
+        auto ds_desc = metal::transfer_ptr(MTL::DepthStencilDescriptor::alloc()->init());
+        ds_desc->setDepthCompareFunction(
+            metal::compare_function(descriptor.depth_stencil->depth_function)
+        );
+        ds_desc->setDepthWriteEnabled(descriptor.depth_stencil->depth_write);
+
+        auto ds_state =
+            metal::transfer_ptr(m_cmd_buffer->device()->newDepthStencilState(ds_desc.get()));
+        encoder->setDepthStencilState(ds_state.get());
+    }
+
+    // cull mode
+    encoder->setCullMode(metal::cull_mode(descriptor.cull_mode));
+    // force always CCW winding
+    encoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
 }
 
 auto MetalCommandExecutor::bind_vertex_buffer(
@@ -164,7 +184,10 @@ auto MetalCommandExecutor::bind_vertex_buffer(
 }
 
 auto MetalCommandExecutor::bind_index_buffer(const BindIndexBuffer& bind_index_buffer) -> void {
-    m_bindings.index_buffer = bind_index_buffer;
+    m_bindings.index_buffer = Bindings::IndexBuf{
+        .buf    = m_state.buffers.fetch(bind_index_buffer.index_buffer).get(),
+        .format = bind_index_buffer.index_format,
+    };
 }
 
 auto MetalCommandExecutor::bind_uniform_buffer(
@@ -179,8 +202,12 @@ auto MetalCommandExecutor::draw_arrays(
     MTL::RenderCommandEncoder* encoder,
     const DrawArrays&          draw_arrays
 ) -> void {
+    ASSERT(
+        m_bindings.pipeline.has_value(), "cannot draw arrays without a bound graphics pipeline."
+    );
+
     encoder->drawPrimitives(
-        metal::primitive_type(draw_arrays.primitive_topology), draw_arrays.start, draw_arrays.count
+        metal::primitive_type(m_bindings.pipeline->topology), draw_arrays.start, draw_arrays.count
     );
 }
 
@@ -188,17 +215,17 @@ auto MetalCommandExecutor::draw_indexed(
     MTL::RenderCommandEncoder* encoder,
     const DrawIndexed&         draw_indexed
 ) -> void {
+    ASSERT(m_bindings.index_buffer.has_value(), "cannot draw indexed without bound index buffer.");
+
     ASSERT(
-        m_bindings.index_buffer.has_value(),
-        "metal: cannot draw indexed without bound index buffer."
+        m_bindings.pipeline.has_value(), "cannot draw arrays without a bound graphics pipeline."
     );
-    auto idxbuf = m_state.buffers.fetch(m_bindings.index_buffer->index_buffer);
 
     encoder->drawIndexedPrimitives(
-        metal::primitive_type(draw_indexed.primitive_topology),
+        metal::primitive_type(m_bindings.pipeline->topology),
         draw_indexed.index_count,
-        metal::index_type(m_bindings.index_buffer->index_format),
-        idxbuf.get(),
+        metal::index_type(m_bindings.index_buffer->format),
+        m_bindings.index_buffer->buf,
         0
     );
 }

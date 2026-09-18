@@ -75,6 +75,7 @@ constexpr auto error_msg(NS::Error* err) -> std::string {
     return out.empty() ? "unknown metal error." : out;
 }
 
+/// @brief Checks if an erroy occurred during making objcect.
 template <typename T>
 constexpr auto check_error(T* object, NS::Error* err) -> void {
     if (object == nullptr) {
@@ -84,6 +85,14 @@ constexpr auto check_error(T* object, NS::Error* err) -> void {
     }
 }
 
-//
+/// @brief Checks if an erroy occurred during making objcect.
+template <typename T>
+constexpr auto check_error(NS::SharedPtr<T> object, NS::Error* err) -> void {
+    if (object.get() == nullptr) {
+        PANIC("failed to create metal resource {}. error: {}", typename_of<T>(), error_msg(err));
+    } else {
+        err = nullptr;
+    }
+}
 
 } // namespace siren::metal

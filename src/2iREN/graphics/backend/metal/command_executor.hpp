@@ -7,8 +7,10 @@
 #include <Metal/MTLCommandBuffer.hpp>
 
 #include "2iREN/graphics/backend/metal/fwd.hpp"
+#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/command_executor.hpp"
 #include "2iREN/graphics/commands.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 
 namespace siren {
 
@@ -45,7 +47,12 @@ private:
     NS::SharedPtr<MTL::CommandBuffer> m_cmd_buffer = nullptr;
 
     struct Bindings {
-        std::optional<BindIndexBuffer> index_buffer = std::nullopt;
+        struct IndexBuf {
+            MTL::Buffer* buf;
+            IndexFormat  format;
+        };
+        std::optional<IndexBuf>                   index_buffer = std::nullopt;
+        std::optional<GraphicsPipelineDescriptor> pipeline     = std::nullopt;
     } m_bindings = {};
 };
 

@@ -1,6 +1,8 @@
 #include "device.hpp"
 
 #include <Foundation/Foundation.hpp>
+#include <Metal/MTL4PipelineState.hpp>
+#include <Metal/MTLPipeline.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
@@ -201,7 +203,7 @@ auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         library_desc->setName(metal::utf8_string(*descriptor.label).get());
     }
 
-    auto* library = compiler->newLibrary(library_desc.get(), &err);
+    auto library = metal::transfer_ptr(compiler->newLibrary(library_desc.get(), &err));
     metal::check_error(library, err);
 
     const auto handle =
@@ -214,8 +216,7 @@ auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
 
 auto MetalDevice::destroy_shader(ShaderHandle handle) -> void {
     log::trace("destroyed shader {}", handle);
-    auto* library = m_state.shaders.fetch_release(handle);
-    library->release();
+    m_state.shaders.fetch_release(handle);
 }
 
 auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
@@ -230,8 +231,8 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     layer->setDisplaySyncEnabled(descriptor.vsync);
 
     const auto handle = m_state.swapchains.reserve_link(layer, MetalSwapchainDetails{descriptor});
-    auto       glfw   = window.native_handle();
-    metal::connect_to_window(glfw, layer);
+
+    metal::connect_to_window(window.native_handle(), layer);
 
     // TODO: do we want to supply an image format? this does not handle color
     // space mapping for us
@@ -256,9 +257,16 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         renderpipeline_descriptor->setLabel(metal::utf8_string(*descriptor.label).get());
     }
 
+    // enable validation always
+    {
+        auto opts = metal::transfer_ptr(MTL4::PipelineOptions::alloc()->init());
+        opts->setShaderValidation(MTL::ShaderValidationEnabled);
+        renderpipeline_descriptor->setOptions(opts.get());
+    }
+
     // color attachments
-    for (usize i = 0; i < descriptor.color_attachments.size(); i++) {
-        const auto& colortarget     = descriptor.color_attachments[i];
+    for (usize i = 0; i < descriptor.colors.size(); i++) {
+        const auto& colortarget     = descriptor.colors[i];
         auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
 
         attachment_descriptor->setAlphaBlendOperation(
@@ -287,7 +295,7 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         );
     }
 
-    // depth desciption can be done during the render pass.
+    // depth desciption is done during the render pass.
 
     // vertex buffer layout
     {
@@ -313,17 +321,17 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
     {
         // TODO: should we migrate code to the more complex MTL4 api?
 
-        auto*       library     = m_state.shaders.fetch(descriptor.shader);
+        auto        library     = m_state.shaders.fetch(descriptor.shader);
         const auto& shader_desc = m_state.shaders.details(descriptor.shader).descriptor;
 
         auto vertexfn = metal::transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
-        vertexfn->setLibrary(library);
+        vertexfn->setLibrary(library.get());
         vertexfn->setName(
             metal::utf8_string(shader_desc.source.at(ShaderStage::Vertex).entry).get()
         );
 
         auto fragmentfn = metal::transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
-        fragmentfn->setLibrary(library);
+        fragmentfn->setLibrary(library.get());
         fragmentfn->setName(
             metal::utf8_string(shader_desc.source.at(ShaderStage::Fragment).entry).get()
         );
@@ -332,9 +340,10 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         renderpipeline_descriptor->setFragmentFunctionDescriptor(fragmentfn.get());
     }
 
-    auto* render_pipeline =
+    auto render_pipeline = metal::transfer_ptr(
         m_state.shaders.details(descriptor.shader)
-            .compiler->newRenderPipelineState(renderpipeline_descriptor.get(), nullptr, &err);
+            .compiler->newRenderPipelineState(renderpipeline_descriptor.get(), nullptr, &err)
+    );
     metal::check_error(render_pipeline, err);
 
     const auto handle =
@@ -345,8 +354,7 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
 
 auto MetalDevice::destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void {
     log::trace("destroyed graphics pipeline {}", handle);
-    auto* state = m_state.pipelines.fetch_release(handle);
-    state->release();
+    m_state.pipelines.fetch_release(handle);
 }
 
 auto MetalDevice::make_query(const QueryDescriptor& descriptor) -> Query {

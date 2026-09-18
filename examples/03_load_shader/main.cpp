@@ -1,3 +1,4 @@
+#include <optional>
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/shader.hpp"
 #include "2iREN/core/context.hpp"
@@ -44,17 +45,21 @@ auto main() -> i32 {
     server.wait_until_loaded(shaderh);
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label             = "Load Shader Pipeline",
-        .shader            = server.get<ShaderAsset>(shaderh)->shader.handle(),
-        .layout            = layout,
-        .color_attachments = GraphicsPipelineColorAttachments{
-            GraphicsPipelineColorAttachment{
-                .format      = swapchain.info().image_format,
-                .alpha_mode  = AlphaMode::Opaque,
-                .color_blend = {},
-                .alpha_blend = {},
+        .label    = "Load Shader Pipeline",
+        .shader   = server.get<ShaderAsset>(shaderh)->shader.handle(),
+        .layout   = layout,
+        .topology = PrimitiveTopology::Triangles,
+        .colors =
+            ColorAttachmentDescriptors{
+                ColorAttachmentDescriptor{
+                    .format      = swapchain.info().image_format,
+                    .alpha_mode  = AlphaMode::Opaque,
+                    .color_blend = {},
+                    .alpha_blend = {},
+                },
             },
-        },
+        .depth_stencil = std::nullopt,
+        .cull_mode     = CullMode::Back,
     });
 
     // main render loop
@@ -84,7 +89,7 @@ auto main() -> i32 {
             [&](RenderCommandRecorder& pass) {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
+                pass.draw_arrays(0, 3);
             }
         );
 

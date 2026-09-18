@@ -5,7 +5,6 @@ find_package(cgltf REQUIRED)
 find_package(stb REQUIRED)
 
 target_compile_definitions(2iREN PRIVATE GLFW_INCLUDE_NONE)
-
 target_link_libraries(
     2iREN
     PUBLIC

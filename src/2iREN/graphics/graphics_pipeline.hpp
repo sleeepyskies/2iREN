@@ -36,9 +36,9 @@ enum class AlphaMode {
 
 ///  @brief The function that determines if a fragment will pass the depth test.
 enum class DepthFunction {
-    /// @brief Always pass.
+    /// @brief Always pass. This essentially disables depth testing.
     Always,
-    /// @brief Never pass.
+    /// @brief Never pass. This means nothing ever renders.
     Never,
     /// @brief Pass if new < old.
     Less,
@@ -91,19 +91,19 @@ enum class BlendFactor {
 /// @brief Collection of parameters describing how to blend together values.
 struct BlendDescription {
     /// @brief Describes what function to use to blend 2 values together.
-    BlendFunction function = BlendFunction::Add;
+    BlendFunction function      = BlendFunction::Add;
     /// @brief The @ref BlendFactor to affect the source.
-    BlendFactor source_factor = BlendFactor::SourceAlpha;
+    BlendFactor   source_factor = BlendFactor::SourceAlpha;
     /// @brief The @ref BlendFactor to affect the destination.
-    BlendFactor dest_factor = BlendFactor::OneMinusSourceAlpha;
+    BlendFactor   dest_factor   = BlendFactor::OneMinusSourceAlpha;
 };
 
 /// @brief Represents a single color attachment.
-struct GraphicsPipelineColorAttachment {
+struct ColorAttachmentDescriptor {
     /// @brief The format of the individual pixels of the image.
-    ImageFormat format;
+    ImageFormat      format;
     /// @brief Determines if pixels can be transparent.
-    AlphaMode alpha_mode;
+    AlphaMode        alpha_mode;
     /// @brief Describes how to blend rgb values. Used only when
     /// AlphaMode::Blend.
     BlendDescription color_blend;
@@ -112,20 +112,42 @@ struct GraphicsPipelineColorAttachment {
     BlendDescription alpha_blend;
 };
 
-/// @brief Simple alias for a vector of color attachments.
-using GraphicsPipelineColorAttachments = std::vector<GraphicsPipelineColorAttachment>;
+/// @brief Simple alias for a colletion of ColorAttachmentDescriptor's.
+using ColorAttachmentDescriptors = std::vector<ColorAttachmentDescriptor>;
+
+/// @brief Controls the way the depth stencil buffer is handled during a pipeline.
+struct DepthStencilAttachmentDescriptor {
+    /// @brief The format of the individual pixels of the image.
+    ImageFormat   format;
+    /// @brief The depth fucntion to use when comparing two depth values.
+    DepthFunction depth_function;
+    /// @brief Whether to write to the depth buffer.
+    bool          depth_write;
+};
+
+enum class CullMode {
+    None,
+    Front,
+    Back,
+};
 
 /// @brief A colletion of parameters used to describe how a @ref
 /// GraphicsPipeline should behave.
 struct GraphicsPipelineDescriptor {
     /// @brief An optional label.
-    Label label = std::nullopt;
-    /// @brief The shader to use.
-    ShaderHandle shader;
-    /// @brief How the vertices are structured. @see LayoutBuilder.
-    Layout layout;
-    /// @brief The structure of the color attachments this pipeline may access.
-    GraphicsPipelineColorAttachments color_attachments;
+    Label                                           label = std::nullopt;
+    /// @brief Handle to the shade to use.
+    ShaderHandle                                    shader;
+    /// @brief Descibes the vertex buffer layout.
+    Layout                                          layout;
+    /// @brief Describes the primitive kind to draw with.
+    PrimitiveTopology                               topology;
+    /// @brief Describes how every color buffer is handled during this pass.
+    ColorAttachmentDescriptors                      colors;
+    /// @brief Describes how depth and stencil buffers are handled during this pass.
+    std::optional<DepthStencilAttachmentDescriptor> depth_stencil;
+    /// @brief Describes how to cull faces.
+    CullMode                                        cull_mode;
 };
 
 /// @brief A 2iREN API agnostic GraphicsPipeline. Encapsulates render state

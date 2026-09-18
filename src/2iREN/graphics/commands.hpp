@@ -215,22 +215,18 @@ struct EndQuery {
 
 /// @brief Performs a non indexed draw call.
 struct DrawArrays {
-    /// @brief The primitives the points should be drawn as.
-    PrimitiveTopology primitive_topology;
     /// @brief The start vertex to draw.
-    u32               start;
+    u32 start;
     /// @brief The amount of vertices to draw.
-    u32               count;
+    u32 count;
 };
 
 /// @brief Performs an indexed draw call.
 struct DrawIndexed {
-    /// @brief The primitives the points should be drawn as.
-    PrimitiveTopology primitive_topology;
     /// @brief The start index.
-    u32               first_index;
+    u32 first_index;
     /// @brief The number of indices to use.
-    u32               index_count;
+    u32 index_count;
 };
 
 /// @brief Uploads data to a buffer.
@@ -394,26 +390,16 @@ public:
     auto end_query(const QueryHandle handle) noexcept -> void;
 
     /// @brief Draws from the currently bound vertex buffer(s) non indexed.
-    /// @param primitive_topology The way to draw the points as.
     /// @param start The first vertex to draw.
     /// @param count The amount of vertices starting from the first to draw.
-    auto draw_arrays(
-        const PrimitiveTopology primitive_topology,
-        const u32               start,
-        const u32               count
-    ) noexcept -> void;
+    auto draw_arrays(const u32 start, const u32 count) noexcept -> void;
 
     /// @brief Draws from the currently bound vertex buffer(s) using the
     /// currently bound index buffer.
-    /// @param primitive_topology The way to draw the points as.
     /// @param index_count The amount of indices to draw.
     /// @param first_index The offset (in indices) into the index buffer to start
     /// from.
-    auto draw_indexed(
-        const PrimitiveTopology primitive_topology,
-        const u32               index_count,
-        const u32               first_index
-    ) noexcept -> void;
+    auto draw_indexed(const u32 index_count, const u32 first_index) noexcept -> void;
 
 private:
     /// @brief Consumes this RenderCommandRecorder and returns the collected commands.

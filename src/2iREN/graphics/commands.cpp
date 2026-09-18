@@ -232,11 +232,7 @@ auto RenderCommandRecorder::end_query(const QueryHandle handle) noexcept -> void
     );
 }
 
-auto RenderCommandRecorder::draw_arrays(
-    const PrimitiveTopology primitive_topology,
-    const u32               start,
-    const u32               count
-) noexcept -> void {
+auto RenderCommandRecorder::draw_arrays(const u32 start, const u32 count) noexcept -> void {
     ASSERT(
         m_active_pipeline.is_valid(),
         "there is no pipeline bound, cannot call "
@@ -249,9 +245,8 @@ auto RenderCommandRecorder::draw_arrays(
                 {
                     .draw_arrays =
                         {
-                            .primitive_topology = primitive_topology,
-                            .start              = start,
-                            .count              = count,
+                            .start = start,
+                            .count = count,
                         },
                 },
             .type = CommandKind::DrawArrays
@@ -259,11 +254,8 @@ auto RenderCommandRecorder::draw_arrays(
     );
 }
 
-auto RenderCommandRecorder::draw_indexed(
-    const PrimitiveTopology primitive_topology,
-    const u32               index_count,
-    const u32               first_index
-) noexcept -> void {
+auto RenderCommandRecorder::draw_indexed(const u32 index_count, const u32 first_index) noexcept
+    -> void {
     ASSERT(
         m_active_pipeline.is_valid(),
         "there is no pipeline bound, cannot call "
@@ -286,9 +278,8 @@ auto RenderCommandRecorder::draw_indexed(
                 {
                     .draw_indexed =
                         {
-                            .primitive_topology = primitive_topology,
-                            .first_index        = first_index,
-                            .index_count        = index_count,
+                            .first_index = first_index,
+                            .index_count = index_count,
                         },
                 },
             .type = CommandKind::DrawIndexed,
