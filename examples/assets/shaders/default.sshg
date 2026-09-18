@@ -1,8 +1,13 @@
 name: shader
-stages:
-  vertex:
-    name: vertex
-    path: default.vert
-  fragment:
-    name: fragment
-    path: default.frag
+glsl:
+  stages:
+    vertex:
+      name: vertex
+      path: ./glsl/default.vert
+    fragment:
+      name: fragment
+      path: ./glsl/default.frag
+msl:
+  path: ./msl/default.msl
+  vertex: vmain
+  fragment: fmain

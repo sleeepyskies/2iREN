@@ -171,19 +171,28 @@ public:
 
     /// @brief Returns the hardware limits of the current backend.
     [[nodiscard]]
-    auto limits() const -> const Limits& {
+    auto limits() const noexcept -> const Limits& {
         return m_limits;
     }
 
     /// @brief Returns the accumulated rendering statistics since the last time
     /// this function was called.
     [[nodiscard]]
-    auto statistics() const -> Statistics {
+    auto statistics() const noexcept -> Statistics {
         return std::exchange(m_statistics, {});
     }
 
+    /// @brief Returns the active backend kind.
+    [[nodiscard]]
+    auto backend() const noexcept -> Backend {
+        return m_backend;
+    }
+
 protected:
+    Device(Backend backend) : m_backend(backend) { }
+
     mutable Limits     m_limits     = {};
     mutable Statistics m_statistics = {};
+    Backend            m_backend;
 };
 } // namespace siren

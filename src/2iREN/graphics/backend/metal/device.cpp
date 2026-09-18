@@ -65,7 +65,7 @@ auto fetch_limits(MTL::Device* device) -> Limits {
 
 } // namespace
 
-MetalDevice::MetalDevice() {
+MetalDevice::MetalDevice() : Device(Backend::Metal) {
     m_device    = metal::transfer_ptr(MTL::CreateSystemDefaultDevice());
     m_cmd_queue = metal::transfer_ptr(m_device->newCommandQueue());
 

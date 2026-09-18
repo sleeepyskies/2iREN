@@ -61,7 +61,7 @@ struct ShaderStage {
 /// @brief Holds information on a single shader stage.
 struct ShaderData {
     /// @brief The optional label of the shader.
-    std::optional<std::string> label;
+    Label       label;
     /// @brief The source code of the stage.
     std::string source;
     /// @brief The name of the entry function.
@@ -81,7 +81,7 @@ namespace siren {
 /// @brief Describes a @ref Shader to be created.
 struct ShaderDescriptor {
     /// @brief An optional label.
-    Label label = std::nullopt;
+    Label                                       label = std::nullopt;
     /// @brief The shader code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };
