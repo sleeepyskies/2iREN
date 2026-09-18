@@ -55,13 +55,16 @@ constexpr auto error_msg(NS::Error* err) -> std::string {
     std::string out;
 
     if (err->localizedDescription()) {
+        out += "\n";
         out += "description: ";
         out += err->localizedDescription()->cString(NS::UTF8StringEncoding);
+        out += "\n";
     }
 
     if (err->localizedFailureReason()) {
         out += "reason: ";
         out += err->localizedFailureReason()->cString(NS::UTF8StringEncoding);
+        out += "\n";
     }
 
     if (err->localizedRecoverySuggestion()) {

@@ -8,6 +8,6 @@ glsl:
       name: fragment
       path: ./glsl/default.frag
 msl:
-  path: ./msl/default.msl
+  path: ./msl/default.metal
   vertex: vmain
   fragment: fmain

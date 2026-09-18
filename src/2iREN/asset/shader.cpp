@@ -133,7 +133,7 @@ auto ShaderLoader::load_msl(
         return invalid_schema("could not load msl, either source or path must be given.");
     }
 
-    const auto map = std::unordered_map<ShaderStage, ShaderData>{
+    auto map = std::unordered_map<ShaderStage, ShaderData>{
         {ShaderStage::Vertex,
          ShaderData{
              .label  = vertex_name,
@@ -142,9 +142,9 @@ auto ShaderLoader::load_msl(
          }},
         {ShaderStage::Fragment,
          ShaderData{
-             .label  = vertex_name,
+             .label  = fragment_name,
              .source = *source,
-             .entry  = vertex_name,
+             .entry  = fragment_name,
          }},
     };
 
@@ -178,7 +178,7 @@ auto ShaderLoader::load(LoadContext&& ctx, const std::optional<ConfigType>) cons
                 if (!yaml[keys::MSL]) {
                     return invalid_schema("`msl` tag is missing, cannot load msl shaders.");
                 }
-                return load_msl(std::move(ctx), yaml[keys::GLSL], name);
+                return load_msl(std::move(ctx), yaml[keys::MSL], name);
             }
         }
 

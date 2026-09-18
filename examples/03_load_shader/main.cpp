@@ -10,17 +10,17 @@
 using namespace siren;
 
 struct Vertex {
-    f32 x, y, z;
+    f32 x, y;
     f32 r, g, b, a;
 };
 
-const ByteBuffer vertices{
-    Vertex{.x = 0.0f, .y = 0.5f, .z = 0.0f, .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = -0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f},
-    Vertex{.x = 0.5f, .y = -0.5f, .z = 0.0f, .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f},
+const auto vertices = ByteBuffer{
+    Vertex{0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f},
+    Vertex{-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f},
+    Vertex{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f},
 };
 
-int main() {
+auto main() -> i32 {
     auto       ctx       = Context::make({.level = log::Level::Trace});
     auto       window    = ctx.make_window({.title = "Example 01"});
     const auto device    = ctx.make_device();
@@ -30,59 +30,65 @@ int main() {
 
     const auto buffer = device->make_buffer(
         {
-            .label = "Sample Buffer",
+            .label = "Vertex Buffer",
             .size  = vertices.size_bytes(),
             .usage = BufferUsage::Static,
         },
         vertices.view()
     );
     const auto layout =
-        LayoutBuilder::make().add(DataType::Float32, 3).add(DataType::Float32, 4).finish();
+        LayoutBuilder::make().add(DataType::Float32, 2).add(DataType::Float32, 4).finish();
 
     const auto shaderh =
         server.load<ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
     server.wait_until_loaded(shaderh);
-    auto* shader_asset = server.get<ShaderAsset>(shaderh);
 
     const auto pipeline = device->make_graphics_pipeline({
         .label             = "Load Shader Pipeline",
-        .shader            = shader_asset->shader.handle(),
+        .shader            = server.get<ShaderAsset>(shaderh)->shader.handle(),
         .layout            = layout,
         .color_attachments = GraphicsPipelineColorAttachments{
             GraphicsPipelineColorAttachment{
-                .format      = ImageFormat::RGBA8,
+                .format      = swapchain.info().image_format,
                 .alpha_mode  = AlphaMode::Opaque,
-                .color_blend = BlendDescription{},
-                .alpha_blend = BlendDescription{},
+                .color_blend = {},
+                .alpha_blend = {},
             },
         },
     });
-
-    const RenderTarget target{
-        .colors =
-            {
-                {
-                    .image           = swapchain.next_image(),
-                    .clear_color     = Rgba::BLACK(),
-                    .begin_operation = BeginOperation::Clear,
-                },
-            },
-        .depth_stencil = std::nullopt
-    };
 
     // main render loop
     while (!window.should_close()) {
         window.poll_events();
 
+        auto backbuffer = swapchain.next_image();
+
         auto cmds = device->make_command_recorder();
 
-        cmds.render_pass({.target = target}, [&](RenderCommandRecorder& pass) -> void {
-            pass.bind_graphics_pipeline(pipeline.handle());
-            pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-            pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
-        });
+        cmds.render_pass(
+            RenderPassDescriptor{
+                .label = "Load Shader Pass",
+                .target =
+                    RenderTarget{
+                        .colors =
+                            {
+                                RenderPassColorAttachment{
+                                    .image           = backbuffer,
+                                    .clear_color     = Rgba::BLACK(),
+                                    .begin_operation = BeginOperation::Clear,
+                                    .end_operation   = EndOperation::Store,
+                                },
+                            },
+                    },
+            },
+            [&](RenderCommandRecorder& pass) {
+                pass.bind_graphics_pipeline(pipeline.handle());
+                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
+                pass.draw_arrays(PrimitiveTopology::Triangles, 0, 3);
+            }
+        );
 
-        device->present(swapchain.handle());
+        swapchain.present(std::move(cmds).finish());
     }
 
     return 0;
