@@ -4,9 +4,7 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
-#include <cstddef>
 #include <utility>
-#include <version>
 
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/metal/command_executor.hpp"
@@ -76,7 +74,10 @@ MetalDevice::MetalDevice() : Device(Backend::Metal) {
     log::info("metal device created.");
 }
 
-MetalDevice::~MetalDevice() { }
+MetalDevice::~MetalDevice() {
+    // TODO: this will crash if called
+    // wait_idle();
+}
 
 auto MetalDevice::wait_idle() const noexcept -> void {
     UNIMPLEMENTED();

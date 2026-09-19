@@ -13,11 +13,11 @@ namespace siren {
 template <IsSizedEnum F>
 class FlagSet {
 public:
-    FlagSet() = default;
-
     static constexpr auto FlagCount = std::to_underlying(F::Max);
     using Flag                      = std::remove_cvref_t<F>;
     using UnderlyingType            = std::underlying_type_t<Flag>;
+
+    FlagSet() = default;
 
     /// @brief Creates a new FlagSet with no flags set.
     [[nodiscard]]

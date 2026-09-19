@@ -294,38 +294,6 @@ auto RenderCommandRecorder::finish() && -> Commands {
     return std::move(m_commands);
 }
 
-TransferCommandRecorder::TransferCommandRecorder([[maybe_unused]] const Device* device) {
-    m_commands.reserve(8);
-}
-
-auto TransferCommandRecorder::upload_to_buffer(
-    const BufferHandle   buffer,
-    const ByteBufferView data,
-    const u32            offset
-) -> void {
-    m_commands.emplace_back(
-        Command{
-            .command =
-                {
-                    .upload_to_buffer =
-                        {
-                            .buffer = buffer,
-                            .data   = data,
-                            .offset = offset,
-                        },
-                },
-            .type = CommandKind::UploadToBuffer,
-        }
-    );
-}
-
-auto TransferCommandRecorder::finish() && -> Commands {
-    // TODO: could we perform some more optimizations here on the commands?
-    // maybe this can be toggled or something with a compile flag,
-    // but reordering commands coul be useful here, or maybe just costly??
-    return std::move(m_commands);
-}
-
 CommandRecorder::CommandRecorder(const Device* device) : m_device(device) { }
 
 auto CommandRecorder::render_pass(
@@ -345,21 +313,11 @@ auto CommandRecorder::render_pass(
     m_passes.emplace_back(descriptor, Range<usize>{start, end});
 }
 
-auto CommandRecorder::transfer_pass(
-    const TransferPassDescriptor& descriptor,
-    TransferPassFunction&&        function
-) -> void {
-    auto recorder = TransferCommandRecorder{m_device};
-
-    std::invoke(function, recorder);
-
-    const auto start = m_commands.size();
-
-    m_commands.append_range(std::move(recorder).finish());
-
-    const auto end = m_commands.size();
-
-    m_passes.emplace_back(descriptor, Range<usize>{start, end});
+auto CommandRecorder::finish() && -> CommandList {
+    return CommandList{
+        .passes   = std::move(m_passes),
+        .commands = std::move(m_commands),
+    };
 }
 
 auto CommandRecorder::finish() && -> CommandList {

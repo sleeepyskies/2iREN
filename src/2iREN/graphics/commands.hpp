@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <unordered_map>
 
 #include "2iREN/container/byte_buffer.hpp"
@@ -89,12 +88,6 @@ struct RenderPassDescriptor {
     RenderTarget target;
 };
 
-/// @brief Struct used to initialize and begin a new transfer pass.
-struct TransferPassDescriptor {
-    /// @brief An optional label.
-    Label label = std::nullopt;
-};
-
 /// TODO: do we need this???
 enum class AccessKind {
     ReadOnly,
@@ -122,9 +115,6 @@ enum class CommandKind : u8 {
 
     BeginQuery,
     EndQuery,
-
-    // TRANSFER COMMANDS
-    UploadToBuffer,
 };
 
 /// @brief Indicates a @ref GraphicsPipeline bind. Sets all of its state.
@@ -258,9 +248,6 @@ struct Command {
         EndQuery                end_query;
         DrawArrays              draw_arrays;
         DrawIndexed             draw_indexed;
-
-        // TRANSFER COMMANDS
-        UploadToBuffer upload_to_buffer;
     } command;
 
     CommandKind type;
@@ -294,9 +281,6 @@ struct Command {
             return command.draw_arrays;
         } else if constexpr (std::is_same_v<Command, DrawIndexed>) {
             return command.draw_indexed;
-            // TRANSFER COMMANDS
-        } else if constexpr (std::is_same_v<Command, UploadToBuffer>) {
-            return command.upload_to_buffer;
         } else {
             static_assert(false, "Invalid Render Command type");
             PANIC("Invalid Render Command. Cannot cast correctly");
@@ -418,83 +402,16 @@ private:
     std::optional<BindIndexBuffer>        m_active_index_buffer;
 };
 
-/// @brief Handles recording any data trnasferal commands into a command list.
-/// @warning Most commands make use of non owning views into CPU buffers.
-/// Therefore the called should make sure to keep the CPU data alive until the
-/// corresponding CommandList in which this will record commands into has been
-/// submitted.
-class TransferCommandRecorder {
-    friend class CommandRecorder;
-
-    explicit TransferCommandRecorder(const Device* device);
-
-public:
-    /// @brief Uploads data from the provided buffer view into a GPU buffer.
-    /// @param data A non owning view of the CPU data to upload to the GPU.
-    /// @param offset The offset in bytes into the GPU buffer from which the data
-    /// will be uploaded.
-    /// @warning The @param `data` must be kept alive until the command list
-    /// has been submit!
-    auto upload_to_buffer(BufferHandle buffer, ByteBufferView data, u32 offset) -> void;
-
-private:
-    /// @brief Consumes this TransferCommandRecorder and returns the collected
-    /// commands.
-    [[nodiscard]]
-    auto finish() && -> Commands;
-
-    std::vector<Command> m_commands;
-};
-
 /// @brief The result of calling finish on a CommandRecorder.
 struct CommandList {
     struct Pass {
-        ~Pass() {
-            kind == Kind::Render ? std::destroy_at(&descriptor.render_descriptor)
-                                 : std::destroy_at(&descriptor.transfer_descriptor);
-        }
-
-        Pass(RenderPassDescriptor descriptor, Range<usize> range) :
-            command_range(range), kind(Kind::Render) {
-            std::construct_at(&this->descriptor.render_descriptor, std::move(descriptor));
-        }
-
-        Pass(TransferPassDescriptor descriptor, Range<usize> range) :
-            command_range(range), kind(Kind::Transfer) {
-            std::construct_at(&this->descriptor.transfer_descriptor, std::move(descriptor));
-        }
-
-        Pass(Pass&& other) noexcept :
-            command_range(std::move(other.command_range)), kind(other.kind) {
-            if (kind == Kind::Render) {
-                std::construct_at(
-                    &descriptor.render_descriptor, std::move(other.descriptor.render_descriptor)
-                );
-            } else {
-                std::construct_at(
-                    &descriptor.transfer_descriptor, std::move(other.descriptor.transfer_descriptor)
-                );
-            }
-        }
-
-        Pass(const Pass&)            = delete;
-        Pass& operator=(const Pass&) = delete;
-
-        union Descriptor {
-            RenderPassDescriptor   render_descriptor;
-            TransferPassDescriptor transfer_descriptor;
-            Descriptor() { }
-            ~Descriptor() { }
-        } descriptor;
-        Range<usize> command_range;
-        enum class Kind : u8 { Render, Transfer } kind;
+        RenderPassDescriptor descriptor;
+        Range<usize>         command_range;
     };
 
     /// @brief Returns a view over the commands within the provided range.
     [[nodiscard]]
     auto command_view(const Range<usize>& range) -> std::span<const Command> {
-        // [0, 1, 2, 3, 4, 5]
-        // we do view(2, 4)
         return std::span(commands).subspan(range.begin, range.end - range.begin);
     }
 
@@ -506,19 +423,17 @@ struct CommandList {
 
 /// @brief A function passed into the @ref RenderCommandRecorder that
 /// will record commands to.
-using RenderPassFunction   = std::function<void(RenderCommandRecorder&)>;
-/// @brief A function passed into the @ref TransferCommandRecorder that
-/// will record commands to.
-using TransferPassFunction = std::function<void(TransferCommandRecorder&)>;
+using RenderPassFunction = std::function<void(RenderCommandRecorder&)>;
 
 class CommandRecorder {
     friend class Device;
 
 public:
-    auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& func) -> void;
+    auto render_pass(const RenderPassDescriptor&, RenderPassFunction&&) -> void;
 
-    auto transfer_pass(const TransferPassDescriptor& descriptor, TransferPassFunction&& func)
-        -> void;
+    auto copy_buffer_to_buffer() -> void;
+    auto copy_buffer_to_texture() -> void;
+    auto copy_texture_to_texture() -> void;
 
     [[nodiscard]]
     auto finish() && -> CommandList;
