@@ -7,6 +7,7 @@
 #include <Metal/MTLRenderPass.hpp>
 #include <Metal/MTLRenderPipeline.hpp>
 #include <Metal/MTLResource.hpp>
+#include <Metal/MTLSampler.hpp>
 #include <Metal/MTLTexture.hpp>
 #include <Metal/MTLTypes.hpp>
 #include <Metal/MTLVertexDescriptor.hpp>
@@ -17,6 +18,7 @@
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
+#include "2iREN/graphics/sampler.hpp"
 
 namespace siren::metal {
 
@@ -316,6 +318,24 @@ constexpr auto region(const Extent3u extent) -> MTL::Region {
     }
 
     return region;
+}
+
+[[nodiscard]]
+constexpr auto address_mode(const WrapMode mode) -> MTL::SamplerAddressMode {
+    switch (mode) {
+        case WrapMode::Repeat: return MTL::SamplerAddressModeRepeat;
+        case WrapMode::Mirror: return MTL::SamplerAddressModeMirrorRepeat;
+        case WrapMode::ClampEdge: return MTL::SamplerAddressModeClampToEdge;
+        case WrapMode::ClampBorder: return MTL::SamplerAddressModeClampToBorderColor;
+    }
+}
+
+[[nodiscard]]
+constexpr auto minmag_filter(const FilterMode mode) -> MTL::SamplerMinMagFilter {
+    switch (mode) {
+        case FilterMode::Nearest: return MTL::SamplerMinMagFilterNearest;
+        case FilterMode::Linear: return MTL::SamplerMinMagFilterLinear;
+    }
 }
 
 } // namespace siren::metal

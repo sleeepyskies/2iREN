@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Metal/MTLSampler.hpp>
 #include <cstddef>
 
 #include <Foundation/Foundation.hpp>
@@ -13,6 +14,7 @@
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
+#include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 
@@ -41,8 +43,9 @@ struct MetalDeviceState {
         NS::SharedPtr<MTL::RenderPipelineState>,
         GraphicsPipeline,
         GraphicsPipelineDescriptor>
-                                                                             pipelines = {};
-    RenderResourceTable<NS::SharedPtr<MTL::Texture>, Image, ImageDescriptor> images    = {};
+                                                                             pipelines         = {};
+    RenderResourceTable<NS::SharedPtr<MTL::Texture>, Image, ImageDescriptor> images            = {};
+    RenderResourceTable<NS::SharedPtr<MTL::SamplerState>, Sampler, SamplerDescriptor> samplers = {};
 };
 
 class MetalDevice final : public Device {

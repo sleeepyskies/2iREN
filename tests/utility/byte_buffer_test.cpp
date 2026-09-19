@@ -6,7 +6,7 @@
 
 #include <doctest/doctest.h>
 
-#include "2iREN/utility/byte_buffer.hpp"
+#include "2iREN/container/byte_buffer.hpp"
 
 TEST_SUITE("ByteBuffer") {
     TEST_CASE("default") {
@@ -200,7 +200,7 @@ TEST_SUITE("ByteBuffer") {
 
     TEST_CASE("copy") {
         const auto original = siren::ByteBuffer::make<siren::u8>({1, 2, 3});
-        auto copy           = original;
+        auto       copy     = original;
 
         copy.data()[0] = 42;
 

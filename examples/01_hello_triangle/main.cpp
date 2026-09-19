@@ -1,3 +1,7 @@
+#include <optional>
+#include <unordered_map>
+#include <utility>
+
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"

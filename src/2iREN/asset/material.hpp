@@ -5,6 +5,7 @@
 #include "2iREN/asset/asset_handle.hpp"
 #include "2iREN/asset/texture.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/math/color.hpp"
 #include "2iREN/math/vec3.hpp"
 
 namespace siren {
@@ -12,7 +13,7 @@ namespace siren {
 /// @brief A Basic PBR material that closely follows the GLTF specs.
 class MaterialAsset : public Asset {
 public:
-    explicit MaterialAsset(const std::string& name) : m_name(name) {}
+    explicit MaterialAsset(const std::string& name) : m_name(name) { }
 
     // setters
 
@@ -140,63 +141,63 @@ public:
 private:
     std::string m_name;
 
-    Rgba m_base_color{1.0f};
-    f32 m_metallic                                 = 1.0f;
-    f32 m_roughness                                = 1.0f;
+    Rgba                  m_base_color{1.0f};
+    f32                   m_metallic               = 1.0f;
+    f32                   m_roughness              = 1.0f;
     StrongHandle<Texture> m_base_color_tex         = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_metallic_roughness_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_clear_coat                                 = 0.0f;
-    f32 m_clear_coat_roughness                       = 0.0f;
+    f32                   m_clear_coat               = 0.0f;
+    f32                   m_clear_coat_roughness     = 0.0f;
     StrongHandle<Texture> m_clear_coat_tex           = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_clear_coat_roughness_tex = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_clearcoat_normal_tex     = StrongHandle<Texture>::invalid();
 
-    f32 m_transmission                       = 0.0f;
+    f32                   m_transmission     = 0.0f;
     StrongHandle<Texture> m_transmission_tex = StrongHandle<Texture>::invalid();
-    f32 m_thickness                          = 0.0f;
-    Vec3f m_attenuation_color{1.f};
-    f32 m_attenuation_distance                = 0.0f;
-    StrongHandle<Texture> m_thickness_texture = StrongHandle<Texture>::invalid();
+    f32                   m_thickness        = 0.0f;
+    Vec3f                 m_attenuation_color{1.f};
+    f32                   m_attenuation_distance = 0.0f;
+    StrongHandle<Texture> m_thickness_texture    = StrongHandle<Texture>::invalid();
 
-    f32 m_ior             = 1.5f;
-    f32 m_specular_factor = 1.0f;
-    Vec3f m_specular_color{1.f};
+    f32                   m_ior             = 1.5f;
+    f32                   m_specular_factor = 1.0f;
+    Vec3f                 m_specular_color{1.f};
     StrongHandle<Texture> m_specular_color_tex = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_specular_tex       = StrongHandle<Texture>::invalid();
 
-    Vec3f m_sheen_color{0.f};
-    f32 m_sheen_roughness                       = 0.0f;
+    Vec3f                 m_sheen_color{0.f};
+    f32                   m_sheen_roughness     = 0.0f;
     StrongHandle<Texture> m_sheen_color_tex     = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_sheen_roughness_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_iridescence_factor                          = 0.0f;
-    f32 m_iridescence_ior                             = 1.3f;
-    f32 m_iridescence_min                             = 100.0f;
-    f32 m_iridescence_max                             = 400.0f;
+    f32                   m_iridescence_factor        = 0.0f;
+    f32                   m_iridescence_ior           = 1.3f;
+    f32                   m_iridescence_min           = 100.0f;
+    f32                   m_iridescence_max           = 400.0f;
     StrongHandle<Texture> m_iridescence_tex           = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_iridescence_thickness_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_diffuse_transmission_factor = 0.0f;
-    Vec3f m_diffuse_transmission_color{1.f};
+    f32                   m_diffuse_transmission_factor = 0.0f;
+    Vec3f                 m_diffuse_transmission_color{1.f};
     StrongHandle<Texture> m_diffuse_transmission_tex       = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_diffuse_transmission_color_tex = StrongHandle<Texture>::invalid();
 
-    f32 m_anisotropy_strength              = 0.0f;
-    f32 m_anisotropy_rotation              = 0.0f;
-    StrongHandle<Texture> m_anisotropy_tex = StrongHandle<Texture>::invalid();
-    f32 m_dispersion                       = 0.0f;
+    f32                   m_anisotropy_strength = 0.0f;
+    f32                   m_anisotropy_rotation = 0.0f;
+    StrongHandle<Texture> m_anisotropy_tex      = StrongHandle<Texture>::invalid();
+    f32                   m_dispersion          = 0.0f;
 
     StrongHandle<Texture> m_normal_tex    = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_occlusion_tex = StrongHandle<Texture>::invalid();
     StrongHandle<Texture> m_emissive_tex  = StrongHandle<Texture>::invalid();
-    Vec3f m_emissive_color{0.f};
-    f32 m_emissive_strength = 1.0f;
+    Vec3f                 m_emissive_color{0.f};
+    f32                   m_emissive_strength = 1.0f;
 
-    AlphaMode m_alpha_mode = AlphaMode::Opaque;
-    f32 m_alpha_cutoff     = 0.5f;
-    bool m_double_sided    = false;
-    bool m_unlit           = false;
+    AlphaMode m_alpha_mode   = AlphaMode::Opaque;
+    f32       m_alpha_cutoff = 0.5f;
+    bool      m_double_sided = false;
+    bool      m_unlit        = false;
 };
 
 } // namespace siren

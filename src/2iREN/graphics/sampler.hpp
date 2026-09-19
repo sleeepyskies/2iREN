@@ -3,14 +3,12 @@
 #include <optional>
 
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/math/color.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 
 namespace siren {
 
 /// @brief Tells the gpu how to filter the image.
-enum class ImageFilterMode {
-    /// @brief No filtering specified.
-    None,
+enum class FilterMode {
     /// @brief Takes the value of the nearest neighbor.
     Nearest,
     /// @brief Bilinear filtering. Interpolates color from neighboring pixels.
@@ -18,7 +16,7 @@ enum class ImageFilterMode {
 };
 
 /// @brief Tells the gpu how to handle coordinated outside the range [0, 1].
-enum class ImageWrapMode {
+enum class WrapMode {
     /// @brief Repeats the image.
     Repeat,
     /// @brief Mirrors the image.
@@ -29,54 +27,20 @@ enum class ImageWrapMode {
     ClampBorder,
 };
 
-/// @brief Tells the gpu how to compare depth values when sampling depth textures.
-enum class ImageCompareMode {
-    /// @brief Sample raw depth.
-    None,
-    /// @brief Result may be either 0 or 1, uses ImageCompareFn.
-    Compare,
-};
-
-/// @brief The comparison function to be used when sampling and comparing depth values.
-///
-/// @see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glSamplerParameter.xhtml
-enum class ImageCompareFn {
-    Always,
-    Never,
-    Less,
-    Equal,
-    LessEqual,
-    Greater,
-    NotEqual,
-    GreaterEqual,
-};
-
 /// @brief Describes the ImageSampler for creation.
 struct SamplerDescriptor {
     /// @brief An optional label.
-    Label label = std::nullopt;
+    Label      label      = std::nullopt;
     /// @brief Tells the gpu how to filter when the source image is smaller.
-    ImageFilterMode min_filter = ImageFilterMode::Nearest;
+    FilterMode min_filter = FilterMode::Nearest;
     /// @brief Tells the gpu how to filter when the source image is larger.
-    ImageFilterMode max_filter = ImageFilterMode::Nearest;
-    /// @brief Tells the gpu how to filter between mipmap levels.
-    ImageFilterMode mipmap_filter = ImageFilterMode::Nearest;
+    FilterMode mag_filter = FilterMode::Nearest;
     /// @brief Tells the gpu how to wrap along the horizontal axis.
-    ImageWrapMode s_wrap = ImageWrapMode::Repeat;
+    WrapMode   s_wrap     = WrapMode::Repeat;
     /// @brief Tells the gpu how to wrap along the vertical axis.
-    ImageWrapMode t_wrap = ImageWrapMode::Repeat;
+    WrapMode   t_wrap     = WrapMode::Repeat;
     /// @brief Tells the gpu how to wrap along the depth axis.
-    ImageWrapMode r_wrap = ImageWrapMode::Repeat;
-    /// @brief Tells the gpu the highest resolution mipmap it can use.
-    f32 lod_min = 0.f;
-    /// @brief Tells the gpu the lowest resolution mipmap it can use.
-    f32 lod_max = 0.f;
-    /// @brief A custom user specified color for the image border.
-    std::optional<Rgba> border_color = std::nullopt;
-    /// @brief Tells the gpu how to sample depth.
-    ImageCompareMode compare_mode = ImageCompareMode::None;
-    /// @brief The function with which to sample depth.
-    ImageCompareFn compare_fn = ImageCompareFn::LessEqual;
+    WrapMode   r_wrap     = WrapMode::Repeat;
 };
 
 /// @brief A gpu resource defining how to read from an Image.

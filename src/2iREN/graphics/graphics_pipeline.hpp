@@ -34,25 +34,28 @@ enum class AlphaMode {
     Blend,
 };
 
-///  @brief The function that determines if a fragment will pass the depth test.
-enum class DepthFunction {
-    /// @brief Always pass. This essentially disables depth testing.
+///  @brief Enum determining how to compare two values.
+enum class CompareFunction {
+    /// @brief Always return true.
     Always,
-    /// @brief Never pass. This means nothing ever renders.
+    /// @brief Always return false.
     Never,
-    /// @brief Pass if new < old.
+    /// @brief Perform new < old.
     Less,
-    /// @brief Pass if new == old.
+    /// @brief Perforn new == old.
     Equal,
-    /// @brief Pass if new <= old.
+    /// @brief Perform new <= old.
     LessEqual,
-    /// @brief Pass if new > old.
+    /// @brief Perform new > old.
     Greater,
-    /// @brief Pass if new >= old.
+    /// @brief Perform new >= old.
     GreaterEqual,
-    /// @brief Pass if new != old.
+    /// @brief Perform new != old.
     NotEqual,
 };
+
+/// @brief Determines how to compare a new depth value against an old one.
+using DepthFunction = CompareFunction;
 
 /// @brief Defines the function to apply to two alpha values when blending.
 /// Aka for: alpha1 . alpha2

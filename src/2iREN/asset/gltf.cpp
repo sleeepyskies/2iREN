@@ -10,6 +10,7 @@
 #include "2iREN/core/defer.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/graphics/sampler.hpp"
 #include "2iREN/utility/filesystem.hpp"
 
 /// For docs on GLTF see:
@@ -73,46 +74,27 @@ static auto gltf_type_to_siren(const cgltf_component_type type) -> DataType {
     }
 }
 
-static auto gltf_filter_to_siren(const i32 filter) -> ImageFilterMode {
+static auto gltf_filter_to_siren(const i32 filter) -> FilterMode {
     switch (filter) {
         // opengl/gltf combine min filter and mipmap filter
         case cgltf_filter_type_nearest_mipmap_linear:
         case cgltf_filter_type_nearest_mipmap_nearest:
-        case cgltf_filter_type_nearest: return ImageFilterMode::Nearest;
+        case cgltf_filter_type_nearest: return FilterMode::Nearest;
 
         case cgltf_filter_type_linear_mipmap_nearest:
         case cgltf_filter_type_linear_mipmap_linear:
-        case cgltf_filter_type_linear: return ImageFilterMode::Linear;
+        case cgltf_filter_type_linear: return FilterMode::Linear;
 
         case cgltf_filter_type_undefined: PANIC("These filter types are not supported yet.");
         default: UNREACHABLE();
     }
 }
 
-static auto gltf_mipmap_filter_to_siren(const i32 filter) -> ImageFilterMode {
-    switch (filter) {
-            // opengl/gltf combine min filter and mipmap filter
-
-        case cgltf_filter_type_nearest_mipmap_nearest:
-        case cgltf_filter_type_linear_mipmap_nearest: return ImageFilterMode::Nearest;
-
-        case cgltf_filter_type_nearest_mipmap_linear:
-        case cgltf_filter_type_linear_mipmap_linear: return ImageFilterMode::Linear;
-
-        // doesnt specify any filtering for mipmaps
-        case cgltf_filter_type_linear:
-        case cgltf_filter_type_nearest: return ImageFilterMode::None;
-
-        case cgltf_filter_type_undefined: PANIC("These filter types are not supported yet.");
-        default: UNREACHABLE();
-    }
-}
-
-static auto gltf_wrap_to_siren(const i32 wrap) -> ImageWrapMode {
+static auto gltf_wrap_to_siren(const i32 wrap) -> WrapMode {
     switch (wrap) {
-        case cgltf_wrap_mode_clamp_to_edge: return ImageWrapMode::ClampEdge;
-        case cgltf_wrap_mode_mirrored_repeat: return ImageWrapMode::Mirror;
-        case cgltf_wrap_mode_repeat: return ImageWrapMode::Repeat;
+        case cgltf_wrap_mode_clamp_to_edge: return WrapMode::ClampEdge;
+        case cgltf_wrap_mode_mirrored_repeat: return WrapMode::Mirror;
+        case cgltf_wrap_mode_repeat: return WrapMode::Repeat;
         default: UNREACHABLE();
     }
 }
@@ -133,11 +115,11 @@ static auto parse_sampler(const cgltf_sampler* sampler, Device& device) -> Sampl
     // use default sampler if none is provided.
     SamplerDescriptor desc;
     if (sampler) {
-        desc.min_filter    = gltf_filter_to_siren(sampler->min_filter);
-        desc.max_filter    = gltf_filter_to_siren(sampler->mag_filter);
-        desc.mipmap_filter = gltf_mipmap_filter_to_siren(sampler->min_filter);
-        desc.s_wrap        = gltf_wrap_to_siren(sampler->wrap_s);
-        desc.t_wrap        = gltf_wrap_to_siren(sampler->wrap_t);
+        desc.min_filter = gltf_filter_to_siren(sampler->min_filter);
+        desc.mag_filter = gltf_filter_to_siren(sampler->mag_filter);
+        // desc.mipmap_filter = gltf_mipmap_filter_to_siren(sampler->min_filter);
+        desc.s_wrap     = gltf_wrap_to_siren(sampler->wrap_s);
+        desc.t_wrap     = gltf_wrap_to_siren(sampler->wrap_t);
         // the following are not provided by gltf spec:
         // r_wrap, lod_min, lod_max, border_color, compare_mode, compare_fn
     }
@@ -225,6 +207,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                     .extent        = extent,
                     .dimension     = ImageDimension::D2,
                     .mipmap_levels = mipmap_levels,
+                    .flags         = ImageFlags::empty(), // TODO: what flags here?
                 },
                 bytebuffer.view()
             );

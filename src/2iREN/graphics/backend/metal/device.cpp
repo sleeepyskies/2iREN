@@ -1,11 +1,6 @@
 #include "device.hpp"
 
 #include <Foundation/Foundation.hpp>
-#include <Metal/MTL4PipelineState.hpp>
-#include <Metal/MTLPipeline.hpp>
-#include <Metal/MTLResource.hpp>
-#include <Metal/MTLTexture.hpp>
-#include <Metal/MTLTypes.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
@@ -13,6 +8,7 @@
 #include <utility>
 #include <version>
 
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/metal/command_executor.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -162,13 +158,14 @@ auto MetalDevice::make_image(
     texture_desc->setResourceOptions(metal::resource_options(descriptor.flags));
     texture_desc->setUsage(metal::texture_usage(descriptor.flags));
 
-    auto       texture = metal::transfer_ptr(m_device->newTexture(texture_desc.get()));
-    const auto handle  = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
+    auto texture = metal::transfer_ptr(m_device->newTexture(texture_desc.get()));
 
     if (initial.has_value()) {
         const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
         texture->replaceRegion(metal::region(descriptor.extent), 1, initial->data(), bytes_per_row);
     }
+
+    const auto handle = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
 
     log::trace("created image {}", handle);
     return Image{this, handle};
@@ -180,11 +177,39 @@ auto MetalDevice::destroy_image(ImageHandle handle) -> void {
 }
 
 auto MetalDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
-    UNIMPLEMENTED();
+    auto mtl_desc = metal::transfer_ptr(MTL::SamplerDescriptor::alloc()->init());
+
+    if (descriptor.label.has_value()) {
+        mtl_desc->setLabel(metal::utf8_string(*descriptor.label).get());
+    }
+
+    mtl_desc->setRAddressMode(metal::address_mode(descriptor.r_wrap));
+    mtl_desc->setSAddressMode(metal::address_mode(descriptor.s_wrap));
+    mtl_desc->setTAddressMode(metal::address_mode(descriptor.t_wrap));
+    // mtl_desc->setBorderColor(descriptor.border_color);
+
+    mtl_desc->setMinFilter(metal::minmag_filter(descriptor.min_filter));
+    mtl_desc->setMagFilter(metal::minmag_filter(descriptor.mag_filter));
+    // mtl_desc->setMipFilter(metal::mipmap_filter(descriptor.mipmap_filter));
+    // mtl_desc->setLodMinClamp(); mtl_desc->setLodMaxClamp();
+    // mtl_desc->setLodAverage();
+    // mtl_desc->setMaxAnisotropy();
+
+    // mtl_desc->setCompareFunction();
+
+    // mtl_desc->setLodBias();
+    // mtl_desc->setReductionMode();
+
+    auto       sampler = metal::transfer_ptr(m_device->newSamplerState(mtl_desc.get()));
+    const auto handle  = m_state.samplers.reserve_link(sampler, SamplerDescriptor{descriptor});
+
+    log::trace("created sampler {}", handle);
+    return Sampler{this, handle};
 }
 
 auto MetalDevice::destroy_sampler(SamplerHandle handle) -> void {
-    UNIMPLEMENTED();
+    m_state.samplers.fetch_release(handle);
+    log::trace("destroyed sampler {}", handle);
 }
 
 auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {

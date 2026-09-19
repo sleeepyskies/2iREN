@@ -41,7 +41,9 @@ constexpr auto retain_ptr(T* ptr) -> NS::SharedPtr<T> {
 /// @note Cannot take a string_view here as NS::String expects a null
 /// terminated string.
 constexpr auto utf8_string(const std::string& str) -> NS::SharedPtr<NS::String> {
-    return retain_ptr(NS::String::string(str.data(), NS::StringEncoding::UTF8StringEncoding));
+    return retain_ptr(
+        NS::String::alloc()->init(str.data(), NS::StringEncoding::UTF8StringEncoding)
+    );
 }
 
 /// @brief Returns the error message contained within an error.

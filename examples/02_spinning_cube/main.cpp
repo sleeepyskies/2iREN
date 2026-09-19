@@ -130,7 +130,7 @@ auto main() -> i32 {
         {
             .label = "Cube Vertices",
             .size  = vertices.size_bytes(),
-            .usage = BufferFlags::from(BufferUsage::Shared),
+            .usage = BufferFlags::from(BufferFlag::Shared),
         },
         vertices.view()
     );
@@ -138,14 +138,14 @@ auto main() -> i32 {
         {
             .label = "Cube Indicies",
             .size  = indices.size_bytes(),
-            .usage = BufferFlags::from(BufferUsage::Shared),
+            .usage = BufferFlags::from(BufferFlag::Shared),
         },
         indices.view()
     );
     const auto uniform_buffer = device->make_buffer({
         .label = "Uniform Buffer",
         .size  = sizeof(UboData),
-        .usage = BufferFlags::from(BufferUsage::Shared),
+        .usage = BufferFlags::from(BufferFlag::Shared),
     });
     const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();
 
