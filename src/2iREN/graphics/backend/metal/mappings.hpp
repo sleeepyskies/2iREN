@@ -7,6 +7,8 @@
 #include <Metal/MTLRenderPass.hpp>
 #include <Metal/MTLRenderPipeline.hpp>
 #include <Metal/MTLResource.hpp>
+#include <Metal/MTLTexture.hpp>
+#include <Metal/MTLTypes.hpp>
 #include <Metal/MTLVertexDescriptor.hpp>
 #include <utility>
 
@@ -225,6 +227,95 @@ constexpr auto compare_function(const DepthFunction function) -> MTL::CompareFun
         case DepthFunction::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
         case DepthFunction::NotEqual: return MTL::CompareFunctionNotEqual;
     }
+}
+
+[[nodiscard]]
+constexpr auto texture_type(const ImageDimension dimension) -> MTL::TextureType {
+    switch (dimension) {
+        case ImageDimension::D1: return MTL::TextureType1D;
+        case ImageDimension::D2: return MTL::TextureType2D;
+        case ImageDimension::D3: return MTL::TextureType3D;
+        case ImageDimension::Cube: return MTL::TextureTypeCube;
+    }
+}
+
+[[nodiscard]]
+constexpr auto resource_options(const BufferFlags flags) -> MTL::ResourceOptions {
+    MTL::ResourceOptions opts = 0;
+
+    ASSERT(
+        !flags.all(BufferFlag::Shared, BufferFlag::Private),
+        "cannot have private and shared image usage."
+    );
+    if (flags.test(BufferFlag::Shared)) {
+        opts |= MTL::ResourceStorageModeShared;
+    }
+
+    if (flags.test(BufferFlag::Private)) {
+        opts |= MTL::ResourceStorageModePrivate;
+    }
+
+    return opts;
+}
+
+[[nodiscard]]
+constexpr auto resource_options(const ImageFlags flags) -> MTL::ResourceOptions {
+    MTL::ResourceOptions opts = 0;
+
+    ASSERT(
+        !flags.all(ImageFlag::Shared, ImageFlag::Private),
+        "cannot have private and shared image usage."
+    );
+    if (flags.test(ImageFlag::Shared)) {
+        opts |= MTL::ResourceStorageModeShared;
+    }
+
+    if (flags.test(ImageFlag::Private)) {
+        opts |= MTL::ResourceStorageModePrivate;
+    }
+
+    return opts;
+}
+
+[[nodiscard]]
+constexpr auto texture_usage(const ImageFlags flags) -> MTL::TextureUsage {
+    MTL::TextureUsage usage = 0;
+
+    if (flags.test(ImageFlag::ShaderRead)) {
+        usage |= MTL::TextureUsageShaderRead;
+    }
+
+    if (flags.test(ImageFlag::ShaderWrite)) {
+        usage |= MTL::TextureUsageShaderWrite;
+    }
+
+    if (flags.test(ImageFlag::RenderAttachment)) {
+        usage |= MTL::TextureUsageRenderTarget;
+    }
+
+    if (flags.test(ImageFlag::UseAtomics)) {
+        usage |= MTL::TextureUsageShaderAtomic;
+    }
+
+    return usage;
+}
+
+[[nodiscard]]
+constexpr auto region(const Extent3u extent) -> MTL::Region {
+    MTL::Region region = {};
+
+    region.origin     = MTL::Origin{0, 0, 0};
+    region.size.width = extent.x;
+
+    if (extent.y > 0) {
+        region.size.height = extent.y;
+    }
+
+    if (extent.z > 0) {
+        region.size.depth = extent.z;
+    }
+
+    return region;
 }
 
 } // namespace siren::metal

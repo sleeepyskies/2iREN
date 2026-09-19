@@ -1,8 +1,10 @@
 #pragma once
 
+#include <limits>
 #include <optional>
 
 #include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/flag_set.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/math/extent.hpp"
 
@@ -10,6 +12,22 @@ namespace siren {
 
 /// @brief Defines the amount of dimensions an @ref Image may have.
 enum class ImageDimension { D1, D2, D3, Cube };
+
+/// @brief Defines the usage of a Buffer.
+enum class ImageFlag {
+    Shared,
+    Private,
+
+    ShaderRead,
+    ShaderWrite,
+    RenderAttachment,
+    UseAtomics,
+
+    Max,
+};
+
+/// @brief Set of flags defining how a buffer may be used.
+using ImageFlags = FlagSet<ImageFlag>;
 
 [[nodiscard]]
 constexpr auto to_string(const ImageDimension dimension) -> std::string_view {
@@ -71,15 +89,18 @@ public:
     /// @brief Returns the number of bytes per pixel for this format.
     [[nodiscard]] constexpr auto bytes_per_pixel() const -> u32 {
         switch (value) {
-            case Unknown: return 0;
             case R8: return 1;
-            case RGBA8: return 4;
+
+            case Depth24Stencil8:
+            case R32UI:
+            case Depth32f:
+            case RGBA8:
             case sRGBA8: return 4;
-            case RGBA16f: return 8;
+
+            case RGBA16f:
             case RG32f: return 8;
-            case Depth24Stencil8: return 4;
-            case R32UI: return 4;
-            case Depth32f: return 4;
+
+            case Unknown: PANIC("bytes_per_pixel called on ImageFormat::Unknown.");
         }
     }
 
@@ -108,12 +129,14 @@ struct ImageDescriptor {
     Label          label = std::nullopt;
     /// @brief The format of the image data (num channels/bytes per channel).
     ImageFormat    format;
-    /// @brief Extent of the image.
+    /// @brief Extent of the image. The z-axis is used iff the image is an aray.
     Extent3u       extent;
     /// @brief The dimensionality of the image.
     ImageDimension dimension;
     /// @brief How many mip map levels to generate.
     u32            mipmap_levels;
+    /// @brief Flags specifying how the @ref Image will be used.
+    ImageFlags     flags;
 };
 
 /// @brief A gpu resource representing image data.

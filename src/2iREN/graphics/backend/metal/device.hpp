@@ -41,8 +41,8 @@ struct MetalDeviceState {
         NS::SharedPtr<MTL::RenderPipelineState>,
         GraphicsPipeline,
         GraphicsPipelineDescriptor>
-                                                               pipelines = {};
-    RenderResourceTable<MTL::Texture*, Image, ImageDescriptor> images    = {};
+                                                                             pipelines = {};
+    RenderResourceTable<NS::SharedPtr<MTL::Texture>, Image, ImageDescriptor> images    = {};
 };
 
 class MetalDevice final : public Device {

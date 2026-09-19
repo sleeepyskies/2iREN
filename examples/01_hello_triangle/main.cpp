@@ -3,6 +3,7 @@
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
+#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
 #include "2iREN/utility/log.hpp"
@@ -75,7 +76,7 @@ const ShaderData fragment_shader{
 };
 #endif
 
-const std::unordered_map<ShaderStage, ShaderData> shaders = {
+const auto shaders = std::unordered_map<ShaderStage, ShaderData>{
     {ShaderStage::Vertex, vertex_shader},
     {ShaderStage::Fragment, fragment_shader},
 };
@@ -101,7 +102,7 @@ auto main() -> i32 {
         {
             .label = "Vertex Buffer",
             .size  = vertices.size_bytes(),
-            .usage = BufferUsage::Static,
+            .usage = BufferFlags::from(BufferFlag::Shared),
         },
         vertices.view()
     );
@@ -109,6 +110,15 @@ auto main() -> i32 {
         LayoutBuilder::make().add(DataType::Float32, 2).add(DataType::Float32, 4).finish();
 
     const auto shader = device->make_shader({.label = "Triangle Shader", .source = shaders});
+
+    const auto attachment = device->make_image({
+        .label         = "Color Attachment",
+        .format        = swapchain.info().image_format,
+        .extent        = swapchain.info().extent.to_extent3(),
+        .dimension     = ImageDimension::D2,
+        .mipmap_levels = 1,
+        .flags         = ImageFlags::from(ImageFlag::Shared),
+    });
 
     const auto pipeline = device->make_graphics_pipeline({
         .label    = "Triangle Pipeline",

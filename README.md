@@ -28,7 +28,7 @@ To build the library.
 - **cgltf**: Loading gltf files.
 - **yaml-cpp**: Used for yaml file parsing.
 - **GLFW**: Cross platform windowing.
-- **glad**: OpenGL function loader.
+- **glad**: OpenGL function loader for Windows and Linux.
 - **OpenGL**: Graphics API for Linux and Windows systems.
 - **Metal**: Graphics API for Apple systems.
 

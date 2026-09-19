@@ -3,6 +3,9 @@
 #include <Foundation/Foundation.hpp>
 #include <Metal/MTL4PipelineState.hpp>
 #include <Metal/MTLPipeline.hpp>
+#include <Metal/MTLResource.hpp>
+#include <Metal/MTLTexture.hpp>
+#include <Metal/MTLTypes.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
@@ -11,6 +14,7 @@
 #include <version>
 
 #include "2iREN/graphics/backend/metal/command_executor.hpp"
+#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 
 #include "2iREN/core/assert.hpp"
@@ -96,44 +100,33 @@ auto MetalDevice::make_buffer(
     const auto autorelease = metal::AutoRelease{};
     auto       buffer      = (NS::SharedPtr<MTL::Buffer>)nullptr;
 
-    switch (descriptor.usage) {
-        // for Static buffers, we must create a staging buffer, then blit its
-        // data to a buffer with Private flag
-        case BufferUsage::Static: {
-            ASSERT(initial.has_value(), "should not create a static buffer with no initial data.");
-            auto staging = metal::transfer_ptr(m_device->newBuffer(
+    if (descriptor.usage.test(BufferFlag::Private)) {
+        ASSERT(initial.has_value(), "should not create a static buffer with no initial data.");
+        auto staging = metal::transfer_ptr(
+            m_device->newBuffer(initial->data(), descriptor.size, MTL::ResourceStorageModeShared)
+        );
+        buffer = metal::transfer_ptr(
+            m_device->newBuffer(descriptor.size, MTL::ResourceStorageModePrivate)
+        );
+
+        auto* cmdbuffer      = m_cmd_queue->commandBuffer();
+        auto  blitdescriptor = metal::transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
+        auto* encoder        = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
+
+        encoder->copyFromBuffer(staging.get(), 0, buffer.get(), 0, initial->size());
+        encoder->endEncoding();
+
+        cmdbuffer->commit();
+        cmdbuffer->waitUntilCompleted();
+    } else {
+        if (initial.has_value()) {
+            buffer = metal::transfer_ptr(m_device->newBuffer(
                 initial->data(), descriptor.size, MTL::ResourceStorageModeShared
             ));
-            buffer       = metal::transfer_ptr(
-                m_device->newBuffer(descriptor.size, MTL::ResourceStorageModePrivate)
+        } else {
+            buffer = metal::transfer_ptr(
+                m_device->newBuffer(descriptor.size, MTL::ResourceStorageModeShared)
             );
-
-            // TODO: make this its own function?
-            auto* cmdbuffer      = m_cmd_queue->commandBuffer();
-            auto  blitdescriptor = metal::transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
-            auto* encoder        = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
-
-            encoder->copyFromBuffer(staging.get(), 0, buffer.get(), 0, initial->size());
-            encoder->endEncoding();
-
-            cmdbuffer->commit();
-            cmdbuffer->waitUntilCompleted(); // keep buffer alive before we can
-                                             // delete it
-
-            break;
-        }
-        // for Dynamic buffers, we simply create a Shared buffer
-        case BufferUsage::Dynamic: {
-            if (initial.has_value()) {
-                buffer = metal::transfer_ptr(m_device->newBuffer(
-                    initial->data(), descriptor.size, MTL::ResourceStorageModeShared
-                ));
-            } else {
-                buffer = metal::transfer_ptr(
-                    m_device->newBuffer(descriptor.size, MTL::ResourceStorageModeShared)
-                );
-            }
-            break;
         }
     }
 
@@ -159,11 +152,31 @@ auto MetalDevice::make_image(
     const ImageDescriptor&        descriptor,
     std::optional<ByteBufferView> initial
 ) -> Image {
-    UNIMPLEMENTED();
+    auto texture_desc = metal::transfer_ptr(MTL::TextureDescriptor::alloc()->init());
+
+    texture_desc->setTextureType(metal::texture_type(descriptor.dimension));
+    texture_desc->setPixelFormat(metal::pixel_format(descriptor.format));
+    texture_desc->setWidth(descriptor.extent.x);
+    texture_desc->setHeight(descriptor.extent.y);
+    texture_desc->setMipmapLevelCount(descriptor.mipmap_levels);
+    texture_desc->setResourceOptions(metal::resource_options(descriptor.flags));
+    texture_desc->setUsage(metal::texture_usage(descriptor.flags));
+
+    auto       texture = metal::transfer_ptr(m_device->newTexture(texture_desc.get()));
+    const auto handle  = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
+
+    if (initial.has_value()) {
+        const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
+        texture->replaceRegion(metal::region(descriptor.extent), 1, initial->data(), bytes_per_row);
+    }
+
+    log::trace("created image {}", handle);
+    return Image{this, handle};
 }
 
 auto MetalDevice::destroy_image(ImageHandle handle) -> void {
-    UNIMPLEMENTED();
+    m_state.images.fetch_release(handle);
+    log::trace("destroyed image {}", handle);
 }
 
 auto MetalDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
@@ -224,18 +237,17 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     // in the metal api, the CAMetalLayer acts as th swapchain.
     // this object manages various Drawables, which are swapchain images.
 
-    auto* layer = CA::MetalLayer::layer();
-
+    auto*      layer         = CA::MetalLayer::layer();
+    const auto scaled_extent = window.framebuffer_extent();
     layer->setDevice(m_device.get());
-    layer->setPixelFormat(MTL::PixelFormatBGRA8Unorm); // TODO: what format bgra or rgba
     layer->setDisplaySyncEnabled(descriptor.vsync);
+    layer->setDrawableSize(
+        CGSize{static_cast<CGFloat>(scaled_extent.x), static_cast<CGFloat>(scaled_extent.y)}
+    );
 
     const auto handle = m_state.swapchains.reserve_link(layer, MetalSwapchainDetails{descriptor});
 
     metal::connect_to_window(window.native_handle(), layer);
-
-    // TODO: do we want to supply an image format? this does not handle color
-    // space mapping for us
 
     log::trace("created swapchain {}", handle);
     return Swapchain{this, handle};
@@ -406,10 +418,12 @@ auto MetalDevice::swapchain_descriptor(SwapchainHandle handle) const -> const Sw
 auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo {
     const auto layer = m_state.swapchains.fetch(handle);
 
-    const auto pixel_format = layer->pixelFormat();
+    const auto pixel_format  = layer->pixelFormat();
+    const auto drawable_size = layer->drawableSize();
 
     return SwapchainInfo{
         .image_format = metal::image_format(pixel_format),
+        .extent       = Extent2u{drawable_size.width, drawable_size.height},
     };
 }
 
@@ -449,13 +463,14 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
     const auto size  = layer->drawableSize();
 
     details.image = m_state.images.reserve_link(
-        drawable->texture(),
+        metal::retain_ptr(drawable->texture()),
         ImageDescriptor{
             .label         = "Swapchain Image",
             .format        = metal::image_format(layer->pixelFormat()),
             .extent        = Extent2u{size.width, size.height}.to_extent3(),
             .dimension     = ImageDimension::D2,
             .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
+            .flags         = ImageFlags::empty(), // flags dont acc matter here.
         }
     );
 

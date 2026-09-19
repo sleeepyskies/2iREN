@@ -1,6 +1,7 @@
 #pragma once
 
 #include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/flag_set.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
 
@@ -9,22 +10,20 @@ namespace siren {
 class ByteBuffer;
 
 /// @brief Defines the usage of a Buffer.
-/// TODO: this should use FlagSet instead.
-enum class BufferUsage {
-    /// @brief Data is uploaded once and is thereafter read only.
-    Static,
-    /// @brief Data may be modified frequently.
-    Dynamic,
+enum class BufferFlag {
+    Shared,
+    Private,
+
+    Max,
 };
+
+/// @brief Set of flags defining how a buffer may be used.
+using BufferFlags = FlagSet<BufferFlag>;
 
 /// @brief Defines the index format of an index buffer.
 class IndexFormat {
 public:
-    enum Value : u8 {
-        UInt8,
-        UInt16,
-        UInt32,
-    } value;
+    enum Value : u8 { UInt8, UInt16, UInt32 } value;
 
     /// @brief Returns the size of this format in bytes.
     [[nodiscard]] constexpr auto size_bytes() const -> usize {
@@ -50,8 +49,8 @@ struct BufferDescriptor {
     Label       label = std::nullopt;
     /// @brief The initial size of the buffer in bytes.
     usize       size;
-    /// @brief The intended use of the buffer.
-    BufferUsage usage;
+    /// @brief Flag set of this buffers uses.
+    BufferFlags usage;
 };
 
 /// @brief A Buffer represents a typeless memory allocation on the GPU. The

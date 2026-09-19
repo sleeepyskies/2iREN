@@ -1,7 +1,9 @@
 #pragma once
 
+#include <limits>
 #include "2iREN/graphics/device.hpp"
-#include "fwd.hpp"
+#include "2iREN/graphics/fwd.hpp"
+#include "2iREN/graphics/image.hpp"
 
 namespace siren {
 
@@ -26,6 +28,8 @@ struct SwapchainDescriptor {
 struct SwapchainInfo {
     /// @brief The format of the pixels of the swapchains image.
     ImageFormat image_format;
+    /// @brief The extent of the swapchains images.
+    Extent2u    extent;
 };
 
 /// @brief A collection of images tied to a specific @ref Window. Used to present

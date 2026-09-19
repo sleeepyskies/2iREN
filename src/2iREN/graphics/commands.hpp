@@ -8,7 +8,6 @@
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/math/color.hpp"
 #include "2iREN/math/range.hpp"
 #include "2iREN/utility/identifier.hpp"
@@ -66,6 +65,9 @@ struct RenderPassDepthStenctilAttachment {
     /// @brief The action to perform for this attachment at the end of the pass.
     EndOperation   end_operation;
 };
+
+/// @brief Simple type alias for a list of RenderPassColorAttachment.
+using RenderPassColorAttachments = std::vector<RenderPassColorAttachment>;
 
 /// @brief A target of rendering. Essentially a collection of same sized images
 /// that can be accessed by shaders during a render pass.

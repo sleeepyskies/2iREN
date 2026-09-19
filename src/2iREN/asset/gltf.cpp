@@ -8,6 +8,7 @@
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/defer.hpp"
+#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/filesystem.hpp"
 
@@ -588,7 +589,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
             {
                 .label = std::format("Index Buffer {}", bufferid),
                 .size  = buffer.size_bytes(),
-                .usage = BufferUsage::Static,
+                .usage = BufferFlags::from(BufferFlag::Shared),
             },
             buffer.view()
         ),
@@ -708,7 +709,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
             {
                 .label = std::format("Vertex Buffer {}", bufferid++),
                 .size  = buffer.size_bytes(),
-                .usage = BufferUsage::Static,
+                .usage = BufferFlags::from(BufferFlag::Shared),
             },
             buffer.view()
         ),

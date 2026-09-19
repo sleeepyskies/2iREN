@@ -72,6 +72,7 @@ target_compile_options(2iREN PRIVATE
         -Wvarargs
         -Wvla
         -Wwrite-strings
+        -Wmissing-field-initializers
 )
 
 if(SIREN_BUILD_EXAMPLES)

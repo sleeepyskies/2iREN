@@ -55,11 +55,11 @@ auto MetalCommandExecutor::execute_render_pass(
     for (usize i = 0; i < descriptor.target.colors.size(); i++) {
         auto& attachment     = descriptor.target.colors[i];
         auto* mtl_attachment = desc->colorAttachments()->object(i);
-        auto* mtl_texture    = m_state.images.fetch(attachment.image);
+        auto  mtl_texture    = m_state.images.fetch(attachment.image);
 
         const auto& rgba = attachment.clear_color;
 
-        mtl_attachment->setTexture(mtl_texture);
+        mtl_attachment->setTexture(mtl_texture.get());
         mtl_attachment->setClearColor(MTL::ClearColor::Make(rgba.r, rgba.g, rgba.b, rgba.a));
         mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
         mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
@@ -69,16 +69,16 @@ auto MetalCommandExecutor::execute_render_pass(
     if (descriptor.target.depth_stencil) {
         auto& attachment  = *descriptor.target.depth_stencil;
         auto* depth       = desc->depthAttachment();
-        auto* depth_txt   = m_state.images.fetch(attachment.image);
+        auto  depth_txt   = m_state.images.fetch(attachment.image);
         auto* stencil     = desc->stencilAttachment();
-        auto* stencil_txt = m_state.images.fetch(attachment.image);
+        auto  stencil_txt = m_state.images.fetch(attachment.image);
 
-        depth->setTexture(depth_txt);
+        depth->setTexture(depth_txt.get());
         depth->setLoadAction(metal::load_action(attachment.begin_operation));
         depth->setClearDepth(attachment.clear_depth);
         depth->setStoreAction(metal::store_action(attachment.end_operation));
 
-        stencil->setTexture(stencil_txt);
+        stencil->setTexture(stencil_txt.get());
         stencil->setLoadAction(metal::load_action(attachment.begin_operation));
         stencil->setClearStencil(attachment.clear_stencil);
         stencil->setStoreAction(metal::store_action(attachment.end_operation));
@@ -242,7 +242,9 @@ auto MetalCommandExecutor::upload_to_buffer(
         "destination buffer is too small to upload data onto!"
     );
 
-    ASSERT(details.usage == BufferUsage::Dynamic, "upload to static buffers is not yet supported.");
+    ASSERT(
+        !details.usage.test(BufferFlag::Private), "upload to static buffers is not yet supported."
+    );
 
     std::memcpy(buf->contents(), upload_to_buffer.data.data(), upload_to_buffer.data.size());
 }

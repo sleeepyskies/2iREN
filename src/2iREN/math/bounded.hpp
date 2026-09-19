@@ -18,11 +18,9 @@ namespace siren {
 
 struct AssertBoundsPolicy {
     template <IsComparable T, typename LowerPolicy, typename UpperPolicy>
-    static constexpr auto check_bounds(T& value, const T& min, const T& max)
-        -> void {
+    static constexpr auto check_bounds(T& value, const T& min, const T& max) -> void {
         ASSERT(
-            LowerPolicy::check_lower(value, min)
-                && UpperPolicy::check_upper(value, max),
+            LowerPolicy::check_lower(value, min) && UpperPolicy::check_upper(value, max),
             "value {} is not within bounds {}{}, {}{}.",
             value,
             LowerPolicy::LParen,
@@ -35,8 +33,7 @@ struct AssertBoundsPolicy {
 
 struct ClampBoundsPolicy {
     template <IsComparable T, typename LowerPolicy, typename UpperPolicy>
-    static constexpr auto check_bounds(T& value, const T& min, const T& max)
-        -> void {
+    static constexpr auto check_bounds(T& value, const T& min, const T& max) -> void {
         if (!LowerPolicy::check_lower(value, min)) {
             value = min;
         } else if (!UpperPolicy::check_upper(value, max)) {
@@ -78,8 +75,8 @@ struct ExclusiveBoundsPolicy {
 /// be inclusive or exclusive.
 template <
     IsComparable T,
-    T Min,
-    T Max,
+    T            Min,
+    T            Max,
     typename BoundsPolicy = AssertBoundsPolicy,
     typename LowerPolicy  = InclusiveBoundsPolicy,
     typename UpperPolicy  = InclusiveBoundsPolicy>
@@ -92,24 +89,17 @@ template <
     typename BoundsPolicy = AssertBoundsPolicy,
     typename LowerPolicy  = InclusiveBoundsPolicy,
     typename UpperPolicy  = InclusiveBoundsPolicy>
-using BoundedF32 =
-    Bounded<f32, Min, Max, BoundsPolicy, LowerPolicy, UpperPolicy>;
+using BoundedF32 = Bounded<f32, Min, Max, BoundsPolicy, LowerPolicy, UpperPolicy>;
 
 /// @brief An f32 that may not be negative, but has no upper bound.
-using PositiveF32 =
-    BoundedF32<0.f, std::numeric_limits<f32>::max(), AssertBoundsPolicy>;
+using PositiveF32 = BoundedF32<0.f, std::numeric_limits<f32>::max(), AssertBoundsPolicy>;
 
 /// @brief An f32 that may not be negative or 0, but has no upper bound.
-using NonZeroPositiveF32 = BoundedF32<
-    0.f,
-    std::numeric_limits<f32>::max(),
-    AssertBoundsPolicy,
-    ExclusiveBoundsPolicy>;
+using NonZeroPositiveF32 =
+    BoundedF32<0.f, std::numeric_limits<f32>::max(), AssertBoundsPolicy, ExclusiveBoundsPolicy>;
 
 /// @brief An i32 that is bounded by an inclusive min and max.
-template <
-    i32 Min = std::numeric_limits<i32>::min(),
-    i32 Max = std::numeric_limits<i32>::max()>
+template <i32 Min = std::numeric_limits<i32>::min(), i32 Max = std::numeric_limits<i32>::max()>
 using BoundedI32 = Bounded<i32, Min, Max>;
 
 /// @brief A u32 that is bounded by an inclusive min and max.
@@ -121,8 +111,8 @@ using BoundedU32 = Bounded<u32, Min, Max, BoundsPolicy>;
 
 template <
     IsComparable T,
-    T Min,
-    T Max,
+    T            Min,
+    T            Max,
     typename BoundsPolicy,
     typename LowerPolicy,
     typename UpperPolicy>
@@ -152,9 +142,7 @@ public:
     template <typename S, S OtherMin, S OtherMax>
         requires(CanConvert<std::remove_cvref_t<S>, Type>)
     [[nodiscard]]
-    constexpr auto operator<=>(
-        const Bounded<S, OtherMax, OtherMin>& other
-    ) const noexcept -> auto {
+    constexpr auto operator<=>(const Bounded<S, OtherMax, OtherMin>& other) const noexcept -> auto {
         other.m_value <=> m_value;
     }
 
@@ -167,9 +155,7 @@ public:
 
 private:
     constexpr auto check_bounds() -> void {
-        BoundsPolicy::template check_bounds<Type, LowerPolicy, UpperPolicy>(
-            m_value, MIN, MAX
-        );
+        BoundsPolicy::template check_bounds<Type, LowerPolicy, UpperPolicy>(m_value, MIN, MAX);
     }
 
     T m_value;
@@ -180,10 +166,8 @@ private:
 template <typename T, typename S, T TMin, T TMax, typename BoundsPolicy>
     requires(CanConvert<S, typename Bounded<T, TMin, TMax>::Type>)
 [[nodiscard]]
-constexpr auto operator-(
-    const Bounded<T, TMin, TMax, BoundsPolicy> left,
-    const S right
-) -> Bounded<T, TMin, TMax>::Type {
+constexpr auto operator-(const Bounded<T, TMin, TMax, BoundsPolicy> left, const S right)
+    -> Bounded<T, TMin, TMax>::Type {
     return left - right;
 }
 

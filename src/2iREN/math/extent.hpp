@@ -42,9 +42,9 @@ struct Extent2 {
     constexpr explicit Extent2(const Type x, const Type y) : x(x), y(y) { }
 
     [[nodiscard]]
-    constexpr auto operator==(const Extent2&) const noexcept -> bool = default;
+    constexpr auto operator==(const Extent2& other) const noexcept -> bool = default;
     [[nodiscard]]
-    constexpr auto operator!=(const Extent2&) const noexcept -> bool = default;
+    constexpr auto operator!=(const Extent2& other) const noexcept -> bool = default;
 
     [[nodiscard]]
     constexpr auto to_extent3() const -> Extent3<T>;
@@ -73,9 +73,9 @@ struct Extent3 {
     constexpr explicit Extent3(const Type x, const Type y, const Type z) : x(x), y(y), z(z) { }
 
     [[nodiscard]]
-    constexpr auto operator==(const Extent3&) const noexcept -> bool = default;
+    constexpr auto operator==(const Extent3& other) const noexcept -> bool = default;
     [[nodiscard]]
-    constexpr auto operator!=(const Extent3&) const noexcept -> bool = default;
+    constexpr auto operator!=(const Extent3& other) const noexcept -> bool = default;
 
     [[nodiscard]]
     constexpr auto to_extent2() const -> Extent2<T>;
@@ -86,7 +86,7 @@ struct Extent3 {
 
 template <typename T>
 constexpr auto Extent2<T>::to_extent3() const -> Extent3<T> {
-    return Extent3<T>{x, y, 1};
+    return Extent3<T>{x, y, 0};
 }
 
 template <typename T>
