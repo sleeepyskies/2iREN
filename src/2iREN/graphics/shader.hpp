@@ -11,7 +11,7 @@ namespace siren {
 
 /// @brief Represents the various possible shader stages
 struct ShaderStage {
-    enum Value { Vertex, Fragment, Geometry, Compute, Task, Mesh } value;
+    enum Value { Vertex, Fragment } value;
 
     constexpr ShaderStage(const Value v) : value(v) { }
     constexpr operator Value() const {
@@ -23,10 +23,6 @@ struct ShaderStage {
         switch (value) {
             case Vertex: return "Vertex";
             case Fragment: return "Fragment";
-            case Geometry: return "Geometry";
-            case Compute: return "Compute";
-            case Task: return "Task";
-            case Mesh: return "Mesh";
             default: return "Unknown";
         }
     }
@@ -41,18 +37,6 @@ struct ShaderStage {
         if (lower == "fragment") {
             return Fragment;
         }
-        if (lower == "geometry") {
-            return Geometry;
-        }
-        if (lower == "compute") {
-            return Compute;
-        }
-        if (lower == "task") {
-            return Task;
-        }
-        if (lower == "mesh") {
-            return Mesh;
-        }
 
         return std::nullopt;
     }
@@ -61,7 +45,7 @@ struct ShaderStage {
 /// @brief Holds information on a single shader stage.
 struct ShaderData {
     /// @brief The optional label of the shader.
-    Label       label;
+    Label label;
     /// @brief The source code of the stage.
     std::string source;
     /// @brief The name of the entry function.
@@ -81,7 +65,7 @@ namespace siren {
 /// @brief Describes a @ref Shader to be created.
 struct ShaderDescriptor {
     /// @brief An optional label.
-    Label                                       label = std::nullopt;
+    Label label = std::nullopt;
     /// @brief The shader code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };
@@ -100,7 +84,8 @@ public:
     Shader& operator=(Shader&& other) noexcept;
 
     /// @brief Returns the @ref ShaderDescriptor associated with this shader.
-    [[nodiscard]] auto descriptor() const noexcept -> const ShaderDescriptor&;
+    [[nodiscard]]
+    auto descriptor() const noexcept -> const ShaderDescriptor&;
 };
 
 } // namespace siren
