@@ -1,11 +1,13 @@
 #pragma once
 
+#include <cstring>
 #include <initializer_list>
 #include <type_traits>
 #include <vector>
 
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
+#include "2iREN/math/range.hpp"
 
 namespace siren {
 
@@ -171,6 +173,12 @@ public:
         return m_data; // should auto convert for us :D
     }
 
+    /// @brief Returns a non owning sub-view into this buffer.
+    [[nodiscard]]
+    constexpr auto subview(const usize start, const usize size) const noexcept -> ByteBufferView {
+        return view().subspan(start, size);
+    }
+
 private:
     std::vector<u8> m_data;
 
@@ -184,5 +192,10 @@ private:
         ASSERT(reinterpret_cast<uintptr_t>(data()) % alignof(T) == 0);
     }
 };
+
+/// @brief Copies the contents of the ByteBufferView into the destionation.
+inline auto bufcpy(const ByteBufferView src, void* dest) -> void {
+    std::memcpy(dest, src.data(), src.size_bytes());
+}
 
 } // namespace siren

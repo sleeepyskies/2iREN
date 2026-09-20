@@ -89,7 +89,7 @@ public:
     }
 
 protected:
-    Device*    m_device;
+    Device* m_device;
     HandleType m_handle;
 };
 
@@ -118,11 +118,11 @@ private:
     /// @brief Struct used for storing resource data.
     struct TableEntry {
         /// @brief The actual api handle.
-        ApiHandleType  api_handle = 0;
+        ApiHandleType api_handle  = 0;
         /// @brief The generation of this resource's slot.
         GenerationType generation = 0;
         /// @brief Some extra data that the user may define.
-        Details        details    = {};
+        Details details           = {};
 
         auto kill() -> void {
             ++generation;
@@ -203,6 +203,12 @@ public:
         return std::forward<Self>(self).m_table[handle.index()].details;
     }
 
+    /// @brief Returns the number of active resources being managed.
+    [[nodiscard]]
+    auto count() const noexcept -> u32 {
+        return m_table.size();
+    }
+
 private:
     /// @brief Checks if a given handle is valid.
     /// @todo Is very strict, maybe we want to alter these check conditions,
@@ -218,7 +224,7 @@ private:
     /// @brief The stored API handles with generation counting.
     std::vector<TableEntry> m_table;
     /// @brief Any free indices to use.
-    std::vector<IndexType>  m_free_list;
+    std::vector<IndexType> m_free_list;
 };
 
 } // namespace siren

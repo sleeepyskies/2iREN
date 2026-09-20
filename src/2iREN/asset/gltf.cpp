@@ -23,8 +23,8 @@
 
 struct NameIDGenerator {
     std::string fallback = "Unnamed";
-    siren::u32  count    = 0;
-    auto        next(const char* name) -> std::string {
+    siren::u32 count     = 0;
+    auto next(const char* name) -> std::string {
         if (name) {
             return name;
         }
@@ -43,14 +43,14 @@ namespace siren {
 [[maybe_unused]]
 static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFormat {
     switch (type) {
-        case cgltf_component_type_r_8u: return IndexFormat::UInt8;
         case cgltf_component_type_r_16u: return IndexFormat::UInt16;
         case cgltf_component_type_r_32u: return IndexFormat::UInt32;
 
+        case cgltf_component_type_r_8u:
         case cgltf_component_type_r_8:
         case cgltf_component_type_r_16:
         case cgltf_component_type_r_32f:
-            PANIC("Attempted to define either a Int8, Int16 or Float32 as an index type.");
+            PANIC("only UInt16 and UInt32 are allowed as index types.");
 
         case cgltf_component_type_max_enum:
         case cgltf_component_type_invalid:
@@ -135,8 +135,8 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
     for (usize texture_idx = 0; texture_idx < data->textures_count; texture_idx++) {
         const auto& texture = data->textures[texture_idx];
-        auto        sampler = parse_sampler(texture.sampler, ctx.device());
-        const auto  name    = name_gen.next(texture.name);
+        auto sampler        = parse_sampler(texture.sampler, ctx.device());
+        const auto name     = name_gen.next(texture.name);
 
         // gltf textures can be either embedded into the gltf
         // via a buffer, or stored elsewhere on disk and be
@@ -169,8 +169,8 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             if (texture.image->buffer_view->has_meshopt_compression) {
                 return std::unexpected(AssetErrorCode::NotSupported);
             }
-            const u8*  bytes = cgltf_buffer_view_data(texture.image->buffer_view);
-            const auto size  = texture.image->buffer_view->size;
+            const u8* bytes = cgltf_buffer_view_data(texture.image->buffer_view);
+            const auto size = texture.image->buffer_view->size;
 
             i32 width, height, channels;
 
@@ -230,9 +230,9 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 }
 
 static auto load_materials(
-    const cgltf_data*                         data,
+    const cgltf_data* data,
     const std::vector<StrongHandle<Texture>>& textures,
-    LoadContext&                              ctx
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<MaterialAsset>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Material"};
 
@@ -251,8 +251,8 @@ static auto load_materials(
 
     for (usize material_idx = 0; material_idx < data->materials_count; material_idx++) {
         const auto& gltf_material = data->materials[material_idx];
-        const auto  name          = name_gen.next(gltf_material.name);
-        auto        mat           = std::make_unique<MaterialAsset>(name);
+        const auto name           = name_gen.next(gltf_material.name);
+        auto mat                  = std::make_unique<MaterialAsset>(name);
 
         // metallic roughness and specular glossiness are mutually exclusive. we stick to just
         // metallic roughness
@@ -570,9 +570,10 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
     return IndexBuffer{
         .buffer = device.make_buffer(
             {
-                .label = std::format("Index Buffer {}", bufferid),
-                .size  = buffer.size_bytes(),
-                .usage = BufferFlags::from(BufferFlag::Shared),
+                .label        = std::format("Index Buffer {}", bufferid),
+                .size         = buffer.size_bytes(),
+                .usage        = BufferFlags::from(BufferFlag::Index),
+                .memory_usage = BufferMemoryUsage::CpuAndGpu,
             },
             buffer.view()
         ),
@@ -690,9 +691,10 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
     return VertexBuffer{
         .buffer = device.make_buffer(
             {
-                .label = std::format("Vertex Buffer {}", bufferid++),
-                .size  = buffer.size_bytes(),
-                .usage = BufferFlags::from(BufferFlag::Shared),
+                .label        = std::format("Vertex Buffer {}", bufferid++),
+                .size         = buffer.size_bytes(),
+                .usage        = BufferFlags::from(BufferFlag::Vertex),
+                .memory_usage = BufferMemoryUsage::CpuAndGpu,
             },
             buffer.view()
         ),
@@ -701,9 +703,9 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
 }
 
 static auto load_meshes(
-    const cgltf_data*                               data,
+    const cgltf_data* data,
     const std::vector<StrongHandle<MaterialAsset>>& materials,
-    LoadContext&                                    ctx
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<Mesh>>, AssetErrorCode> {
     // surface names scoped are scoped to the gltf due to asset label system.
     NameIDGenerator mesh_name_generator{.fallback = "Mesh"};
@@ -758,9 +760,9 @@ static auto load_meshes(
 }
 
 static auto load_nodes(
-    const cgltf_data*                      data,
+    const cgltf_data* data,
     const std::vector<StrongHandle<Mesh>>& meshes,
-    LoadContext&                           ctx
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<GltfNode>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Node_"};
 
@@ -783,7 +785,7 @@ static auto load_nodes(
 
     for (usize node_idx = 0; node_idx < data->nodes_count; node_idx++) {
         const auto& gltf_node = data->nodes[node_idx];
-        const auto  name      = name_gen.next(gltf_node.name);
+        const auto name       = name_gen.next(gltf_node.name);
 
         std::optional<StrongHandle<Mesh>> mesh = std::nullopt;
         if (gltf_node.mesh != nullptr) {
@@ -811,9 +813,9 @@ static auto load_nodes(
         auto& [handle, node]  = vec[node_idx];
 
         if (gltf_node.parent) {
-            const auto parent_idx    = get_node_idx(gltf_node.parent);
-            auto&      parent_handle = vec[parent_idx].first;
-            node->parent             = make_weak(parent_handle);
+            const auto parent_idx = get_node_idx(gltf_node.parent);
+            auto& parent_handle   = vec[parent_idx].first;
+            node->parent          = make_weak(parent_handle);
         }
 
         std::vector<StrongHandle<GltfNode>> children;
@@ -829,9 +831,9 @@ static auto load_nodes(
 }
 
 static auto load_scenes(
-    const cgltf_data*                          data,
+    const cgltf_data* data,
     const std::vector<StrongHandle<GltfNode>>& nodes,
-    LoadContext&                               ctx
+    LoadContext& ctx
 ) -> std::expected<std::vector<StrongHandle<GltfScene>>, AssetErrorCode> {
     NameIDGenerator name_gen{.fallback = "Node_"};
 
@@ -839,8 +841,8 @@ static auto load_scenes(
     vec.reserve(data->scenes_count);
 
     for (usize scene_idx = 0; scene_idx < data->scenes_count; scene_idx++) {
-        const auto&                         gltf_scene = data->scenes[scene_idx];
-        const auto                          name       = name_gen.next(gltf_scene.name);
+        const auto& gltf_scene = data->scenes[scene_idx];
+        const auto name        = name_gen.next(gltf_scene.name);
         std::vector<StrongHandle<GltfNode>> root_nodes;
 
         for (usize node_idx = 0; node_idx < gltf_scene.nodes_count; node_idx++) {
@@ -876,11 +878,11 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
     // @formatter:on
 
     // load the gltf file using cgltf
-    auto        physical_path_opt = FileSystem::to_physical(ctx.path().full_path());
-    cgltf_data* raw               = nullptr;
+    auto physical_path_opt = FileSystem::to_physical(ctx.path().full_path());
+    cgltf_data* raw        = nullptr;
 
     if (physical_path_opt) {
-        const Path&   p = *physical_path_opt;
+        const Path& p = *physical_path_opt;
         cgltf_options options{};
 
         if (cgltf_parse_file(&options, p.string().c_str(), &raw) != cgltf_result_success) {

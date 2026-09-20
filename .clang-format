@@ -3,7 +3,7 @@ BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveAssignments: AcrossComments
-AlignConsecutiveDeclarations: AcrossComments
+AlignConsecutiveDeclarations: None
 AlignOperands: DontAlign
 AlignTrailingComments: true
 AllowShortCaseLabelsOnASingleLine: true

@@ -42,8 +42,8 @@ auto Swapchain::present() const -> void {
     m_device->present(m_handle);
 }
 
-auto Swapchain::present(CommandList&& cmds) const -> void {
-    m_device->present(m_handle, std::move(cmds));
+auto Swapchain::present(std::unique_ptr<CommandBuffer>&& command_buffer) const -> void {
+    m_device->present(m_handle, std::move(command_buffer));
 }
 
 } // namespace siren

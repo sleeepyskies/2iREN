@@ -121,31 +121,34 @@ const auto indices = ByteBuffer::make<u32>({
 });
 
 auto main() -> i32 {
-    auto       ctx       = Context::make({.level = log::Level::Trace});
-    auto       window    = ctx.make_window({.title = "Example 02"});
+    auto ctx             = Context::make({.level = log::Level::Trace});
+    auto window          = ctx.make_window({.title = "Example 02"});
     const auto device    = ctx.make_device();
     const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
     const auto vertex_buffer = device->make_buffer(
         {
-            .label = "Cube Vertices",
-            .size  = vertices.size_bytes(),
-            .usage = BufferFlags::from(BufferFlag::Shared),
+            .label        = "Cube Vertices",
+            .size         = vertices.size_bytes(),
+            .usage        = BufferFlags::from(BufferFlag::Vertex),
+            .memory_usage = BufferMemoryUsage::CpuAndGpu,
         },
         vertices.view()
     );
     const auto index_buffer = device->make_buffer(
         {
-            .label = "Cube Indicies",
-            .size  = indices.size_bytes(),
-            .usage = BufferFlags::from(BufferFlag::Shared),
+            .label        = "Cube Indicies",
+            .size         = indices.size_bytes(),
+            .usage        = BufferFlags::from(BufferFlag::Index),
+            .memory_usage = BufferMemoryUsage::CpuAndGpu,
         },
         indices.view()
     );
     const auto uniform_buffer = device->make_buffer({
-        .label = "Uniform Buffer",
-        .size  = sizeof(UboData),
-        .usage = BufferFlags::from(BufferFlag::Shared),
+        .label        = "Uniform Buffer",
+        .size         = sizeof(UboData),
+        .usage        = BufferFlags::from(BufferFlag::Uniform),
+        .memory_usage = BufferMemoryUsage::CpuAndGpu,
     });
     const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();
 
@@ -175,7 +178,7 @@ auto main() -> i32 {
     });
 
     const auto quarter_angle = Degrees{45}.to_radians();
-    u32        count         = 0;
+    u32 count                = 0;
 
     while (!window.should_close()) {
         window.poll_events();
@@ -189,13 +192,11 @@ auto main() -> i32 {
 
         auto backbuffer = swapchain.next_image();
 
-        auto cmds = device->make_command_recorder();
+        auto cmds = device->make_command_buffer();
 
-        cmds.transfer_pass({}, [&](TransferCommandRecorder& transfer) {
-            transfer.upload_to_buffer(uniform_buffer.handle(), data.view(), 0);
-        });
+        cmds->write_buffer(uniform_buffer.handle(), 0, data.view());
 
-        cmds.render_pass(
+        cmds->render_pass(
             RenderPassDescriptor{
                 .label = "Cube Pass",
                 .target =
@@ -212,16 +213,16 @@ auto main() -> i32 {
                         .depth_stencil = std::nullopt,
                     },
             },
-            [&](RenderCommandRecorder& pass) -> void {
+            [&](RenderCommandEncoder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
                 pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
-                pass.bind_uniform_buffer(uniform_buffer.handle(), 1);
+                pass.bind_uniform_buffer(uniform_buffer.handle(), 1, 0);
                 pass.draw_indexed(indices.size_as<u32>(), 0);
             }
         );
 
-        swapchain.present(std::move(cmds).finish());
+        swapchain.present(std::move(cmds));
 
         count++;
     }

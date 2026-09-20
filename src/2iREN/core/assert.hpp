@@ -35,10 +35,7 @@ inline auto report_and_terminate(
     const std::string_view message
 ) -> void {
     const std::string locationstring = std::format(
-        "{}:{}:{}",
-        strip_path(location.file_name()),
-        location.line(),
-        location.column()
+        "{}:{}:{}", strip_path(location.file_name()), location.line(), location.column()
     );
 
     std::println(
@@ -72,10 +69,7 @@ inline auto do_panic(const std::source_location& location) -> void {
 }
 
 [[noreturn]]
-inline auto do_panic(
-    const std::source_location& location,
-    const std::string_view message
-) -> void {
+inline auto do_panic(const std::source_location& location, const std::string_view message) -> void {
     report_and_terminate(location, "", message);
 }
 
@@ -95,10 +89,8 @@ inline auto do_unreachable(const std::source_location& location) -> void {
 }
 
 [[noreturn]]
-inline auto do_unreachable(
-    const std::source_location& location,
-    const std::string_view message
-) -> void {
+inline auto do_unreachable(const std::source_location& location, const std::string_view message)
+    -> void {
     do_panic(location, message);
 }
 
@@ -137,39 +129,30 @@ inline auto do_assertion_failed(
     const std::format_string<Args...> format,
     Args&&... args
 ) -> void {
-    do_assertion_failed(
-        location, expression, std::format(format, std::forward<Args>(args)...)
-    );
+    do_assertion_failed(location, expression, std::format(format, std::forward<Args>(args)...));
 }
 
 } // namespace siren::impl
 
 /// @brief Crashes the program with an optional formatted message and stack
 /// trace.
-#define PANIC(...)                                                             \
-    siren::impl::do_panic(                                                     \
-        std::source_location::current() __VA_OPT__(, ) __VA_ARGS__             \
-    )
+#define PANIC(...) siren::impl::do_panic(std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)
 
 /// @brief Crashes the program because control reached a logically impossible
 /// path.
-#define UNREACHABLE(...)                                                       \
-    siren::impl::do_unreachable(                                               \
-        std::source_location::current() __VA_OPT__(, ) __VA_ARGS__             \
-    )
+#define UNREACHABLE(...)                                                                           \
+    siren::impl::do_unreachable(std::source_location::current() __VA_OPT__(, ) __VA_ARGS__)
 
 /// @brief Checks a condition and crashes with an optional formatted message
 /// when it is false.
-#define ASSERT(condition, ...)                                                 \
-    do {                                                                       \
-        if (!(condition)) [[unlikely]] {                                       \
-            siren::impl::do_assertion_failed(                                  \
-                std::source_location::current(),                               \
-                #condition __VA_OPT__(, ) __VA_ARGS__                          \
-            );                                                                 \
-        }                                                                      \
+#define ASSERT(condition, ...)                                                                     \
+    do {                                                                                           \
+        if (!(condition)) [[unlikely]] {                                                           \
+            siren::impl::do_assertion_failed(                                                      \
+                std::source_location::current(), #condition __VA_OPT__(, ) __VA_ARGS__             \
+            );                                                                                     \
+        }                                                                                          \
     } while (false)
 
 /// @brief Checks some value is not nullptr.
-#define ASSERT_NOT_NULL(ptr, ...)                                              \
-    ASSERT(ptr != nullptr __VA_OPT__(, ) __VA_ARGS__)
+#define ASSERT_NOT_NULL(ptr, ...) ASSERT(ptr != nullptr __VA_OPT__(, ) __VA_ARGS__)

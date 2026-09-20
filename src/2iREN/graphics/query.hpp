@@ -42,10 +42,5 @@ public:
     /// @brief Returns the descriptor of this @ref Query.
     [[nodiscard]]
     auto descriptor() const -> const QueryDescriptor&;
-
-    [[nodiscard]]
-    auto result() const -> u64 {
-        return m_device->query_result(handle());
-    }
 };
 } // namespace siren

@@ -23,7 +23,7 @@ public:
     /// BufferDescriptor.
     [[nodiscard]]
     virtual auto make_buffer(
-        const BufferDescriptor&       descriptor,
+        const BufferDescriptor& descriptor,
         std::optional<ByteBufferView> initial = std::nullopt
     ) -> Buffer = 0;
 
@@ -31,7 +31,7 @@ public:
     /// ImageDescriptor.
     [[nodiscard]]
     virtual auto make_image(
-        const ImageDescriptor&        descriptor,
+        const ImageDescriptor& descriptor,
         std::optional<ByteBufferView> initial = std::nullopt
     ) -> Image = 0;
 
@@ -117,21 +117,12 @@ public:
     [[nodiscard]]
     virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
 
-    /// @brief Returns a new command recorder.
+    /// @brief Returns a new command buffer.
     [[nodiscard]]
-    virtual auto make_command_recorder() const noexcept -> CommandRecorder {
-        return CommandRecorder{this};
-    };
+    virtual auto make_command_buffer() const noexcept -> std::unique_ptr<CommandBuffer> = 0;
 
-    /// @brief Submits a list of 2iREN commands to be translated for the
-    /// backend and for exection on the GPU.
-    virtual auto submit(CommandList&& cmds) -> void = 0;
-
-    /// @brief Submits a list of 2iREN commands to be translated for the
-    /// backend and for exection on the GPU.
-    auto submit(CommandRecorder&& cmds) -> void {
-        submit(std::move(cmds).finish());
-    }
+    /// @brief Submits the commands to the Gpu for execution.
+    virtual auto submit(std::unique_ptr<CommandBuffer>&& command_buffer) const -> void = 0;
 
     /// @brief Presents the back buffer of the given swapchain to the screen.
     /// @note Does not guarantee that work using the backbuffer is completed
@@ -139,32 +130,13 @@ public:
     virtual auto present(SwapchainHandle handle) -> void = 0;
 
     /// @brief Presents the back buffer of the given swapchain to the screen.
-    /// Furthremore, the backbuffer will only be presented once the provided
-    /// work has been completed by the GPU.
-    virtual auto present(SwapchainHandle handle, CommandList&& cmds) -> void = 0;
+    virtual auto present(SwapchainHandle handle, std::unique_ptr<CommandBuffer>&& command_buffer)
+        -> void = 0;
 
     /// @brief Returns the next @ref Image target managed by this framebuffer to
     /// render to.
     [[nodiscard]] virtual auto acquire_next_swapchain_image(SwapchainHandle handle)
         -> ImageHandle = 0;
-
-    /// @brief Retrieves the information stored inside a query object. May be
-    /// blocking on some implementations. The return value must be interpreted
-    /// by the caller depending on the QueryKind.
-    [[nodiscard]]
-    virtual auto query_result(QueryHandle handle) const -> u64 = 0;
-
-    /// @brief Checks if a query objects result is available.
-    [[nodiscard]]
-    virtual auto query_available(QueryHandle handle) const -> bool = 0;
-
-    /// @brief Begins a conditionally rendered scope. Any draw calls between
-    /// this and end_conditional_render may be omitted based on the query
-    /// object.
-    virtual auto begin_conditional_render(QueryHandle query) const -> void = 0;
-
-    /// @brief Ends a conditionally rendered scope.
-    virtual auto end_conditional_render() const -> void = 0;
 
     /// @brief Blocks until the device has finished all tasks.
     virtual auto wait_idle() const noexcept -> void = 0;
@@ -191,8 +163,8 @@ public:
 protected:
     Device(Backend backend) : m_backend(backend) { }
 
-    mutable Limits     m_limits     = {};
+    mutable Limits m_limits         = {};
     mutable Statistics m_statistics = {};
-    Backend            m_backend;
+    Backend m_backend;
 };
 } // namespace siren

@@ -75,8 +75,8 @@ struct ExclusiveBoundsPolicy {
 /// be inclusive or exclusive.
 template <
     IsComparable T,
-    T            Min,
-    T            Max,
+    T Min,
+    T Max,
     typename BoundsPolicy = AssertBoundsPolicy,
     typename LowerPolicy  = InclusiveBoundsPolicy,
     typename UpperPolicy  = InclusiveBoundsPolicy>
@@ -102,6 +102,9 @@ using NonZeroPositiveF32 =
 template <i32 Min = std::numeric_limits<i32>::min(), i32 Max = std::numeric_limits<i32>::max()>
 using BoundedI32 = Bounded<i32, Min, Max>;
 
+/// @brief A usize value that cannot be 0.
+using NonZeroUsize = Bounded<usize, 1, std::numeric_limits<usize>::max()>;
+
 /// @brief A u32 that is bounded by an inclusive min and max.
 template <
     u32 Min               = std::numeric_limits<u32>::min(),
@@ -111,8 +114,8 @@ using BoundedU32 = Bounded<u32, Min, Max, BoundsPolicy>;
 
 template <
     IsComparable T,
-    T            Min,
-    T            Max,
+    T Min,
+    T Max,
     typename BoundsPolicy,
     typename LowerPolicy,
     typename UpperPolicy>
@@ -122,7 +125,7 @@ public:
     inline static constexpr T MIN = Min;
     inline static constexpr T MAX = Max;
 
-    constexpr Bounded() : Bounded(T{}) { }
+    constexpr Bounded() : Bounded(MIN) { }
 
     constexpr Bounded(T value) : m_value(value) {
         check_bounds();

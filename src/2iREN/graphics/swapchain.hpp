@@ -1,6 +1,5 @@
 #pragma once
 
-#include <limits>
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -29,7 +28,7 @@ struct SwapchainInfo {
     /// @brief The format of the pixels of the swapchains image.
     ImageFormat image_format;
     /// @brief The extent of the swapchains images.
-    Extent2u    extent;
+    Extent2u extent;
 };
 
 /// @brief A collection of images tied to a specific @ref Window. Used to present
@@ -59,8 +58,7 @@ public:
     /// @brief Presents the back buffer to the screen.
     auto present() const -> void;
 
-    /// @brief Presents the back buffer to the screen after the commands have
-    /// finished executing.
-    auto present(CommandList&& cmds) const -> void;
+    /// @brief Presents the back buffer to the screen after the commands have finished executing.
+    auto present(std::unique_ptr<CommandBuffer>&& command_buffer) const -> void;
 };
 } // namespace siren

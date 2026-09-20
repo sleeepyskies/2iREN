@@ -128,7 +128,6 @@ constexpr auto index_type(const IndexFormat format) -> MTL::IndexType {
     switch (format) {
         case IndexFormat::UInt16: return MTL::IndexType::IndexTypeUInt16;
         case IndexFormat::UInt32: return MTL::IndexType::IndexTypeUInt32; break;
-        case IndexFormat::UInt8: PANIC("UInt8 index type not supported on metal.");
     }
 }
 
@@ -242,22 +241,11 @@ constexpr auto texture_type(const ImageDimension dimension) -> MTL::TextureType 
 }
 
 [[nodiscard]]
-constexpr auto resource_options(const BufferFlags flags) -> MTL::ResourceOptions {
-    MTL::ResourceOptions opts = 0;
-
-    ASSERT(
-        !flags.all(BufferFlag::Shared, BufferFlag::Private),
-        "cannot have private and shared image usage."
-    );
-    if (flags.test(BufferFlag::Shared)) {
-        opts |= MTL::ResourceStorageModeShared;
+constexpr auto resource_options(const BufferMemoryUsage memory_usage) -> MTL::ResourceOptions {
+    switch (memory_usage) {
+        case BufferMemoryUsage::CpuAndGpu: return MTL::ResourceStorageModeShared;
+        case BufferMemoryUsage::GpuOnly: return MTL::ResourceStorageModePrivate;
     }
-
-    if (flags.test(BufferFlag::Private)) {
-        opts |= MTL::ResourceStorageModePrivate;
-    }
-
-    return opts;
 }
 
 [[nodiscard]]

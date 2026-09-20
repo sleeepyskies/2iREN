@@ -1,4 +1,5 @@
 #include <optional>
+
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/shader.hpp"
 #include "2iREN/core/context.hpp"
@@ -22,8 +23,8 @@ const auto vertices = ByteBuffer{
 };
 
 auto main() -> i32 {
-    auto       ctx       = Context::make({.level = log::Level::Trace});
-    auto       window    = ctx.make_window({.title = "Example 01"});
+    auto ctx             = Context::make({.level = log::Level::Trace});
+    auto window          = ctx.make_window({.title = "Example 01"});
     const auto device    = ctx.make_device();
     const auto swapchain = device->make_swapchain(window, {.vsync = true});
 
@@ -31,9 +32,10 @@ auto main() -> i32 {
 
     const auto buffer = device->make_buffer(
         {
-            .label = "Vertex Buffer",
-            .size  = vertices.size_bytes(),
-            .usage = BufferFlags::from(BufferFlag::Shared),
+            .label        = "Vertex Buffer",
+            .size         = vertices.size_bytes(),
+            .usage        = BufferFlags::from(BufferFlag::Vertex),
+            .memory_usage = BufferMemoryUsage::CpuAndGpu,
         },
         vertices.view()
     );
@@ -68,9 +70,9 @@ auto main() -> i32 {
 
         auto backbuffer = swapchain.next_image();
 
-        auto cmds = device->make_command_recorder();
+        auto cmds = device->make_command_buffer();
 
-        cmds.render_pass(
+        cmds->render_pass(
             RenderPassDescriptor{
                 .label = "Load Shader Pass",
                 .target =
@@ -86,14 +88,14 @@ auto main() -> i32 {
                             },
                     },
             },
-            [&](RenderCommandRecorder& pass) {
+            [&](RenderCommandEncoder& pass) {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(buffer.handle(), 0, 0);
                 pass.draw_arrays(0, 3);
             }
         );
 
-        swapchain.present(std::move(cmds).finish());
+        swapchain.present(std::move(cmds));
     }
 
     return 0;

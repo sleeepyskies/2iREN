@@ -3,11 +3,11 @@
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
+#include <memory>
 
-#include <utility>
-
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
-#include "2iREN/graphics/backend/metal/command_executor.hpp"
+#include "2iREN/graphics/backend/metal/commands.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 
@@ -15,7 +15,6 @@
 #include "2iREN/graphics/backend/metal/adapter.hpp"
 #include "2iREN/graphics/backend/metal/mappings.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
-#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/limits.hpp"
@@ -35,6 +34,8 @@
 #pragma clang diagnostic ignored "-Wunused-parameter"
 
 namespace siren {
+
+using namespace metal;
 
 namespace {
 
@@ -66,8 +67,8 @@ auto fetch_limits(MTL::Device* device) -> Limits {
 } // namespace
 
 MetalDevice::MetalDevice() : Device(Backend::Metal) {
-    m_device    = metal::transfer_ptr(MTL::CreateSystemDefaultDevice());
-    m_cmd_queue = metal::transfer_ptr(m_device->newCommandQueue());
+    m_device    = transfer_ptr(MTL::CreateSystemDefaultDevice());
+    m_cmd_queue = transfer_ptr(m_device->newCommandQueue());
 
     m_limits = fetch_limits(m_device.get());
 
@@ -84,60 +85,53 @@ auto MetalDevice::wait_idle() const noexcept -> void {
 }
 
 auto MetalDevice::make_buffer(
-    const BufferDescriptor&       descriptor,
+    const BufferDescriptor& descriptor,
     std::optional<ByteBufferView> initial
 ) -> Buffer {
-    if (initial.has_value()) {
+    AUTORELEASE {
         ASSERT(
-            initial->size() <= descriptor.size,
+            initial.transform(&ByteBufferView::size).value_or(0) <= descriptor.size.get(),
             "buffer size is not large enough to hold the requested data."
         );
-    }
-
-    const auto autorelease = metal::AutoRelease{};
-    auto       buffer      = (NS::SharedPtr<MTL::Buffer>)nullptr;
-
-    if (descriptor.usage.test(BufferFlag::Private)) {
-        ASSERT(initial.has_value(), "should not create a static buffer with no initial data.");
-        auto staging = metal::transfer_ptr(
-            m_device->newBuffer(initial->data(), descriptor.size, MTL::ResourceStorageModeShared)
-        );
-        buffer = metal::transfer_ptr(
-            m_device->newBuffer(descriptor.size, MTL::ResourceStorageModePrivate)
+        auto buffer = transfer_ptr(
+            m_device->newBuffer(descriptor.size, resource_options(descriptor.memory_usage))
         );
 
-        auto* cmdbuffer      = m_cmd_queue->commandBuffer();
-        auto  blitdescriptor = metal::transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
-        auto* encoder        = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
+        set_label(buffer, descriptor.label);
 
-        encoder->copyFromBuffer(staging.get(), 0, buffer.get(), 0, initial->size());
-        encoder->endEncoding();
-
-        cmdbuffer->commit();
-        cmdbuffer->waitUntilCompleted();
-    } else {
         if (initial.has_value()) {
-            buffer = metal::transfer_ptr(m_device->newBuffer(
-                initial->data(), descriptor.size, MTL::ResourceStorageModeShared
-            ));
-        } else {
-            buffer = metal::transfer_ptr(
-                m_device->newBuffer(descriptor.size, MTL::ResourceStorageModeShared)
-            );
+            switch (descriptor.memory_usage) {
+                case BufferMemoryUsage::CpuAndGpu: {
+                    bufcpy(*initial, buffer->contents());
+                    break;
+                }
+                case BufferMemoryUsage::GpuOnly: {
+                    auto staging = transfer_ptr(m_device->newBuffer(
+                        initial->data(), initial->size(), MTL::ResourceStorageModeShared
+                    ));
+
+                    auto blitdescriptor = transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
+
+                    auto cmdbuffer = m_cmd_queue->commandBuffer();
+                    auto encoder   = cmdbuffer->blitCommandEncoder(blitdescriptor.get());
+
+                    encoder->copyFromBuffer(staging.get(), 0, buffer.get(), 0, initial->size());
+                    encoder->endEncoding();
+
+                    cmdbuffer->commit();
+                    cmdbuffer->waitUntilCompleted();
+                    check(cmdbuffer);
+                    break;
+                }
+            }
         }
-    }
 
-    ASSERT_NOT_NULL(buffer.get(), "failed to create metal buffer.");
+        const auto handle =
+            m_state.buffers.reserve_link(std::move(buffer), BufferDescriptor{descriptor});
 
-    if (descriptor.label) {
-        buffer->setLabel(metal::utf8_string(*descriptor.label).get());
-    }
-
-    const auto handle =
-        m_state.buffers.reserve_link(std::move(buffer), BufferDescriptor{descriptor});
-
-    log::trace("created buffer {}", handle);
-    return Buffer{this, handle};
+        log::trace("created buffer {}", handle);
+        return Buffer{this, handle};
+    };
 }
 
 auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
@@ -146,30 +140,33 @@ auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
 }
 
 auto MetalDevice::make_image(
-    const ImageDescriptor&        descriptor,
+    const ImageDescriptor& descriptor,
     std::optional<ByteBufferView> initial
 ) -> Image {
-    auto texture_desc = metal::transfer_ptr(MTL::TextureDescriptor::alloc()->init());
+    AUTORELEASE {
+        auto texture_desc = transfer_ptr(MTL::TextureDescriptor::alloc()->init());
 
-    texture_desc->setTextureType(metal::texture_type(descriptor.dimension));
-    texture_desc->setPixelFormat(metal::pixel_format(descriptor.format));
-    texture_desc->setWidth(descriptor.extent.x);
-    texture_desc->setHeight(descriptor.extent.y);
-    texture_desc->setMipmapLevelCount(descriptor.mipmap_levels);
-    texture_desc->setResourceOptions(metal::resource_options(descriptor.flags));
-    texture_desc->setUsage(metal::texture_usage(descriptor.flags));
+        texture_desc->setTextureType(texture_type(descriptor.dimension));
+        texture_desc->setPixelFormat(pixel_format(descriptor.format));
+        texture_desc->setWidth(descriptor.extent.x);
+        texture_desc->setHeight(descriptor.extent.y);
+        texture_desc->setMipmapLevelCount(descriptor.mipmap_levels);
+        texture_desc->setResourceOptions(resource_options(descriptor.flags));
+        texture_desc->setUsage(texture_usage(descriptor.flags));
 
-    auto texture = metal::transfer_ptr(m_device->newTexture(texture_desc.get()));
+        auto texture = transfer_ptr(m_device->newTexture(texture_desc.get()));
+        set_label(texture, descriptor.label);
 
-    if (initial.has_value()) {
-        const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
-        texture->replaceRegion(metal::region(descriptor.extent), 1, initial->data(), bytes_per_row);
+        if (initial.has_value()) {
+            const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
+            texture->replaceRegion(region(descriptor.extent), 1, initial->data(), bytes_per_row);
+        }
+
+        const auto handle = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
+
+        log::trace("created image {}", handle);
+        return Image{this, handle};
     }
-
-    const auto handle = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
-
-    log::trace("created image {}", handle);
-    return Image{this, handle};
 }
 
 auto MetalDevice::destroy_image(ImageHandle handle) -> void {
@@ -178,20 +175,16 @@ auto MetalDevice::destroy_image(ImageHandle handle) -> void {
 }
 
 auto MetalDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
-    auto mtl_desc = metal::transfer_ptr(MTL::SamplerDescriptor::alloc()->init());
+    auto mtl_desc = transfer_ptr(MTL::SamplerDescriptor::alloc()->init());
 
-    if (descriptor.label.has_value()) {
-        mtl_desc->setLabel(metal::utf8_string(*descriptor.label).get());
-    }
-
-    mtl_desc->setRAddressMode(metal::address_mode(descriptor.r_wrap));
-    mtl_desc->setSAddressMode(metal::address_mode(descriptor.s_wrap));
-    mtl_desc->setTAddressMode(metal::address_mode(descriptor.t_wrap));
+    mtl_desc->setRAddressMode(address_mode(descriptor.r_wrap));
+    mtl_desc->setSAddressMode(address_mode(descriptor.s_wrap));
+    mtl_desc->setTAddressMode(address_mode(descriptor.t_wrap));
     // mtl_desc->setBorderColor(descriptor.border_color);
 
-    mtl_desc->setMinFilter(metal::minmag_filter(descriptor.min_filter));
-    mtl_desc->setMagFilter(metal::minmag_filter(descriptor.mag_filter));
-    // mtl_desc->setMipFilter(metal::mipmap_filter(descriptor.mipmap_filter));
+    mtl_desc->setMinFilter(minmag_filter(descriptor.min_filter));
+    mtl_desc->setMagFilter(minmag_filter(descriptor.mag_filter));
+    // mtl_desc->setMipFilter(mipmap_filter(descriptor.mipmap_filter));
     // mtl_desc->setLodMinClamp(); mtl_desc->setLodMaxClamp();
     // mtl_desc->setLodAverage();
     // mtl_desc->setMaxAnisotropy();
@@ -201,8 +194,9 @@ auto MetalDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
     // mtl_desc->setLodBias();
     // mtl_desc->setReductionMode();
 
-    auto       sampler = metal::transfer_ptr(m_device->newSamplerState(mtl_desc.get()));
-    const auto handle  = m_state.samplers.reserve_link(sampler, SamplerDescriptor{descriptor});
+    set_label(mtl_desc, descriptor.label);
+    auto sampler      = transfer_ptr(m_device->newSamplerState(mtl_desc.get()));
+    const auto handle = m_state.samplers.reserve_link(sampler, SamplerDescriptor{descriptor});
 
     log::trace("created sampler {}", handle);
     return Sampler{this, handle};
@@ -214,43 +208,44 @@ auto MetalDevice::destroy_sampler(SamplerHandle handle) -> void {
 }
 
 auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
-    auto* err = (NS::Error*)nullptr;
-    ASSERT(
-        descriptor.source.contains(ShaderStage::Vertex),
-        "cannot create a shader without a vertex shader"
-    );
-    ASSERT(
-        descriptor.source.contains(ShaderStage::Fragment),
-        "cannot create a shader without a fragment shader"
-    );
+    AUTORELEASE {
+        auto* err = (NS::Error*)nullptr;
+        ASSERT(
+            descriptor.source.contains(ShaderStage::Vertex),
+            "cannot create a shader without a vertex shader"
+        );
+        ASSERT(
+            descriptor.source.contains(ShaderStage::Fragment),
+            "cannot create a shader without a fragment shader"
+        );
 
-    // create shader compiler
-    auto compiler_descriptor = metal::transfer_ptr(MTL4::CompilerDescriptor::alloc()->init());
-    auto compiler            = m_device->newCompiler(compiler_descriptor.get(), &err);
+        // create shader compiler
+        auto compiler_descriptor = transfer_ptr(MTL4::CompilerDescriptor::alloc()->init());
+        auto compiler            = m_device->newCompiler(compiler_descriptor.get(), &err);
 
-    metal::check_error(compiler, err);
+        check_error(compiler, err);
 
-    // create shader library
-    auto compile_opts = metal::transfer_ptr(MTL::CompileOptions::alloc()->init());
-    compile_opts->setEnableLogging(true);
-    auto source = metal::utf8_string(descriptor.source.at(ShaderStage::Vertex).source);
+        // create shader library
+        auto compile_opts = transfer_ptr(MTL::CompileOptions::alloc()->init());
+        compile_opts->setEnableLogging(true);
 
-    auto library_desc = metal::transfer_ptr(MTL4::LibraryDescriptor::alloc()->init());
-    library_desc->setSource(source.get());
-    library_desc->setOptions(compile_opts.get());
-    if (descriptor.label) {
-        library_desc->setName(metal::utf8_string(*descriptor.label).get());
+        auto library_desc = transfer_ptr(MTL4::LibraryDescriptor::alloc()->init());
+        library_desc->setSource(utf8_string(descriptor.source.at(ShaderStage::Vertex).source));
+        library_desc->setOptions(compile_opts.get());
+        if (descriptor.label) {
+            library_desc->setName(utf8_string(*descriptor.label));
+        }
+
+        auto library = transfer_ptr(compiler->newLibrary(library_desc.get(), &err));
+        check_error(library, err);
+
+        const auto handle =
+            m_state.shaders.reserve_link(library, ShaderDetails{descriptor, compiler});
+
+        log::trace("created shader {}", handle);
+
+        return Shader{this, handle};
     }
-
-    auto library = metal::transfer_ptr(compiler->newLibrary(library_desc.get(), &err));
-    metal::check_error(library, err);
-
-    const auto handle =
-        m_state.shaders.reserve_link(library, MetalShaderDetails{descriptor, compiler});
-
-    log::trace("created shader {}", handle);
-
-    return Shader{this, handle};
 }
 
 auto MetalDevice::destroy_shader(ShaderHandle handle) -> void {
@@ -263,7 +258,7 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     // in the metal api, the CAMetalLayer acts as th swapchain.
     // this object manages various Drawables, which are swapchain images.
 
-    auto*      layer         = CA::MetalLayer::layer();
+    auto* layer              = CA::MetalLayer::layer();
     const auto scaled_extent = window.framebuffer_extent();
     layer->setDevice(m_device.get());
     layer->setDisplaySyncEnabled(descriptor.vsync);
@@ -271,9 +266,9 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
         CGSize{static_cast<CGFloat>(scaled_extent.x), static_cast<CGFloat>(scaled_extent.y)}
     );
 
-    const auto handle = m_state.swapchains.reserve_link(layer, MetalSwapchainDetails{descriptor});
+    const auto handle = m_state.swapchains.reserve_link(layer, SwapchainDetails{descriptor});
 
-    metal::connect_to_window(window.native_handle(), layer);
+    connect_to_window(window.native_handle(), layer);
 
     log::trace("created swapchain {}", handle);
     return Swapchain{this, handle};
@@ -288,16 +283,15 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
     -> GraphicsPipeline {
     auto* err = (NS::Error*)nullptr;
 
-    auto renderpipeline_descriptor =
-        metal::transfer_ptr(MTL4::RenderPipelineDescriptor::alloc()->init());
+    auto renderpipeline_descriptor = transfer_ptr(MTL4::RenderPipelineDescriptor::alloc()->init());
 
     if (descriptor.label) {
-        renderpipeline_descriptor->setLabel(metal::utf8_string(*descriptor.label).get());
+        renderpipeline_descriptor->setLabel(utf8_string(*descriptor.label));
     }
 
     // enable validation always
     {
-        auto opts = metal::transfer_ptr(MTL4::PipelineOptions::alloc()->init());
+        auto opts = transfer_ptr(MTL4::PipelineOptions::alloc()->init());
         opts->setShaderValidation(MTL::ShaderValidationEnabled);
         renderpipeline_descriptor->setOptions(opts.get());
     }
@@ -308,28 +302,28 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
 
         attachment_descriptor->setAlphaBlendOperation(
-            metal::blend_operation(colortarget.alpha_blend.function)
+            blend_operation(colortarget.alpha_blend.function)
         );
-        attachment_descriptor->setBlendingState(metal::blending_state(colortarget.alpha_mode));
+        attachment_descriptor->setBlendingState(blending_state(colortarget.alpha_mode));
 
         attachment_descriptor->setDestinationAlphaBlendFactor(
-            metal::blend_factor(colortarget.alpha_blend.dest_factor)
+            blend_factor(colortarget.alpha_blend.dest_factor)
         );
 
         attachment_descriptor->setSourceAlphaBlendFactor(
-            metal::blend_factor(colortarget.alpha_blend.source_factor)
+            blend_factor(colortarget.alpha_blend.source_factor)
         );
 
         attachment_descriptor->setDestinationRGBBlendFactor(
-            metal::blend_factor(colortarget.color_blend.dest_factor)
+            blend_factor(colortarget.color_blend.dest_factor)
         );
         attachment_descriptor->setSourceRGBBlendFactor(
-            metal::blend_factor(colortarget.color_blend.source_factor)
+            blend_factor(colortarget.color_blend.source_factor)
         );
 
-        attachment_descriptor->setPixelFormat(metal::pixel_format(colortarget.format));
+        attachment_descriptor->setPixelFormat(pixel_format(colortarget.format));
         attachment_descriptor->setRgbBlendOperation(
-            metal::blend_operation(colortarget.color_blend.function)
+            blend_operation(colortarget.color_blend.function)
         );
     }
 
@@ -342,7 +336,7 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         for (usize i = 0; i < descriptor.layout.components.size(); i++) {
             auto* vertex    = layout->attributes()->object(i);
             auto& component = descriptor.layout.components[i];
-            vertex->setFormat(metal::vertex_format(component));
+            vertex->setFormat(vertex_format(component));
             vertex->setOffset(component.offset);
             vertex->setBufferIndex(0);
         }
@@ -359,30 +353,26 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
     {
         // TODO: should we migrate code to the more complex MTL4 api?
 
-        auto        library     = m_state.shaders.fetch(descriptor.shader);
+        auto library            = m_state.shaders.fetch(descriptor.shader);
         const auto& shader_desc = m_state.shaders.details(descriptor.shader).descriptor;
 
-        auto vertexfn = metal::transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
+        auto vertexfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
         vertexfn->setLibrary(library.get());
-        vertexfn->setName(
-            metal::utf8_string(shader_desc.source.at(ShaderStage::Vertex).entry).get()
-        );
+        vertexfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Vertex).entry));
 
-        auto fragmentfn = metal::transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
+        auto fragmentfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
         fragmentfn->setLibrary(library.get());
-        fragmentfn->setName(
-            metal::utf8_string(shader_desc.source.at(ShaderStage::Fragment).entry).get()
-        );
+        fragmentfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Fragment).entry));
 
         renderpipeline_descriptor->setVertexFunctionDescriptor(vertexfn.get());
         renderpipeline_descriptor->setFragmentFunctionDescriptor(fragmentfn.get());
     }
 
-    auto render_pipeline = metal::transfer_ptr(
+    auto render_pipeline = transfer_ptr(
         m_state.shaders.details(descriptor.shader)
             .compiler->newRenderPipelineState(renderpipeline_descriptor.get(), nullptr, &err)
     );
-    metal::check_error(render_pipeline, err);
+    check_error(render_pipeline, err);
 
     const auto handle =
         m_state.pipelines.reserve_link(render_pipeline, GraphicsPipelineDescriptor{descriptor});
@@ -393,27 +383,6 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
 auto MetalDevice::destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void {
     log::trace("destroyed graphics pipeline {}", handle);
     m_state.pipelines.fetch_release(handle);
-}
-
-auto MetalDevice::make_query(const QueryDescriptor& descriptor) -> Query {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::destroy_query(QueryHandle handle) -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::submit(CommandList&& cmds) -> void {
-    const auto autorelease = metal::AutoRelease{};
-
-    auto cmd_buffer = metal::retain_ptr(m_cmd_queue->commandBuffer());
-
-    auto executor = MetalCommandExecutor{this->m_state, cmd_buffer};
-    executor.execute(std::move(cmds));
-
-    cmd_buffer->commit();
-
-    m_statistics += executor.statistics();
 }
 
 auto MetalDevice::buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& {
@@ -448,29 +417,32 @@ auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo 
     const auto drawable_size = layer->drawableSize();
 
     return SwapchainInfo{
-        .image_format = metal::image_format(pixel_format),
+        .image_format = image_format(pixel_format),
         .extent       = Extent2u{drawable_size.width, drawable_size.height},
     };
+}
+
+auto MetalDevice::make_query(const QueryDescriptor& descriptor) -> Query {
+    UNIMPLEMENTED();
+}
+
+auto MetalDevice::destroy_query(const QueryHandle handle) -> void {
+    UNIMPLEMENTED();
 }
 
 auto MetalDevice::query_descriptor(QueryHandle handle) const -> const QueryDescriptor& {
     UNIMPLEMENTED();
 }
 
-auto MetalDevice::query_result(QueryHandle handle) const -> u64 {
-    UNIMPLEMENTED();
+auto MetalDevice::make_command_buffer() const noexcept -> std::unique_ptr<::siren::CommandBuffer> {
+    auto* cmdbuffer = m_cmd_queue->commandBuffer();
+    return std::make_unique<metal::CommandBuffer>(cmdbuffer, m_state);
 }
 
-auto MetalDevice::query_available(QueryHandle handle) const -> bool {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::begin_conditional_render(const QueryHandle query) const -> void {
-    UNIMPLEMENTED();
-}
-
-auto MetalDevice::end_conditional_render() const -> void {
-    UNIMPLEMENTED();
+auto MetalDevice::submit(std::unique_ptr<siren::CommandBuffer>&& command_buffer) const -> void {
+    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).mtl_command_buffer();
+    mtlbuffer->commit();
+    check(mtlbuffer);
 }
 
 auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle {
@@ -482,17 +454,17 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
 
     auto* layer = m_state.swapchains.fetch(handle);
 
-    auto drawable = metal::retain_ptr(layer->nextDrawable());
+    auto drawable = retain_ptr(layer->nextDrawable());
     auto texture  = drawable->texture();
 
     details.drawable = drawable;
     const auto size  = layer->drawableSize();
 
     details.image = m_state.images.reserve_link(
-        metal::retain_ptr(drawable->texture()),
+        retain_ptr(drawable->texture()),
         ImageDescriptor{
-            .label         = "Swapchain Image",
-            .format        = metal::image_format(layer->pixelFormat()),
+            .label         = "swapchain image",
+            .format        = image_format(layer->pixelFormat()),
             .extent        = Extent2u{size.width, size.height}.to_extent3(),
             .dimension     = ImageDimension::D2,
             .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
@@ -504,10 +476,12 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
 }
 
 auto MetalDevice::present(SwapchainHandle handle) -> void {
-    auto& details  = m_state.swapchains.details(handle);
-    auto  drawable = details.drawable;
+    auto& details = m_state.swapchains.details(handle);
+    auto drawable = details.drawable;
 
-    ASSERT_NOT_NULL(drawable.get(), "metal: cannot present swapchain, no drawable present.");
+    ASSERT_NOT_NULL(drawable.get(), "cannot present swapchain, no drawable present.");
+
+    drawable->present();
 
     if (details.drawable) {
         details.drawable->release();
@@ -519,29 +493,28 @@ auto MetalDevice::present(SwapchainHandle handle) -> void {
     details.image = std::nullopt;
 }
 
-auto MetalDevice::present(SwapchainHandle handle, CommandList&& cmds) -> void {
-    const auto autorelease = metal::AutoRelease{};
+auto MetalDevice::present(
+    SwapchainHandle handle,
+    std::unique_ptr<siren::CommandBuffer>&& command_buffer
+) -> void {
+    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).mtl_command_buffer();
 
-    auto& details  = m_state.swapchains.details(handle);
-    auto  drawable = details.drawable;
+    auto& details = m_state.swapchains.details(handle);
+    auto drawable = details.drawable;
 
-    ASSERT_NOT_NULL(drawable.get(), "metal: cannot present swapchain, no drawable present.");
+    mtlbuffer->presentDrawable(drawable.get());
+    mtlbuffer->commit();
 
-    auto cmd_buffer = metal::retain_ptr(m_cmd_queue->commandBuffer());
+    ASSERT_NOT_NULL(drawable.get(), "cannot present swapchain, no drawable present.");
 
-    auto executor = MetalCommandExecutor{this->m_state, cmd_buffer};
-    executor.execute(std::move(cmds));
-
-    cmd_buffer->presentDrawable(drawable.get());
-    cmd_buffer->commit();
-
-    m_statistics += executor.statistics();
-
+    if (details.drawable) {
+        details.drawable->release();
+    }
+    details.drawable = nullptr;
     if (details.image) {
         m_state.images.release(*details.image);
     }
-    details.image    = std::nullopt;
-    details.drawable = nullptr;
+    details.image = std::nullopt;
 }
 
 } // namespace siren

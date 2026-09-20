@@ -1,7 +1,6 @@
 #include "buffer.hpp"
 
 #include "2iREN/core/base.hpp"
-#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/device.hpp"
 
 namespace siren {
@@ -32,12 +31,8 @@ auto Buffer::descriptor() const noexcept -> const BufferDescriptor& {
     return m_device->buffer_descriptor(m_handle);
 }
 
-auto Buffer::upload(const ByteBufferView data, const u32 offset) const noexcept -> void {
-    auto cmds = m_device->make_command_recorder();
-    cmds.transfer_pass({.label = std::nullopt}, [&](TransferCommandRecorder& transfer) {
-        transfer.upload_to_buffer(m_handle, data, offset);
-    });
-    m_device->submit(std::move(cmds).finish());
+auto Buffer::upload(const ByteBufferView, const u32) const noexcept -> void {
+    UNIMPLEMENTED();
 }
 
 } // namespace siren

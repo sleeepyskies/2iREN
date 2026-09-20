@@ -1,6 +1,5 @@
 #pragma once
 
-#include <limits>
 #include <optional>
 
 #include "2iREN/container/byte_buffer.hpp"
@@ -126,17 +125,17 @@ public:
 /// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
     /// @brief An optional label.
-    Label          label = std::nullopt;
+    Label label = std::nullopt;
     /// @brief The format of the image data (num channels/bytes per channel).
-    ImageFormat    format;
+    ImageFormat format;
     /// @brief Extent of the image. The z-axis is used iff the image is an aray.
-    Extent3u       extent;
+    Extent3u extent;
     /// @brief The dimensionality of the image.
     ImageDimension dimension;
     /// @brief How many mip map levels to generate.
-    u32            mipmap_levels;
+    u32 mipmap_levels;
     /// @brief Flags specifying how the @ref Image will be used.
-    ImageFlags     flags;
+    ImageFlags flags;
 };
 
 /// @brief A gpu resource representing image data.

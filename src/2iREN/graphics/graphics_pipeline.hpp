@@ -1,7 +1,6 @@
 #pragma once
 
 #include <optional>
-#include <string>
 
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -94,19 +93,19 @@ enum class BlendFactor {
 /// @brief Collection of parameters describing how to blend together values.
 struct BlendDescription {
     /// @brief Describes what function to use to blend 2 values together.
-    BlendFunction function      = BlendFunction::Add;
+    BlendFunction function    = BlendFunction::Add;
     /// @brief The @ref BlendFactor to affect the source.
-    BlendFactor   source_factor = BlendFactor::SourceAlpha;
+    BlendFactor source_factor = BlendFactor::SourceAlpha;
     /// @brief The @ref BlendFactor to affect the destination.
-    BlendFactor   dest_factor   = BlendFactor::OneMinusSourceAlpha;
+    BlendFactor dest_factor   = BlendFactor::OneMinusSourceAlpha;
 };
 
 /// @brief Represents a single color attachment.
 struct ColorAttachmentDescriptor {
     /// @brief The format of the individual pixels of the image.
-    ImageFormat      format;
+    ImageFormat format;
     /// @brief Determines if pixels can be transparent.
-    AlphaMode        alpha_mode;
+    AlphaMode alpha_mode;
     /// @brief Describes how to blend rgb values. Used only when
     /// AlphaMode::Blend.
     BlendDescription color_blend;
@@ -121,16 +120,20 @@ using ColorAttachmentDescriptors = std::vector<ColorAttachmentDescriptor>;
 /// @brief Controls the way the depth stencil buffer is handled during a pipeline.
 struct DepthStencilAttachmentDescriptor {
     /// @brief The format of the individual pixels of the image.
-    ImageFormat   format;
+    ImageFormat format;
     /// @brief The depth fucntion to use when comparing two depth values.
     DepthFunction depth_function;
     /// @brief Whether to write to the depth buffer.
-    bool          depth_write;
+    bool depth_write;
 };
 
+/// @brief Possible ways to cull sides of geometry.
 enum class CullMode {
+    /// @brief Performs no culling.
     None,
+    /// @brief The font face is culled.
     Front,
+    /// @brief The back face is culled.
     Back,
 };
 
@@ -138,19 +141,19 @@ enum class CullMode {
 /// GraphicsPipeline should behave.
 struct GraphicsPipelineDescriptor {
     /// @brief An optional label.
-    Label                                           label = std::nullopt;
+    Label label = std::nullopt;
     /// @brief Handle to the shade to use.
-    ShaderHandle                                    shader;
+    ShaderHandle shader;
     /// @brief Descibes the vertex buffer layout.
-    Layout                                          layout;
+    Layout layout;
     /// @brief Describes the primitive kind to draw with.
-    PrimitiveTopology                               topology;
+    PrimitiveTopology topology;
     /// @brief Describes how every color buffer is handled during this pass.
-    ColorAttachmentDescriptors                      colors;
+    ColorAttachmentDescriptors colors;
     /// @brief Describes how depth and stencil buffers are handled during this pass.
     std::optional<DepthStencilAttachmentDescriptor> depth_stencil;
     /// @brief Describes how to cull faces.
-    CullMode                                        cull_mode;
+    CullMode cull_mode;
 };
 
 /// @brief A 2iREN API agnostic GraphicsPipeline. Encapsulates render state

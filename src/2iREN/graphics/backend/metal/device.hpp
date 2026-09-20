@@ -1,14 +1,11 @@
 #pragma once
 
-#include <Metal/MTLSampler.hpp>
-#include <cstddef>
-
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
 #include "2iREN/graphics/backend/metal/fwd.hpp"
-#include "2iREN/graphics/backend/metal/util.hpp"
+#include "2iREN/graphics/backend/metal/resource_state.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -19,34 +16,6 @@
 #include "2iREN/graphics/swapchain.hpp"
 
 namespace siren {
-
-struct MetalShaderDetails {
-    ShaderDescriptor descriptor;
-    MTL4::Compiler*  compiler;
-};
-
-struct MetalSwapchainDetails {
-    /// @brief The original descriptor of the object.
-    SwapchainDescriptor              descriptor;
-    /// @brief The drawable retrieved via the MetalLayer.
-    NS::SharedPtr<CA::MetalDrawable> drawable = nullptr;
-    /// @brief The image wrapper of the next swapchain image. Is reset after
-    /// each call to present.
-    std::optional<ImageHandle>       image    = std::nullopt;
-};
-
-struct MetalDeviceState {
-    RenderResourceTable<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor>    buffers    = {};
-    RenderResourceTable<CA::MetalLayer*, Swapchain, MetalSwapchainDetails>       swapchains = {};
-    RenderResourceTable<NS::SharedPtr<MTL::Library>, Shader, MetalShaderDetails> shaders    = {};
-    RenderResourceTable<
-        NS::SharedPtr<MTL::RenderPipelineState>,
-        GraphicsPipeline,
-        GraphicsPipelineDescriptor>
-                                                                             pipelines         = {};
-    RenderResourceTable<NS::SharedPtr<MTL::Texture>, Image, ImageDescriptor> images            = {};
-    RenderResourceTable<NS::SharedPtr<MTL::SamplerState>, Sampler, SamplerDescriptor> samplers = {};
-};
 
 class MetalDevice final : public Device {
 public:
@@ -117,19 +86,15 @@ public:
     [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
 
-    auto submit(CommandList&& cmds) -> void override;
+    [[nodiscard]]
+    auto make_command_buffer() const noexcept -> std::unique_ptr<siren::CommandBuffer> override;
+
+    auto submit(std::unique_ptr<CommandBuffer>&& command_buffer) const -> void override;
 
     auto present(SwapchainHandle handle) -> void override;
 
-    auto present(SwapchainHandle handle, CommandList&& cmds) -> void override;
-
-    auto query_result(QueryHandle handle) const -> u64 override;
-
-    auto query_available(QueryHandle handle) const -> bool override;
-
-    auto begin_conditional_render(QueryHandle query) const -> void override;
-
-    auto end_conditional_render() const -> void override;
+    auto present(SwapchainHandle handle, std::unique_ptr<CommandBuffer>&& command_buffer)
+        -> void override;
 
     [[nodiscard]]
     auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle override;
@@ -137,13 +102,11 @@ public:
     auto wait_idle() const noexcept -> void override;
 
 private:
-    MetalDeviceState m_state  = {};
-    Limits           m_limits = {};
+    metal::ResourceState m_state = {};
+    Limits m_limits              = {};
 
-    NS::SharedPtr<MTL::Device>       m_device    = nullptr;
+    NS::SharedPtr<MTL::Device> m_device          = nullptr;
     NS::SharedPtr<MTL::CommandQueue> m_cmd_queue = nullptr;
-
-    metal::AutoRelease m_autorelease = {};
 };
 
 } // namespace siren

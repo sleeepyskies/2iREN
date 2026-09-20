@@ -1,7 +1,4 @@
 target_sources(2iREN PRIVATE
-    layout.cpp
-    commands.cpp
-
     buffer.cpp
     graphics_pipeline.cpp
     image.cpp
@@ -9,6 +6,7 @@ target_sources(2iREN PRIVATE
     sampler.cpp
     shader.cpp
     swapchain.cpp
+    layout.cpp
 )
 
 add_subdirectory(backend/opengl)
