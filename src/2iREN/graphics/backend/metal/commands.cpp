@@ -1,7 +1,6 @@
 #include "commands.hpp"
 
 #include <Foundation/Foundation.hpp>
-#include <Metal/MTLResource.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
@@ -15,6 +14,38 @@
 #include "2iREN/graphics/fwd.hpp"
 
 namespace siren::metal {
+
+namespace {
+
+struct ImageCopyLayout {
+    MTL::Size size;
+    usize bytes_per_row;
+    usize bytes_per_slice;
+    usize slice_count;
+};
+
+auto image_copy_layout(MTL::Texture* texture, ImageFormat format) -> ImageCopyLayout {
+    ASSERT(texture->sampleCount() == 1, "buffer/image copies require a single-sample image.");
+    ASSERT(!texture->isFramebufferOnly(), "cannot copy a framebuffer-only image.");
+    ASSERT(
+        format != ImageFormat::Depth24Stencil8,
+        "buffer/image copies of combined depth/stencil require an explicit plane selection."
+    );
+
+    const auto size = MTL::Size{texture->width(), texture->height(), texture->depth()};
+    const auto bytes_per_row = size.width * format.bytes_per_pixel();
+    const auto is_cube = texture->textureType() == MTL::TextureTypeCube
+        || texture->textureType() == MTL::TextureTypeCubeArray;
+
+    return {
+        .size = size,
+        .bytes_per_row = bytes_per_row,
+        .bytes_per_slice = bytes_per_row * size.height * size.depth,
+        .slice_count = texture->arrayLength() * (is_cube ? 6 : 1),
+    };
+}
+
+} // namespace
 
 auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void {
     const auto& descriptor = m_state.pipelines.details(pipeline);
@@ -168,21 +199,21 @@ auto CommandBuffer::render_pass(
 
 auto CommandBuffer::write_buffer(
     const BufferHandle buffer,
-    const u32 buffer_offset,
+    const usize buffer_offset,
     const ByteBufferView data
 ) -> void {
     const auto& desc = m_state.buffers.details(buffer);
 
     ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
     ASSERT(
-        desc.size.get() - buffer_offset >= data.size(),
+        buffer_offset <= desc.size.get() && data.size() <= desc.size.get() - buffer_offset,
         "buffer is too small to write the requested data."
     );
 
     auto mtlbuf = m_state.buffers.fetch(buffer);
     ASSERT_NOT_NULL(mtlbuf.get());
 
-    bufcpy(data, mtlbuf->contents());
+    bufcpy(data, static_cast<u8*>(mtlbuf->contents()) + buffer_offset);
 }
 
 auto CommandBuffer::fill_buffer(const BufferHandle buffer, const RangeUsize range, const u8 value)
@@ -214,6 +245,121 @@ auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView da
 
     const auto bytes_per_row = desc.extent.x * desc.format.bytes_per_pixel();
     mtlimg->replaceRegion(region(desc.extent), 0, data.data(), bytes_per_row);
+}
+
+auto CommandBuffer::copy_buffer_to_buffer(
+    BufferHandle src,
+    RangeUsize src_range,
+    BufferHandle dst,
+    usize dst_offset
+) -> void {
+    AUTORELEASE {
+        auto mtlsrc   = m_state.buffers.fetch(src).get();
+        auto mtldst   = m_state.buffers.fetch(dst).get();
+        auto* encoder = m_cmdbuffer->blitCommandEncoder();
+        encoder->copyFromBuffer(mtlsrc, src_range.begin, mtldst, dst_offset, src_range.length());
+        encoder->endEncoding();
+    }
+}
+
+auto CommandBuffer::copy_buffer_to_image(
+    BufferHandle src,
+    usize src_offset,
+    ImageHandle dst
+) -> void {
+    AUTORELEASE {
+        auto* mtlsrc = m_state.buffers.fetch(src).get();
+        auto* mtldst = m_state.images.fetch(dst).get();
+        const auto format = m_state.images.details(dst).format;
+        const auto layout = image_copy_layout(mtldst, format);
+        const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
+
+        ASSERT(src_offset % format.bytes_per_pixel() == 0, "unaligned source buffer offset.");
+        ASSERT(
+            src_offset <= mtlsrc->length() && size_bytes <= mtlsrc->length() - src_offset,
+            "source buffer is too small to copy the image."
+        );
+
+        auto* encoder = m_cmdbuffer->blitCommandEncoder();
+        for (usize slice = 0; slice < layout.slice_count; ++slice) {
+            encoder->copyFromBuffer(
+                mtlsrc,
+                src_offset + slice * layout.bytes_per_slice,
+                layout.bytes_per_row,
+                layout.size.depth > 1 ? layout.bytes_per_row * layout.size.height : 0,
+                layout.size,
+                mtldst,
+                slice,
+                0,
+                MTL::Origin{0, 0, 0}
+            );
+        }
+        encoder->endEncoding();
+    }
+}
+
+auto CommandBuffer::copy_image_to_buffer(
+    ImageHandle src,
+    BufferHandle dst,
+    usize dst_offset
+) -> void {
+    AUTORELEASE {
+        auto* mtlsrc = m_state.images.fetch(src).get();
+        auto* mtldst = m_state.buffers.fetch(dst).get();
+        const auto format = m_state.images.details(src).format;
+        const auto layout = image_copy_layout(mtlsrc, format);
+        const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
+
+        ASSERT(dst_offset % format.bytes_per_pixel() == 0, "unaligned destination buffer offset.");
+        ASSERT(
+            dst_offset <= mtldst->length() && size_bytes <= mtldst->length() - dst_offset,
+            "destination buffer is too small to copy the image."
+        );
+
+        auto* encoder = m_cmdbuffer->blitCommandEncoder();
+        for (usize slice = 0; slice < layout.slice_count; ++slice) {
+            encoder->copyFromTexture(
+                mtlsrc,
+                slice,
+                0,
+                MTL::Origin{0, 0, 0},
+                layout.size,
+                mtldst,
+                dst_offset + slice * layout.bytes_per_slice,
+                layout.bytes_per_row,
+                layout.size.depth > 1 ? layout.bytes_per_row * layout.size.height : 0
+            );
+        }
+        encoder->endEncoding();
+    }
+}
+
+auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> void {
+    AUTORELEASE {
+        auto* mtlsrc = m_state.images.fetch(src).get();
+        auto* mtldst = m_state.images.fetch(dst).get();
+
+        ASSERT(mtlsrc->pixelFormat() == mtldst->pixelFormat(), "image formats must match.");
+        ASSERT(mtlsrc->textureType() == mtldst->textureType(), "image dimensions must match.");
+        ASSERT(
+            mtlsrc->width() == mtldst->width() && mtlsrc->height() == mtldst->height()
+                && mtlsrc->depth() == mtldst->depth() && mtlsrc->arrayLength() == mtldst->arrayLength(),
+            "image extents and slice counts must match."
+        );
+        ASSERT(mtlsrc->sampleCount() == mtldst->sampleCount(), "image sample counts must match.");
+        ASSERT(
+            !mtlsrc->isFramebufferOnly() && !mtldst->isFramebufferOnly(),
+            "cannot copy a framebuffer only image."
+        );
+
+        const auto is_cube = mtlsrc->textureType() == MTL::TextureTypeCube
+            || mtlsrc->textureType() == MTL::TextureTypeCubeArray;
+        const auto slice_count = mtlsrc->arrayLength() * (is_cube ? 6 : 1);
+
+        auto* encoder = m_cmdbuffer->blitCommandEncoder();
+        encoder->copyFromTexture(mtlsrc, 0, 0, mtldst, 0, 0, slice_count, 1);
+        encoder->endEncoding();
+    }
 }
 
 } // namespace siren::metal

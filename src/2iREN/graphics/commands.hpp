@@ -92,9 +92,23 @@ public:
     virtual auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void = 0;
 
-    virtual auto write_buffer(BufferHandle dest, u32 dest_offset, ByteBufferView data) -> void = 0;
-    virtual auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void          = 0;
-    virtual auto write_image(ImageHandle dest, ByteBufferView data) -> void                    = 0;
+    virtual auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void = 0;
+
+    virtual auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data)
+        -> void                                                             = 0;
+    virtual auto write_image(ImageHandle dest, ByteBufferView data) -> void = 0;
+
+    virtual auto copy_buffer_to_buffer(
+        BufferHandle src,
+        RangeUsize src_range,
+        BufferHandle dest,
+        usize dest_offset
+    ) -> void = 0;
+    virtual auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
+        -> void = 0;
+    virtual auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
+        -> void = 0;
+    virtual auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void = 0;
 
     [[nodiscard]]
     virtual auto statistics() const -> const Statistics& {

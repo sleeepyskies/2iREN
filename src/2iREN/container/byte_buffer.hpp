@@ -193,7 +193,7 @@ private:
     }
 };
 
-/// @brief Copies the contents of the ByteBufferView into the destionation.
+/// @brief Copies the contents of the ByteBufferView into the destination.
 inline auto bufcpy(const ByteBufferView src, void* dest) -> void {
     std::memcpy(dest, src.data(), src.size_bytes());
 }

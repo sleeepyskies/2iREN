@@ -134,8 +134,12 @@ public:
 
     /// @brief Returns the next @ref Image target managed by this framebuffer to
     /// render to.
-    [[nodiscard]] virtual auto acquire_next_swapchain_image(SwapchainHandle handle)
-        -> ImageHandle = 0;
+    [[nodiscard]]
+    virtual auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle = 0;
+
+    /// @brief Copies the Gpu buffer data into a Cpu buffer.
+    [[nodiscard]]
+    virtual auto read_buffer(BufferHandle buffer) const -> ByteBuffer = 0;
 
     /// @brief Blocks until the device has finished all tasks.
     virtual auto wait_idle() const noexcept -> void = 0;

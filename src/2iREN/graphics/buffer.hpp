@@ -37,9 +37,9 @@ struct BufferDescriptor {
     /// @brief The initial size of the buffer in bytes.
     NonZeroUsize size;
     /// @brief Flag set of this buffers uses.
-    BufferFlags usage;
+    BufferFlags usage        = BufferFlags::empty();
     /// @brief Denotes what components may access the buffer.
-    MemoryUsage memory_usage;
+    MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
 };
 
 /// @brief A Buffer represents a typeless memory allocation on the GPU. The

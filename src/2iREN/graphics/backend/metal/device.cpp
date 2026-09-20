@@ -4,6 +4,7 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
+#include <cstring>
 #include <memory>
 
 #include "2iREN/container/byte_buffer.hpp"
@@ -511,6 +512,17 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
     );
 
     return *details.image;
+}
+
+auto MetalDevice::read_buffer(BufferHandle buffer) const -> ByteBuffer {
+    auto* buf = m_state.buffers.fetch(buffer).get();
+    ASSERT_NOT_NULL(buf);
+
+    ByteBuffer output;
+    output.reserve_bytes(buf->length());
+    std::memcpy(output.data(), buf->contents(), buf->length());
+
+    return output;
 }
 
 auto MetalDevice::present(SwapchainHandle handle) -> void {

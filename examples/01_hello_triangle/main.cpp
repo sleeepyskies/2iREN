@@ -9,6 +9,7 @@
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
+#include "2iREN/graphics/types.hpp"
 #include "2iREN/utility/log.hpp"
 #include "2iREN/window/window.hpp"
 
@@ -127,7 +128,8 @@ auto main() -> i32 {
         .extent        = swapchain.info().extent.to_extent3(),
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
-        .flags         = ImageFlags::from(ImageFlag::Shared),
+        .memory_usage  = MemoryUsage::CpuAndGpu,
+        .flags         = ImageFlags::from(ImageFlag::RenderAttachment),
     });
 
     const auto pipeline = device->make_graphics_pipeline({

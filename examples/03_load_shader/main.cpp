@@ -3,6 +3,7 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/asset/shader.hpp"
 #include "2iREN/core/context.hpp"
+#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/layout.hpp"

@@ -49,9 +49,22 @@ public:
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& function)
         -> void override;
 
-    auto write_buffer(BufferHandle buffer, u32 buffer_offset, ByteBufferView data) -> void override;
     auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void override;
-    auto write_image(ImageHandle image, const ByteBufferView data) -> void override;
+
+    auto write_buffer(BufferHandle buffer, usize buffer_offset, ByteBufferView data)
+        -> void override;
+    auto write_image(ImageHandle image, ByteBufferView data) -> void override;
+
+    auto copy_buffer_to_buffer(
+        BufferHandle src,
+        RangeUsize src_range,
+        BufferHandle dest,
+        usize dest_offset
+    ) -> void override;
+
+    auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst) -> void override;
+    auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset) -> void override;
+    auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override;
 
     auto mtl_command_buffer() -> MTL::CommandBuffer* {
         return m_cmdbuffer;

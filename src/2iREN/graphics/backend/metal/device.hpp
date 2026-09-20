@@ -99,6 +99,9 @@ public:
     [[nodiscard]]
     auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle override;
 
+    [[nodiscard]]
+    auto read_buffer(BufferHandle buffer) const -> ByteBuffer override;
+
     auto wait_idle() const noexcept -> void override;
 
 private:
