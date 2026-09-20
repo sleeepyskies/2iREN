@@ -2,11 +2,13 @@
 
 #include <functional>
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
-#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/statistics.hpp"
+#include "2iREN/graphics/types.hpp"
 #include "2iREN/math/color.hpp"
+#include "2iREN/math/range.hpp"
 
 namespace siren {
 
@@ -73,12 +75,11 @@ public:
 
     virtual auto bind_image(ImageHandle image, u32 slot) -> void = 0;
 
+    virtual auto bind_sampler(SamplerHandle sampler, u32 slot) -> void = 0;
+
     virtual auto draw_arrays(u32 start, u32 count) -> void = 0;
 
     virtual auto draw_indexed(u32 index_count, u32 first_index) -> void = 0;
-
-protected:
-    RenderCommandEncoder() = default;
 };
 
 using RenderPassFunction = std::function<void(RenderCommandEncoder&)>;
@@ -91,8 +92,9 @@ public:
     virtual auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void = 0;
 
-    virtual auto write_buffer(BufferHandle dest, u32 dest_offset, const ByteBufferView data)
-        -> void = 0;
+    virtual auto write_buffer(BufferHandle dest, u32 dest_offset, ByteBufferView data) -> void = 0;
+    virtual auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void          = 0;
+    virtual auto write_image(ImageHandle dest, ByteBufferView data) -> void                    = 0;
 
     [[nodiscard]]
     virtual auto statistics() const -> const Statistics& {

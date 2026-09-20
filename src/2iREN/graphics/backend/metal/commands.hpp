@@ -4,8 +4,8 @@
 #include <optional>
 
 #include "2iREN/graphics/backend/metal/resource_state.hpp"
-#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
+#include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 
 namespace siren::metal {
@@ -23,6 +23,7 @@ public:
     auto bind_uniform_buffer(BufferHandle buffer, u32 offset, u32 slot) -> void override;
     auto bind_storage_buffer(BufferHandle buffer, u32 slot) -> void override;
     auto bind_image(ImageHandle image, u32 slot) -> void override;
+    auto bind_sampler(SamplerHandle sampler, u32 slot) -> void override;
     auto draw_arrays(u32 start, u32 count) -> void override;
     auto draw_indexed(u32 index_count, u32 first_index) -> void override;
 
@@ -48,8 +49,9 @@ public:
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& function)
         -> void override;
 
-    auto write_buffer(BufferHandle dest, u32 dest_offset, const ByteBufferView data)
-        -> void override;
+    auto write_buffer(BufferHandle buffer, u32 buffer_offset, ByteBufferView data) -> void override;
+    auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void override;
+    auto write_image(ImageHandle image, const ByteBufferView data) -> void override;
 
     auto mtl_command_buffer() -> MTL::CommandBuffer* {
         return m_cmdbuffer;

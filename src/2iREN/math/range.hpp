@@ -12,6 +12,11 @@ struct Range {
     T begin;
     /// @brief The exclusive end.
     T end;
+
+    /// @brief Returns the length of the range.
+    constexpr auto length() const noexcept -> T {
+        return end - begin;
+    }
 };
 
 using RangeF32   = Range<f32>;

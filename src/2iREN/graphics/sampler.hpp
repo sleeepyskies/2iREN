@@ -3,7 +3,6 @@
 #include <optional>
 
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/graphics/graphics_pipeline.hpp"
 
 namespace siren {
 
@@ -30,17 +29,17 @@ enum class WrapMode {
 /// @brief Describes the ImageSampler for creation.
 struct SamplerDescriptor {
     /// @brief An optional label.
-    Label      label      = std::nullopt;
+    Label label           = std::nullopt;
     /// @brief Tells the gpu how to filter when the source image is smaller.
     FilterMode min_filter = FilterMode::Nearest;
     /// @brief Tells the gpu how to filter when the source image is larger.
     FilterMode mag_filter = FilterMode::Nearest;
     /// @brief Tells the gpu how to wrap along the horizontal axis.
-    WrapMode   s_wrap     = WrapMode::Repeat;
+    WrapMode s_wrap       = WrapMode::Repeat;
     /// @brief Tells the gpu how to wrap along the vertical axis.
-    WrapMode   t_wrap     = WrapMode::Repeat;
+    WrapMode t_wrap       = WrapMode::Repeat;
     /// @brief Tells the gpu how to wrap along the depth axis.
-    WrapMode   r_wrap     = WrapMode::Repeat;
+    WrapMode r_wrap       = WrapMode::Repeat;
 };
 
 /// @brief A gpu resource defining how to read from an Image.

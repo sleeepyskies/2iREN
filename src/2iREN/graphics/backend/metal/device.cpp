@@ -146,6 +146,7 @@ auto MetalDevice::make_image(
     std::optional<ByteBufferView> initial
 ) -> Image {
     AUTORELEASE {
+        // TODO: cannot upload direct to private buffers, need staging for that
         auto texture_desc = transfer_ptr(MTL::TextureDescriptor::alloc()->init());
 
         texture_desc->setTextureType(texture_type(descriptor.dimension));
@@ -161,7 +162,7 @@ auto MetalDevice::make_image(
 
         if (initial.has_value()) {
             const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
-            texture->replaceRegion(region(descriptor.extent), 1, initial->data(), bytes_per_row);
+            texture->replaceRegion(region(descriptor.extent), 0, initial->data(), bytes_per_row);
         }
 
         const auto handle = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
@@ -319,103 +320,106 @@ auto MetalDevice::destroy_swapchain(SwapchainHandle handle) -> void {
 
 auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
     -> GraphicsPipeline {
-    auto* err = (NS::Error*)nullptr;
+    AUTORELEASE {
+        auto* err = (NS::Error*)nullptr;
 
-    auto renderpipeline_descriptor = transfer_ptr(MTL4::RenderPipelineDescriptor::alloc()->init());
+        auto renderpipeline_descriptor =
+            transfer_ptr(MTL4::RenderPipelineDescriptor::alloc()->init());
 
-    if (descriptor.label) {
-        renderpipeline_descriptor->setLabel(utf8_string(*descriptor.label));
-    }
-
-    // enable validation always
-    {
-        auto opts = transfer_ptr(MTL4::PipelineOptions::alloc()->init());
-        opts->setShaderValidation(MTL::ShaderValidationEnabled);
-        renderpipeline_descriptor->setOptions(opts.get());
-    }
-
-    // color attachments
-    for (usize i = 0; i < descriptor.colors.size(); i++) {
-        const auto& colortarget     = descriptor.colors[i];
-        auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
-
-        attachment_descriptor->setAlphaBlendOperation(
-            blend_operation(colortarget.alpha_blend.function)
-        );
-        attachment_descriptor->setBlendingState(blending_state(colortarget.alpha_mode));
-
-        attachment_descriptor->setDestinationAlphaBlendFactor(
-            blend_factor(colortarget.alpha_blend.dest_factor)
-        );
-
-        attachment_descriptor->setSourceAlphaBlendFactor(
-            blend_factor(colortarget.alpha_blend.source_factor)
-        );
-
-        attachment_descriptor->setDestinationRGBBlendFactor(
-            blend_factor(colortarget.color_blend.dest_factor)
-        );
-        attachment_descriptor->setSourceRGBBlendFactor(
-            blend_factor(colortarget.color_blend.source_factor)
-        );
-
-        attachment_descriptor->setPixelFormat(pixel_format(colortarget.format));
-        attachment_descriptor->setRgbBlendOperation(
-            blend_operation(colortarget.color_blend.function)
-        );
-    }
-
-    // depth desciption is done during the render pass.
-
-    // vertex buffer layout
-    {
-        auto* layout = MTL::VertexDescriptor::alloc()->init();
-
-        for (usize i = 0; i < descriptor.layout.components.size(); i++) {
-            auto* vertex    = layout->attributes()->object(i);
-            auto& component = descriptor.layout.components[i];
-            vertex->setFormat(vertex_format(component));
-            vertex->setOffset(component.offset);
-            vertex->setBufferIndex(0);
+        if (descriptor.label) {
+            renderpipeline_descriptor->setLabel(utf8_string(*descriptor.label));
         }
 
-        auto* buf_layout = layout->layouts()->object(0);
-        buf_layout->setStepFunction(MTL::VertexStepFunctionPerVertex);
-        buf_layout->setStride(descriptor.layout.stride);
-        buf_layout->setStepRate(1);
+        // enable validation always
+        {
+            auto opts = transfer_ptr(MTL4::PipelineOptions::alloc()->init());
+            opts->setShaderValidation(MTL::ShaderValidationEnabled);
+            renderpipeline_descriptor->setOptions(opts.get());
+        }
 
-        renderpipeline_descriptor->setVertexDescriptor(layout);
+        // color attachments
+        for (usize i = 0; i < descriptor.colors.size(); i++) {
+            const auto& colortarget     = descriptor.colors[i];
+            auto* attachment_descriptor = renderpipeline_descriptor->colorAttachments()->object(i);
+
+            attachment_descriptor->setAlphaBlendOperation(
+                blend_operation(colortarget.alpha_blend.function)
+            );
+            attachment_descriptor->setBlendingState(blending_state(colortarget.alpha_mode));
+
+            attachment_descriptor->setDestinationAlphaBlendFactor(
+                blend_factor(colortarget.alpha_blend.dest_factor)
+            );
+
+            attachment_descriptor->setSourceAlphaBlendFactor(
+                blend_factor(colortarget.alpha_blend.source_factor)
+            );
+
+            attachment_descriptor->setDestinationRGBBlendFactor(
+                blend_factor(colortarget.color_blend.dest_factor)
+            );
+            attachment_descriptor->setSourceRGBBlendFactor(
+                blend_factor(colortarget.color_blend.source_factor)
+            );
+
+            attachment_descriptor->setPixelFormat(pixel_format(colortarget.format));
+            attachment_descriptor->setRgbBlendOperation(
+                blend_operation(colortarget.color_blend.function)
+            );
+        }
+
+        // depth desciption is done during the render pass.
+
+        // vertex buffer layout
+        {
+            auto* layout = MTL::VertexDescriptor::alloc()->init();
+
+            for (usize i = 0; i < descriptor.layout.components.size(); i++) {
+                auto* vertex    = layout->attributes()->object(i);
+                auto& component = descriptor.layout.components[i];
+                vertex->setFormat(vertex_format(component));
+                vertex->setOffset(component.offset);
+                vertex->setBufferIndex(0);
+            }
+
+            auto* buf_layout = layout->layouts()->object(0);
+            buf_layout->setStepFunction(MTL::VertexStepFunctionPerVertex);
+            buf_layout->setStride(descriptor.layout.stride);
+            buf_layout->setStepRate(1);
+
+            renderpipeline_descriptor->setVertexDescriptor(layout);
+        }
+
+        // link shader
+        {
+            // TODO: should we migrate code to the more complex MTL4 api?
+
+            auto library            = m_state.shaders.fetch(descriptor.shader);
+            const auto& shader_desc = m_state.shaders.details(descriptor.shader).descriptor;
+
+            auto vertexfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
+            vertexfn->setLibrary(library.get());
+            vertexfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Vertex).entry));
+
+            auto fragmentfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
+            fragmentfn->setLibrary(library.get());
+            fragmentfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Fragment).entry));
+
+            renderpipeline_descriptor->setVertexFunctionDescriptor(vertexfn.get());
+            renderpipeline_descriptor->setFragmentFunctionDescriptor(fragmentfn.get());
+        }
+
+        auto render_pipeline = transfer_ptr(
+            m_state.shaders.details(descriptor.shader)
+                .compiler->newRenderPipelineState(renderpipeline_descriptor.get(), nullptr, &err)
+        );
+        check_error(render_pipeline, err);
+
+        const auto handle =
+            m_state.pipelines.reserve_link(render_pipeline, GraphicsPipelineDescriptor{descriptor});
+        log::trace("created graphics pipeline {}", handle);
+        return GraphicsPipeline{this, handle};
     }
-
-    // link shader
-    {
-        // TODO: should we migrate code to the more complex MTL4 api?
-
-        auto library            = m_state.shaders.fetch(descriptor.shader);
-        const auto& shader_desc = m_state.shaders.details(descriptor.shader).descriptor;
-
-        auto vertexfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
-        vertexfn->setLibrary(library.get());
-        vertexfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Vertex).entry));
-
-        auto fragmentfn = transfer_ptr(MTL4::LibraryFunctionDescriptor::alloc()->init());
-        fragmentfn->setLibrary(library.get());
-        fragmentfn->setName(utf8_string(shader_desc.source.at(ShaderStage::Fragment).entry));
-
-        renderpipeline_descriptor->setVertexFunctionDescriptor(vertexfn.get());
-        renderpipeline_descriptor->setFragmentFunctionDescriptor(fragmentfn.get());
-    }
-
-    auto render_pipeline = transfer_ptr(
-        m_state.shaders.details(descriptor.shader)
-            .compiler->newRenderPipelineState(renderpipeline_descriptor.get(), nullptr, &err)
-    );
-    check_error(render_pipeline, err);
-
-    const auto handle =
-        m_state.pipelines.reserve_link(render_pipeline, GraphicsPipelineDescriptor{descriptor});
-    log::trace("created graphics pipeline {}", handle);
-    return GraphicsPipeline{this, handle};
 }
 
 auto MetalDevice::destroy_graphics_pipeline(GraphicsPipelineHandle handle) -> void {

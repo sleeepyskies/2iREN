@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include <Foundation/Foundation.hpp>
+#include <Metal/MTLResource.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
@@ -90,8 +91,17 @@ auto RenderCommandEncoder::bind_storage_buffer(const BufferHandle buffer, const 
 
 auto RenderCommandEncoder::bind_image(const ImageHandle image, const u32 slot) -> void {
     // TODO: do we want this in the fragment too/instead?
+    // TODO: do we want to bind always to all stages?
     auto img = m_state.images.fetch(image).get();
     m_encoder->setVertexTexture(img, slot);
+    m_encoder->setFragmentTexture(img, slot);
+}
+
+auto RenderCommandEncoder::bind_sampler(const SamplerHandle sampler, const u32 slot) -> void {
+    // TODO: do we want to bind always to all stages?
+    auto* ss = m_state.samplers.fetch(sampler).get();
+    m_encoder->setVertexSamplerState(ss, slot);
+    m_encoder->setFragmentSamplerState(ss, slot);
 }
 
 auto RenderCommandEncoder::draw_arrays(const u32 start, const u32 count) -> void {
@@ -157,22 +167,53 @@ auto CommandBuffer::render_pass(
 }
 
 auto CommandBuffer::write_buffer(
-    const BufferHandle dest,
-    const u32 dest_offset,
+    const BufferHandle buffer,
+    const u32 buffer_offset,
     const ByteBufferView data
 ) -> void {
-    const auto& desc = m_state.buffers.details(dest);
+    const auto& desc = m_state.buffers.details(buffer);
 
     ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
     ASSERT(
-        desc.size.get() - dest_offset >= data.size(),
+        desc.size.get() - buffer_offset >= data.size(),
         "buffer is too small to write the requested data."
     );
 
-    auto mtlbuf = m_state.buffers.fetch(dest);
+    auto mtlbuf = m_state.buffers.fetch(buffer);
     ASSERT_NOT_NULL(mtlbuf.get());
 
     bufcpy(data, mtlbuf->contents());
+}
+
+auto CommandBuffer::fill_buffer(const BufferHandle buffer, const RangeUsize range, const u8 value)
+    -> void {
+    // TODO: should we really make a new blit command encoder per upload?
+    AUTORELEASE {
+        const auto& desc = m_state.buffers.details(buffer);
+        ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
+        ASSERT(
+            desc.size.get() >= range.length(),
+            "buffer is not large enough to write the requested amount of data."
+        );
+        auto mtlbuf = m_state.buffers.fetch(buffer).get();
+
+        auto encoder = m_cmdbuffer->blitCommandEncoder();
+        encoder->fillBuffer(mtlbuf, NS::Range(range.begin, range.length()), value);
+        encoder->endEncoding();
+    }
+}
+
+auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView data) -> void {
+    const auto& desc = m_state.images.details(image);
+
+    ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly image.");
+    ASSERT(desc.extent.area() >= data.size(), "image is too small to write the requested data.");
+
+    auto mtlimg = m_state.images.fetch(image);
+    ASSERT_NOT_NULL(mtlimg.get());
+
+    const auto bytes_per_row = desc.extent.x * desc.format.bytes_per_pixel();
+    mtlimg->replaceRegion(region(desc.extent), 0, data.data(), bytes_per_row);
 }
 
 } // namespace siren::metal

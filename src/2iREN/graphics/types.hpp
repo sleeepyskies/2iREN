@@ -4,6 +4,7 @@
 
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
+#include "2iREN/utility/string.hpp"
 
 namespace siren {
 
@@ -188,9 +189,9 @@ public:
 
 ///  @brief Enum determining how to compare two values.
 enum class CompareFunction {
-    /// @brief Always return true.
+    /// @brief Always return true. Essentially disables the depth buffer.
     Always,
-    /// @brief Always return false.
+    /// @brief Always return false. Nothing is drawn.
     Never,
     /// @brief Perform new < old.
     Less,
@@ -206,4 +207,43 @@ enum class CompareFunction {
     NotEqual,
 };
 
+/// @brief Represents the various possible shader stages
+struct ShaderStage {
+    enum Value { Vertex, Fragment } value;
+
+    constexpr ShaderStage(const Value v) : value(v) { }
+    constexpr operator Value() const {
+        return value;
+    }
+
+    [[nodiscard]]
+    constexpr auto to_string() const -> std::string_view {
+        switch (value) {
+            case Vertex: return "Vertex";
+            case Fragment: return "Fragment";
+        }
+    }
+
+    [[nodiscard]]
+    static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
+        const std::string lower = string::tolower(str);
+
+        if (lower == "vertex") {
+            return Vertex;
+        }
+        if (lower == "fragment") {
+            return Fragment;
+        }
+
+        return std::nullopt;
+    }
+};
+
 } // namespace siren
+
+template <>
+struct std::hash<siren::ShaderStage> {
+    auto operator()(const siren::ShaderStage& stage) const noexcept -> siren::usize {
+        return static_cast<siren::usize>(stage.value);
+    }
+};

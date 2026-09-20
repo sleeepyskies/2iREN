@@ -25,9 +25,13 @@ constexpr auto to_string(const ImageDimension dimension) -> std::string_view {
 
 /// @brief Defines the usage of a Buffer.
 enum class ImageFlag {
+    /// @brief The image can be read from within shaders.
     ShaderRead,
+    /// @brief The image can be written to from within shaders.
     ShaderWrite,
+    /// @brief The image can be used as a render attachment.
     RenderAttachment,
+    /// @brief The image has access to atomic operations.
     UseAtomics,
 
     Max,

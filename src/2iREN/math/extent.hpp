@@ -51,6 +51,9 @@ struct Extent2 {
 
     [[nodiscard]]
     constexpr auto to_string() const -> std::string;
+
+    [[nodiscard]]
+    constexpr auto area() const -> usize;
 };
 
 template <typename T>
@@ -82,6 +85,9 @@ struct Extent3 {
 
     [[nodiscard]]
     constexpr auto to_string() const -> std::string;
+
+    [[nodiscard]]
+    constexpr auto area() const -> usize;
 };
 
 template <typename T>
@@ -95,6 +101,11 @@ constexpr auto Extent2<T>::to_string() const -> std::string {
 }
 
 template <typename T>
+constexpr auto Extent2<T>::area() const -> usize {
+    return x * y;
+}
+
+template <typename T>
 constexpr auto Extent3<T>::to_extent2() const -> Extent2<T> {
     return Extent2<T>{x, y};
 }
@@ -102,6 +113,11 @@ constexpr auto Extent3<T>::to_extent2() const -> Extent2<T> {
 template <typename T>
 constexpr auto Extent3<T>::to_string() const -> std::string {
     return std::format("Extent3<{}>(x={}, y={}, z={})", typename_of<T>(), x, y, z);
+}
+
+template <typename T>
+constexpr auto Extent3<T>::area() const -> usize {
+    return x * y * z;
 }
 
 } // namespace siren

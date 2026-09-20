@@ -5,42 +5,9 @@
 #include <unordered_map>
 
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/utility/string.hpp"
+#include "2iREN/graphics/types.hpp"
 
 namespace siren {
-
-/// @brief Represents the various possible shader stages
-struct ShaderStage {
-    enum Value { Vertex, Fragment } value;
-
-    constexpr ShaderStage(const Value v) : value(v) { }
-    constexpr operator Value() const {
-        return value;
-    }
-
-    [[nodiscard]]
-    constexpr auto to_string() const -> std::string_view {
-        switch (value) {
-            case Vertex: return "Vertex";
-            case Fragment: return "Fragment";
-            default: return "Unknown";
-        }
-    }
-
-    [[nodiscard]]
-    static auto from_string(const std::string_view str) -> std::optional<ShaderStage> {
-        const std::string lower = string::tolower(str);
-
-        if (lower == "vertex") {
-            return Vertex;
-        }
-        if (lower == "fragment") {
-            return Fragment;
-        }
-
-        return std::nullopt;
-    }
-};
 
 /// @brief Holds information on a single shader stage.
 struct ShaderData {
@@ -51,16 +18,6 @@ struct ShaderData {
     /// @brief The name of the entry function.
     std::string entry = "main";
 };
-} // namespace siren
-
-template <>
-struct std::hash<siren::ShaderStage> {
-    auto operator()(const siren::ShaderStage& stage) const noexcept -> siren::usize {
-        return static_cast<siren::usize>(stage.value);
-    }
-};
-
-namespace siren {
 
 /// @brief Describes a @ref Shader to be created.
 struct ShaderDescriptor {
