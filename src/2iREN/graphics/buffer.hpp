@@ -4,6 +4,7 @@
 #include "2iREN/container/flag_set.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
+#include "2iREN/graphics/types.hpp"
 #include "2iREN/math/bounded.hpp"
 
 namespace siren {
@@ -27,36 +28,6 @@ enum class BufferFlag {
 /// @brief Set of flags defining how a buffer may be used.
 using BufferFlags = FlagSet<BufferFlag>;
 
-/// @brief Specifies the GPU and CPU access permissions.
-enum class BufferMemoryUsage {
-    /// @brief The buffer can be accessed by the CPU and the GPU.
-    CpuAndGpu,
-    /// @brief The buffer can be accessed by only the GPU.
-    GpuOnly
-};
-
-/// @brief Defines the index format of an index buffer.
-class IndexFormat {
-public:
-    IndexFormat() : value(IndexFormat::UInt32) { }
-
-    enum Value : u8 { UInt16, UInt32 } value;
-
-    /// @brief Returns the size of this format in bytes.
-    [[nodiscard]] constexpr auto size_bytes() const -> usize {
-        switch (value) {
-            case UInt16: return 2;
-            case UInt32: return 4;
-            default: UNREACHABLE();
-        }
-    }
-
-    IndexFormat(const Value v) : value(v) { }
-    constexpr operator Value() const {
-        return value;
-    }
-};
-
 /// @brief Describes a @ref Buffer. Used for object creation via @ref Device.
 /// @todo pass in the data as a separate buffer in the device->create_buffer(),
 /// or just remove entirely
@@ -68,7 +39,7 @@ struct BufferDescriptor {
     /// @brief Flag set of this buffers uses.
     BufferFlags usage;
     /// @brief Denotes what components may access the buffer.
-    BufferMemoryUsage memory_usage;
+    MemoryUsage memory_usage;
 };
 
 /// @brief A Buffer represents a typeless memory allocation on the GPU. The

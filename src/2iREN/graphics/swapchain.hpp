@@ -4,7 +4,6 @@
 
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/graphics/image.hpp"
 #include "2iREN/math/extent.hpp"
 
 namespace siren {

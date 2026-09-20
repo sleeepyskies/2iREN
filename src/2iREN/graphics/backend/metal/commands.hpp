@@ -18,9 +18,9 @@ public:
     ) : m_state(state), m_encoder(encoder) { }
 
     auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void override;
-    auto bind_vertex_buffer(BufferHandle buffer, u32 slot, u32 offset) -> void override;
+    auto bind_vertex_buffer(BufferHandle buffer, u32 offset, u32 slot) -> void override;
     auto bind_index_buffer(BufferHandle buffer, IndexFormat index_format) -> void override;
-    auto bind_uniform_buffer(BufferHandle buffer, u32 slot, u32 offset) -> void override;
+    auto bind_uniform_buffer(BufferHandle buffer, u32 offset, u32 slot) -> void override;
     auto bind_storage_buffer(BufferHandle buffer, u32 slot) -> void override;
     auto bind_image(ImageHandle image, u32 slot) -> void override;
     auto draw_arrays(u32 start, u32 count) -> void override;

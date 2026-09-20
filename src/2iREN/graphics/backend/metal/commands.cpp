@@ -3,7 +3,6 @@
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
-#include <cgltf.h>
 
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/assert.hpp"
@@ -13,7 +12,6 @@
 #include "2iREN/graphics/backend/metal/util.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/math/range.hpp"
 
 namespace siren::metal {
 
@@ -31,7 +29,7 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
     if (descriptor.depth_stencil.has_value()) {
         auto ds_desc = transfer_ptr(MTL::DepthStencilDescriptor::alloc()->init());
         ds_desc->setDepthCompareFunction(
-            compare_function(descriptor.depth_stencil->depth_function)
+            compare_function(descriptor.depth_stencil->compare_function)
         );
         ds_desc->setDepthWriteEnabled(descriptor.depth_stencil->depth_write);
 
@@ -46,8 +44,8 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
 
 auto RenderCommandEncoder::bind_vertex_buffer(
     const BufferHandle buffer,
-    const u32 slot,
-    const u32 offset
+    const u32 offset,
+    const u32 slot
 ) -> void {
     ASSERT(
         m_state.buffers.details(buffer).usage.test(BufferFlag::Vertex),
@@ -70,8 +68,8 @@ auto RenderCommandEncoder::bind_index_buffer(
 
 auto RenderCommandEncoder::bind_uniform_buffer(
     const BufferHandle buffer,
-    const u32 slot,
-    const u32 offset
+    const u32 offset,
+    const u32 slot
 ) -> void {
     ASSERT(
         m_state.buffers.details(buffer).usage.test(BufferFlag::Uniform),
@@ -165,7 +163,7 @@ auto CommandBuffer::write_buffer(
 ) -> void {
     const auto& desc = m_state.buffers.details(dest);
 
-    ASSERT(desc.memory_usage != BufferMemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
+    ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
     ASSERT(
         desc.size.get() - dest_offset >= data.size(),
         "buffer is too small to write the requested data."

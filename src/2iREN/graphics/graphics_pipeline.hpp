@@ -3,7 +3,6 @@
 #include <optional>
 
 #include "2iREN/graphics/fwd.hpp"
-#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 
 namespace siren {
@@ -32,29 +31,6 @@ enum class AlphaMode {
     /// @brief Semi-transparent. Colors from behind can show through.
     Blend,
 };
-
-///  @brief Enum determining how to compare two values.
-enum class CompareFunction {
-    /// @brief Always return true.
-    Always,
-    /// @brief Always return false.
-    Never,
-    /// @brief Perform new < old.
-    Less,
-    /// @brief Perforn new == old.
-    Equal,
-    /// @brief Perform new <= old.
-    LessEqual,
-    /// @brief Perform new > old.
-    Greater,
-    /// @brief Perform new >= old.
-    GreaterEqual,
-    /// @brief Perform new != old.
-    NotEqual,
-};
-
-/// @brief Determines how to compare a new depth value against an old one.
-using DepthFunction = CompareFunction;
 
 /// @brief Defines the function to apply to two alpha values when blending.
 /// Aka for: alpha1 . alpha2
@@ -108,10 +84,10 @@ struct ColorAttachmentDescriptor {
     AlphaMode alpha_mode;
     /// @brief Describes how to blend rgb values. Used only when
     /// AlphaMode::Blend.
-    BlendDescription color_blend;
+    BlendDescription color_blend = {};
     /// @brief Describes how to blend alpha values. Used only when
     /// AlphaMode::Blend.
-    BlendDescription alpha_blend;
+    BlendDescription alpha_blend = {};
 };
 
 /// @brief Simple alias for a colletion of ColorAttachmentDescriptor's.
@@ -122,9 +98,9 @@ struct DepthStencilAttachmentDescriptor {
     /// @brief The format of the individual pixels of the image.
     ImageFormat format;
     /// @brief The depth fucntion to use when comparing two depth values.
-    DepthFunction depth_function;
+    CompareFunction compare_function = CompareFunction::Less;
     /// @brief Whether to write to the depth buffer.
-    bool depth_write;
+    bool depth_write                 = true;
 };
 
 /// @brief Possible ways to cull sides of geometry.
@@ -147,13 +123,13 @@ struct GraphicsPipelineDescriptor {
     /// @brief Descibes the vertex buffer layout.
     Layout layout;
     /// @brief Describes the primitive kind to draw with.
-    PrimitiveTopology topology;
+    PrimitiveTopology topology                                    = PrimitiveTopology::Triangles;
     /// @brief Describes how every color buffer is handled during this pass.
-    ColorAttachmentDescriptors colors;
+    ColorAttachmentDescriptors colors                             = {};
     /// @brief Describes how depth and stencil buffers are handled during this pass.
-    std::optional<DepthStencilAttachmentDescriptor> depth_stencil;
+    std::optional<DepthStencilAttachmentDescriptor> depth_stencil = std::nullopt;
     /// @brief Describes how to cull faces.
-    CullMode cull_mode;
+    CullMode cull_mode                                            = CullMode::Back;
 };
 
 /// @brief A 2iREN API agnostic GraphicsPipeline. Encapsulates render state

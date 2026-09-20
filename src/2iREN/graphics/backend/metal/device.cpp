@@ -3,6 +3,7 @@
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
+
 #include <memory>
 
 #include "2iREN/container/byte_buffer.hpp"
@@ -102,11 +103,11 @@ auto MetalDevice::make_buffer(
 
         if (initial.has_value()) {
             switch (descriptor.memory_usage) {
-                case BufferMemoryUsage::CpuAndGpu: {
+                case MemoryUsage::CpuAndGpu: {
                     bufcpy(*initial, buffer->contents());
                     break;
                 }
-                case BufferMemoryUsage::GpuOnly: {
+                case MemoryUsage::GpuOnly: {
                     auto staging = transfer_ptr(m_device->newBuffer(
                         initial->data(), initial->size(), MTL::ResourceStorageModeShared
                     ));
@@ -152,7 +153,7 @@ auto MetalDevice::make_image(
         texture_desc->setWidth(descriptor.extent.x);
         texture_desc->setHeight(descriptor.extent.y);
         texture_desc->setMipmapLevelCount(descriptor.mipmap_levels);
-        texture_desc->setResourceOptions(resource_options(descriptor.flags));
+        texture_desc->setResourceOptions(resource_options(descriptor.memory_usage));
         texture_desc->setUsage(texture_usage(descriptor.flags));
 
         auto texture = transfer_ptr(m_device->newTexture(texture_desc.get()));

@@ -573,7 +573,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
                 .label        = std::format("Index Buffer {}", bufferid),
                 .size         = buffer.size_bytes(),
                 .usage        = BufferFlags::from(BufferFlag::Index),
-                .memory_usage = BufferMemoryUsage::CpuAndGpu,
+                .memory_usage = MemoryUsage::CpuAndGpu,
             },
             buffer.view()
         ),
@@ -694,7 +694,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
                 .label        = std::format("Vertex Buffer {}", bufferid++),
                 .size         = buffer.size_bytes(),
                 .usage        = BufferFlags::from(BufferFlag::Vertex),
-                .memory_usage = BufferMemoryUsage::CpuAndGpu,
+                .memory_usage = MemoryUsage::CpuAndGpu,
             },
             buffer.view()
         ),

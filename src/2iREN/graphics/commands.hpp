@@ -63,11 +63,11 @@ public:
 
     virtual auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void = 0;
 
-    virtual auto bind_vertex_buffer(BufferHandle buffer, u32 slot, u32 offset) -> void = 0;
+    virtual auto bind_vertex_buffer(BufferHandle buffer, u32 offset, u32 slot) -> void = 0;
 
     virtual auto bind_index_buffer(BufferHandle buffer, IndexFormat index_format) -> void = 0;
 
-    virtual auto bind_uniform_buffer(BufferHandle buffer, u32 slot, u32 offset) -> void = 0;
+    virtual auto bind_uniform_buffer(BufferHandle buffer, u32 offset, u32 slot) -> void = 0;
 
     virtual auto bind_storage_buffer(BufferHandle buffer, u32 slot) -> void = 0;
 

@@ -17,7 +17,7 @@ struct ShaderAsset : Asset {
         shader(std::move(shader)), source(data) { }
 
     /// @brief The underlying GPU Shader object.
-    Shader                                      shader;
+    Shader shader;
     /// @brief The source code for each stage of the Shader.
     std::unordered_map<ShaderStage, ShaderData> source;
 };

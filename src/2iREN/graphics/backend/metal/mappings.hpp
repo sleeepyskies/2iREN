@@ -1,19 +1,9 @@
 #pragma once
 
-#include <Metal/MTL4PipelineState.hpp>
-#include <Metal/MTLDepthStencil.hpp>
-#include <Metal/MTLPixelFormat.hpp>
-#include <Metal/MTLRenderCommandEncoder.hpp>
-#include <Metal/MTLRenderPass.hpp>
-#include <Metal/MTLRenderPipeline.hpp>
-#include <Metal/MTLResource.hpp>
-#include <Metal/MTLSampler.hpp>
-#include <Metal/MTLTexture.hpp>
-#include <Metal/MTLTypes.hpp>
-#include <Metal/MTLVertexDescriptor.hpp>
+#include <Metal/Metal.hpp>
+
 #include <utility>
 
-#include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -218,16 +208,16 @@ constexpr auto cull_mode(const CullMode mode) -> MTL::CullMode {
 }
 
 [[nodiscard]]
-constexpr auto compare_function(const DepthFunction function) -> MTL::CompareFunction {
+constexpr auto compare_function(const CompareFunction function) -> MTL::CompareFunction {
     switch (function) {
-        case DepthFunction::Always: return MTL::CompareFunctionAlways;
-        case DepthFunction::Never: return MTL::CompareFunctionNever;
-        case DepthFunction::Less: return MTL::CompareFunctionLess;
-        case DepthFunction::Equal: return MTL::CompareFunctionEqual;
-        case DepthFunction::LessEqual: return MTL::CompareFunctionLessEqual;
-        case DepthFunction::Greater: return MTL::CompareFunctionGreater;
-        case DepthFunction::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
-        case DepthFunction::NotEqual: return MTL::CompareFunctionNotEqual;
+        case CompareFunction::Always: return MTL::CompareFunctionAlways;
+        case CompareFunction::Never: return MTL::CompareFunctionNever;
+        case CompareFunction::Less: return MTL::CompareFunctionLess;
+        case CompareFunction::Equal: return MTL::CompareFunctionEqual;
+        case CompareFunction::LessEqual: return MTL::CompareFunctionLessEqual;
+        case CompareFunction::Greater: return MTL::CompareFunctionGreater;
+        case CompareFunction::GreaterEqual: return MTL::CompareFunctionGreaterEqual;
+        case CompareFunction::NotEqual: return MTL::CompareFunctionNotEqual;
     }
 }
 
@@ -242,30 +232,11 @@ constexpr auto texture_type(const ImageDimension dimension) -> MTL::TextureType 
 }
 
 [[nodiscard]]
-constexpr auto resource_options(const BufferMemoryUsage memory_usage) -> MTL::ResourceOptions {
+constexpr auto resource_options(const MemoryUsage memory_usage) -> MTL::ResourceOptions {
     switch (memory_usage) {
-        case BufferMemoryUsage::CpuAndGpu: return MTL::ResourceStorageModeShared;
-        case BufferMemoryUsage::GpuOnly: return MTL::ResourceStorageModePrivate;
+        case MemoryUsage::CpuAndGpu: return MTL::ResourceStorageModeShared;
+        case MemoryUsage::GpuOnly: return MTL::ResourceStorageModePrivate;
     }
-}
-
-[[nodiscard]]
-constexpr auto resource_options(const ImageFlags flags) -> MTL::ResourceOptions {
-    MTL::ResourceOptions opts = 0;
-
-    ASSERT(
-        !flags.all(ImageFlag::Shared, ImageFlag::Private),
-        "cannot have private and shared image usage."
-    );
-    if (flags.test(ImageFlag::Shared)) {
-        opts |= MTL::ResourceStorageModeShared;
-    }
-
-    if (flags.test(ImageFlag::Private)) {
-        opts |= MTL::ResourceStorageModePrivate;
-    }
-
-    return opts;
 }
 
 [[nodiscard]]

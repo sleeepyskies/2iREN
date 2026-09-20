@@ -3,7 +3,6 @@
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
-#include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
@@ -137,7 +136,7 @@ auto main() -> i32 {
             .label        = "Cube Vertices",
             .size         = vertices.size_bytes(),
             .usage        = BufferFlags::from(BufferFlag::Vertex),
-            .memory_usage = BufferMemoryUsage::CpuAndGpu,
+            .memory_usage = MemoryUsage::CpuAndGpu,
         },
         vertices.view()
     );
@@ -146,7 +145,7 @@ auto main() -> i32 {
             .label        = "Cube Indicies",
             .size         = indices.size_bytes(),
             .usage        = BufferFlags::from(BufferFlag::Index),
-            .memory_usage = BufferMemoryUsage::CpuAndGpu,
+            .memory_usage = MemoryUsage::CpuAndGpu,
         },
         indices.view()
     );
@@ -154,33 +153,24 @@ auto main() -> i32 {
         .label        = "Uniform Buffer",
         .size         = sizeof(UboData),
         .usage        = BufferFlags::from(BufferFlag::Uniform),
-        .memory_usage = BufferMemoryUsage::CpuAndGpu,
+        .memory_usage = MemoryUsage::CpuAndGpu,
     });
     const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();
 
-    const auto shader = device->make_shader({.label = std::nullopt, .source = shaders});
+    const auto shader = device->make_shader({.label = "Cube Shader", .source = shaders});
 
     const auto pipeline = device->make_graphics_pipeline({
-        .label    = "Cube Pipeline",
-        .shader   = shader.handle(),
-        .layout   = layout,
-        .topology = PrimitiveTopology::Triangles,
+        .label  = "Cube Pipeline",
+        .shader = shader.handle(),
+        .layout = layout,
         .colors =
             ColorAttachmentDescriptors{
                 ColorAttachmentDescriptor{
-                    .format      = swapchain.info().image_format,
-                    .alpha_mode  = AlphaMode::Opaque,
-                    .color_blend = {},
-                    .alpha_blend = {},
+                    .format     = swapchain.info().image_format,
+                    .alpha_mode = AlphaMode::Opaque,
                 },
             },
-        .depth_stencil =
-            DepthStencilAttachmentDescriptor{
-                .format         = ImageFormat::Depth32f,
-                .depth_function = DepthFunction::Less,
-                .depth_write    = true,
-            },
-        .cull_mode = CullMode::Back,
+        .depth_stencil = DepthStencilAttachmentDescriptor{.format = ImageFormat::Depth32f},
     });
 
     const auto quarter_angle = Degrees{45}.to_radians();
@@ -223,7 +213,7 @@ auto main() -> i32 {
                 pass.bind_graphics_pipeline(pipeline.handle());
                 pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
                 pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
-                pass.bind_uniform_buffer(uniform_buffer.handle(), 1, 0);
+                pass.bind_uniform_buffer(uniform_buffer.handle(), 0, 1);
                 pass.draw_indexed(indices.size_as<u32>(), 0);
             }
         );
