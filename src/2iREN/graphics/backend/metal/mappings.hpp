@@ -136,7 +136,7 @@ constexpr auto image_format(const MTL::PixelFormat format) -> ImageFormat {
         case MTL::PixelFormatR8Uint: return ImageFormat::R8;
         case MTL::PixelFormatR32Uint: return ImageFormat::R32UI;
         case MTL::PixelFormatRG32Float: return ImageFormat::RG32f;
-        case MTL::PixelFormatBGRA8Unorm: // TODO: is this fine?
+        case MTL::PixelFormatBGRA8Unorm: return ImageFormat::BGRA8;
         case MTL::PixelFormatRGBA8Uint: return ImageFormat::RGBA8;
         case MTL::PixelFormatRGBA8Unorm_sRGB: return ImageFormat::sRGBA8;
         case MTL::PixelFormatRGBA16Float: return ImageFormat::RGBA16f;
@@ -200,6 +200,7 @@ constexpr auto pixel_format(const ImageFormat format) -> MTL::PixelFormat {
         case ImageFormat::R32UI: return MTL::PixelFormatR32Uint;
         case ImageFormat::RG32f: return MTL::PixelFormatRG32Float;
         case ImageFormat::RGBA8: return MTL::PixelFormatRGBA8Unorm;
+        case ImageFormat::BGRA8: return MTL::PixelFormatBGRA8Unorm;
         case ImageFormat::sRGBA8: return MTL::PixelFormatRGBA8Unorm_sRGB;
         case ImageFormat::RGBA16f: return MTL::PixelFormatRGBA16Float;
         case ImageFormat::Depth24Stencil8: return MTL::PixelFormatDepth24Unorm_Stencil8;

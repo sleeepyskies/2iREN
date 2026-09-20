@@ -26,12 +26,12 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
     return *this;
 }
 
-auto Swapchain::descriptor() const -> const SwapchainDescriptor& {
-    return m_device->swapchain_descriptor(m_handle);
+auto Swapchain::info() const -> const SwapchainInfo& {
+    return m_device->swapchain_info(m_handle);
 }
 
-auto Swapchain::info() const -> SwapchainInfo {
-    return m_device->swapchain_info(m_handle);
+auto Swapchain::update(const SwapchainDescriptor& new_values) -> void {
+    m_device->update_swapchain(m_handle, new_values);
 }
 
 auto Swapchain::next_image() const -> ImageHandle {

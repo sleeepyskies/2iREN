@@ -25,6 +25,7 @@ struct ShaderDescriptor;
 using ShaderHandle = ResourceHandle<Shader>;
 
 class Swapchain;
+struct UpdateSwapchainDescriptor;
 struct SwapchainDescriptor;
 struct SwapchainInfo;
 using SwapchainHandle = ResourceHandle<Swapchain>;

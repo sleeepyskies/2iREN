@@ -52,6 +52,8 @@ public:
         RG32f,
         /// @brief 4-channel 8-bit linear RGBA.
         RGBA8,
+        /// @brief 4-channel 8-bit linear BGRA.
+        BGRA8,
         /// @brief 4-channel 8-bit sRGB.
         sRGBA8,
         /// @brief 4-channel 16-bit float HDR RGB.
@@ -74,6 +76,7 @@ public:
         switch (value) {
             case R8: return "R8";
             case RGBA8: return "RGBA8";
+            case BGRA8: return "BGRA8";
             case sRGBA8: return "sRGBA8";
             case RGBA16f: return "RGBA16f";
             case RG32f: return "RG32f";
@@ -94,6 +97,7 @@ public:
             case R32UI:
             case Depth32f:
             case RGBA8:
+            case BGRA8:
             case sRGBA8: return 4;
 
             case RGBA16f:
@@ -115,6 +119,7 @@ public:
             case Depth24Stencil8:
             case RG32f: return 2;
 
+            case BGRA8:
             case RGBA8:
             case sRGBA8:
             case RGBA16f: return 4;

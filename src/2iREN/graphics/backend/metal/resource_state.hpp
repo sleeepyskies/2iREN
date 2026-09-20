@@ -18,7 +18,7 @@ struct ShaderDetails {
 
 struct SwapchainDetails {
     /// @brief The original descriptor of the object.
-    SwapchainDescriptor descriptor;
+    SwapchainInfo descriptor;
     /// @brief The drawable retrieved via the MetalLayer.
     NS::SharedPtr<CA::MetalDrawable> drawable = nullptr;
     /// @brief The image wrapper of the next swapchain image. Is reset after
@@ -31,9 +31,9 @@ struct ResourceState {
     template <typename M, typename S, typename D>
     using Table = RenderResourceTable<M, S, D>;
 
-    Table<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers = {};
-    Table<CA::MetalLayer*, Swapchain, SwapchainDetails> swapchains      = {};
-    Table<NS::SharedPtr<MTL::Library>, Shader, ShaderDetails> shaders   = {};
+    Table<NS::SharedPtr<MTL::Buffer>, Buffer, BufferDescriptor> buffers    = {};
+    mutable Table<CA::MetalLayer*, Swapchain, SwapchainDetails> swapchains = {};
+    Table<NS::SharedPtr<MTL::Library>, Shader, ShaderDetails> shaders      = {};
     Table<NS::SharedPtr<MTL::RenderPipelineState>, GraphicsPipeline, GraphicsPipelineDescriptor>
         pipelines                                                                = {};
     Table<NS::SharedPtr<MTL::Texture>, Image, ImageDescriptor> images            = {};

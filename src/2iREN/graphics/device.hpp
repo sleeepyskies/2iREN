@@ -57,6 +57,10 @@ public:
     virtual auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain = 0;
 
+    /// @brief Updates the given swapchains values.
+    virtual auto update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
+        -> void = 0;
+
     /// @brief Creates and returns a new @ref Query.
     [[nodiscard]]
     virtual auto make_query(const QueryDescriptor& descriptor) -> Query = 0;
@@ -104,14 +108,9 @@ public:
     virtual auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
         -> const GraphicsPipelineDescriptor& = 0;
 
-    /// @brief Returns the @ref ShaderDescriptor associated with this handle.
-    [[nodiscard]]
-    virtual auto swapchain_descriptor(SwapchainHandle handle) const
-        -> const SwapchainDescriptor& = 0;
-
     /// @brief Returns information about the swapchain.
     [[nodiscard]]
-    virtual auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo = 0;
+    virtual auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& = 0;
 
     /// @brief Returns the @ref QueryDescriptor associated with this handle.
     [[nodiscard]]

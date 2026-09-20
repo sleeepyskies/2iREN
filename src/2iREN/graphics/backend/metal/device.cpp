@@ -22,6 +22,7 @@
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
+#include "2iREN/math/extent.hpp"
 #include "2iREN/utility/log.hpp"
 #include "2iREN/window/window.hpp"
 
@@ -258,20 +259,56 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     // in the metal api, the CAMetalLayer acts as th swapchain.
     // this object manages various Drawables, which are swapchain images.
 
-    auto* layer              = CA::MetalLayer::layer();
-    const auto scaled_extent = window.framebuffer_extent();
+    auto* layer = CA::MetalLayer::layer();
     layer->setDevice(m_device.get());
-    layer->setDisplaySyncEnabled(descriptor.vsync);
-    layer->setDrawableSize(
-        CGSize{static_cast<CGFloat>(scaled_extent.x), static_cast<CGFloat>(scaled_extent.y)}
-    );
 
-    const auto handle = m_state.swapchains.reserve_link(layer, SwapchainDetails{descriptor});
+    const auto extent = descriptor.extent.value_or(window.framebuffer_extent());
+
+    layer->setDrawableSize(CGSize{static_cast<CGFloat>(extent.x), static_cast<CGFloat>(extent.y)});
+    layer->setDisplaySyncEnabled(descriptor.vsync.value_or(true));
+    layer->setPixelFormat(pixel_format(descriptor.image_format.value_or(ImageFormat::BGRA8)));
+
+    const auto handle = m_state.swapchains.reserve_link(
+        layer,
+        SwapchainDetails{
+            .descriptor = {
+                .extent       = extent,
+                .vsync        = layer->displaySyncEnabled(),
+                .image_format = image_format(layer->pixelFormat()),
+            },
+        }
+    );
 
     connect_to_window(window.native_handle(), layer);
 
     log::trace("created swapchain {}", handle);
     return Swapchain{this, handle};
+}
+
+auto MetalDevice::update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
+    -> void {
+    auto* layer = m_state.swapchains.fetch(handle);
+    auto& old   = m_state.swapchains.details(handle).descriptor;
+
+    if (new_values.extent) {
+        const auto& newsize = new_values.extent.value();
+        old.extent          = newsize;
+        layer->setDrawableSize(
+            CGSize{static_cast<CGFloat>(newsize.x), static_cast<CGFloat>(newsize.y)}
+        );
+    }
+
+    if (new_values.vsync) {
+        old.vsync = new_values.vsync.value();
+        layer->setDisplaySyncEnabled(new_values.vsync.value());
+    }
+
+    if (new_values.image_format) {
+        old.vsync = new_values.image_format.value();
+        layer->setPixelFormat(pixel_format(new_values.image_format.value()));
+    }
+
+    log::trace("updated swapchain {}", handle);
 }
 
 auto MetalDevice::destroy_swapchain(SwapchainHandle handle) -> void {
@@ -406,20 +443,16 @@ auto MetalDevice::graphics_pipeline_descriptor(GraphicsPipelineHandle handle) co
     return m_state.pipelines.details(handle);
 }
 
-auto MetalDevice::swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& {
-    return m_state.swapchains.details(handle).descriptor;
-}
-
-auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo {
+auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& {
+    auto& info       = m_state.swapchains.details(handle).descriptor;
     const auto layer = m_state.swapchains.fetch(handle);
 
-    const auto pixel_format  = layer->pixelFormat();
-    const auto drawable_size = layer->drawableSize();
+    const auto size   = layer->drawableSize();
+    info.image_format = image_format(layer->pixelFormat());
+    info.extent       = Extent2u{size.width, size.height};
+    info.vsync        = layer->displaySyncEnabled();
 
-    return SwapchainInfo{
-        .image_format = image_format(pixel_format),
-        .extent       = Extent2u{drawable_size.width, drawable_size.height},
-    };
+    return info;
 }
 
 auto MetalDevice::make_query(const QueryDescriptor& descriptor) -> Query {

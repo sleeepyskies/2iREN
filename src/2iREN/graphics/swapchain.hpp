@@ -1,8 +1,11 @@
 #pragma once
 
+#include <optional>
+
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/image.hpp"
+#include "2iREN/math/extent.hpp"
 
 namespace siren {
 
@@ -13,22 +16,26 @@ class Window;
 /// buffering and 3 for triple buffering.
 using FramesInFlight = BoundedU32<1, 3>;
 
-/// @brief Parameters used to create a new @ref Swapchain.
+/// @brief Parameters used to update a @ref Swapchain.
 struct SwapchainDescriptor {
+    /// @brief The size of the swapchains underlying framebuffer in pixels.
+    std::optional<Extent2u> extent          = std::nullopt;
     /// @brief If the swapchain should be created with vsync enabled.
-    bool vsync;
-    /// @brief The max number of frames in flight at a time.
-    /// TODO: make this be used bro
-    /// FramesInFlight frames_in_flight;
+    std::optional<bool> vsync               = std::nullopt;
+    /// @brief The format of the pixels of the swapchains image.
+    std::optional<ImageFormat> image_format = std::nullopt;
+    // std::optional<FramesInFlight> frames_in_flight = std::nullopt;
 };
 
-/// @brief Information about the swapchain that the user cannot define, but
-/// may query the swapchain for.
+/// @brief Parameters of the swapchain.
 struct SwapchainInfo {
+    /// @brief The size of the swapchains underlying framebuffer in pixels.
+    Extent2u extent;
+    /// @brief If the swapchain has vsync enabled.
+    bool vsync;
     /// @brief The format of the pixels of the swapchains image.
     ImageFormat image_format;
-    /// @brief The extent of the swapchains images.
-    Extent2u extent;
+    // std::optional<FramesInFlight> frames_in_flight = std::nullopt;
 };
 
 /// @brief A collection of images tied to a specific @ref Window. Used to present
@@ -44,11 +51,10 @@ public:
 
     /// @brief Returns the descriptor of this @ref Swapchain.
     [[nodiscard]]
-    auto descriptor() const -> const SwapchainDescriptor&;
+    auto info() const -> const SwapchainInfo&;
 
-    /// @brief Returns the descriptor of this @ref Swapchain.
-    [[nodiscard]]
-    auto info() const -> SwapchainInfo;
+    /// @brief Resizes the swapchain.
+    auto update(const SwapchainDescriptor& new_values) -> void;
 
     /// @brief Returns the next free image managed by this @ref Swapchain to
     /// render to.

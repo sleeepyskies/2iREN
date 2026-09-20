@@ -44,6 +44,9 @@ public:
     auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain override;
 
+    auto update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
+        -> void override;
+
     [[nodiscard]]
     auto make_query(const QueryDescriptor& descriptor) -> Query override;
 
@@ -78,10 +81,7 @@ public:
         -> const GraphicsPipelineDescriptor& override;
 
     [[nodiscard]]
-    auto swapchain_descriptor(SwapchainHandle handle) const -> const SwapchainDescriptor& override;
-
-    [[nodiscard]]
-    auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo override;
+    auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& override;
 
     [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;
