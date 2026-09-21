@@ -1,5 +1,5 @@
 from conan import ConanFile
-from conan.tools.cmake import cmake_layout, CMakeToolchain, CMakeDeps, CMake
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 
 
 class ConanApplication(ConanFile):
@@ -22,28 +22,17 @@ class ConanApplication(ConanFile):
         tc.generate()
 
     def requirements(self):
+        self.requires("opengl/system")
+        self.requires("glfw/3.4")  # with_wayland = False is default value in recipe
+
         self.requires("cgltf/1.15")
         self.requires("yaml-cpp/0.9.0")
         self.requires("stb/cci.20240531")
 
         if self.settings.os == "Macos":
-            self.requires("glfw/3.4")
             self.requires("metal-cpp/26")
 
-        if self.settings.os == "Windows":
-            self.requires("opengl/system")
-            self.requires("glfw/3.4")
-            self.requires(
-                "glad/2.0.8",
-                options={
-                    "gl_version": "4.6",
-                    "gl_profile": "core",
-                },
-            )
-
-        if self.settings.os == "Linux":
-            self.requires("opengl/system")
-            self.requires("glfw/3.4", options={"with_wayland": False})
+        if self.settings.os in ("Windows", "Linux"):
             self.requires(
                 "glad/2.0.8",
                 options={
