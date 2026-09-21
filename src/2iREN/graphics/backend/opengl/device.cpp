@@ -1,6 +1,5 @@
 #include "device.hpp"
 
-#include <glad/gl.h>
 #include <optional>
 #include <utility>
 
@@ -118,8 +117,8 @@ auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
 
 auto FramebufferCache::Hasher::operator()(const Key& key) const -> usize {
     // ty mr chatgpt, idk nun bout this
-    usize hash    = 0;
-    auto  combine = [&hash](const usize value) {
+    usize hash   = 0;
+    auto combine = [&hash](const usize value) {
         hash ^= value + 0x9e3779b9 + (hash << 6) + (hash >> 2);
     };
     for (const auto image : key.colors)
@@ -189,7 +188,7 @@ auto OpenGLDevice::wait_idle() const noexcept -> void {
 }
 
 auto OpenGLDevice::make_buffer(
-    const BufferDescriptor&       descriptor,
+    const BufferDescriptor& descriptor,
     std::optional<ByteBufferView> initial
 ) -> Buffer {
     ASSERT(descriptor.size > 0, "cannot legally allocate empty buffer (sorry).");
@@ -260,8 +259,8 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         );
     }
 
-    const auto  internal_format = opengl::img_format_to_gl_internal(descriptor.format);
-    const auto& extent          = descriptor.extent;
+    const auto internal_format = opengl::img_format_to_gl_internal(descriptor.format);
+    const auto& extent         = descriptor.extent;
 
     // allocate enough memory
     switch (target) {
@@ -388,7 +387,7 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
 
     // debug callbacks dont handle shader compilation
     GLint success;
-    char  err_info[512];
+    char err_info[512];
 
     std::vector<GLuint> shader_ids;
     shader_ids.reserve(descriptor.source.size());
@@ -397,7 +396,7 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     // here
     for (const auto& [stage, stage_data] : descriptor.source) {
         const GLuint shader = glCreateShader(opengl::shader_stage_to_gl(stage));
-        const char*  raw    = stage_data.source.c_str();
+        const char* raw     = stage_data.source.c_str();
 
         // compile and check status of shader
         glShaderSource(shader, 1, &raw, nullptr);
@@ -441,15 +440,15 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     }
 
     // cache uniforms
-    i32                                    uniform_count = 0;
+    i32 uniform_count = 0;
     std::unordered_map<std::string, GLint> cache;
 
     glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniform_count);
     if (uniform_count != 0) {
-        i32     max_name_length = 0;
-        GLsizei length          = 0;
-        GLsizei count           = 0;
-        GLenum  type            = GL_NONE;
+        i32 max_name_length = 0;
+        GLsizei length      = 0;
+        GLsizei count       = 0;
+        GLenum type         = GL_NONE;
         glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_length);
         const auto uniform_name = std::make_unique<char[]>(static_cast<usize>(max_name_length));
 
@@ -505,7 +504,7 @@ auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescripto
 
     auto image = make_image({
         .format        = ImageFormat::RGBA8,
-        .extent        = Extent3u{windowfb_extent.x, windowfb_extent.y, 1},
+        .extent        = Extent3{windowfb_extent.x, windowfb_extent.y, 1},
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
     });
@@ -602,7 +601,7 @@ auto OpenGLDevice::destroy_graphics_pipeline(const GraphicsPipelineHandle handle
 
 auto OpenGLDevice::make_query(const QueryDescriptor& descriptor) -> Query {
     const auto handle = m_state.query_table.reserve();
-    GLuint     query;
+    GLuint query;
     glGenQueries(1, &query);
     m_state.query_table.link(handle, query, GlQueryDetails{.descriptor = descriptor});
     log::trace("{} created.", handle);
@@ -659,14 +658,14 @@ auto OpenGLDevice::query_descriptor(const QueryHandle handle) const -> const Que
 
 auto OpenGLDevice::query_result(const QueryHandle handle) const -> u64 {
     const auto apihandle = m_state.query_table.fetch(handle);
-    u64        result    = 0;
+    u64 result           = 0;
     glGetQueryObjectui64v(apihandle, GL_QUERY_RESULT, &result);
     return result;
 }
 
 auto OpenGLDevice::query_available(const QueryHandle handle) const -> bool {
     const auto apihandle = m_state.query_table.fetch(handle);
-    u64        result    = 0;
+    u64 result           = 0;
     glGetQueryObjectui64v(apihandle, GL_QUERY_RESULT_AVAILABLE, &result);
     return result == GL_TRUE;
 }
@@ -682,12 +681,12 @@ auto OpenGLDevice::end_conditional_render() const -> void {
 
 auto OpenGLDevice::upload_to_image(
     const ImageHandle image,
-    ByteBufferView    data,
-    const usize       layer
+    ByteBufferView data,
+    const usize layer
 ) const -> void {
     // just upload it all in one go, this should be fine even for cube maps
-    const auto  gl_handle = m_state.image_table.fetch(image);
-    const auto& desc      = m_state.image_table.details(image).descriptor;
+    const auto gl_handle = m_state.image_table.fetch(image);
+    const auto& desc     = m_state.image_table.details(image).descriptor;
 
     switch (desc.dimension) {
         case ImageDimension::D1: {
@@ -760,11 +759,11 @@ auto OpenGLDevice::upload_to_image(
 
 auto OpenGLDevice::upload_to_buffer(
     const BufferHandle buffer,
-    ByteBufferView     data,
-    const usize        offset
+    ByteBufferView data,
+    const usize offset
 ) const -> void {
-    const auto  gl_handle = m_state.buffer_table.fetch(buffer);
-    const auto& desc      = m_state.buffer_table.details(buffer).descriptor;
+    const auto gl_handle = m_state.buffer_table.fetch(buffer);
+    const auto& desc     = m_state.buffer_table.details(buffer).descriptor;
 
     switch (desc.usage) {
         case BufferUsage::Static: {
@@ -828,7 +827,7 @@ auto OpenGLDevice::acquire_next_swapchain_image(const SwapchainHandle handle) ->
 
 auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
-    auto*       window   = m_state.swapchain_table.details(handle).native_handle;
+    auto* window         = m_state.swapchain_table.details(handle).native_handle;
     const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
     const auto [w, h, _] = m_state.image_table.details(target.colors[0].image).descriptor.extent;
 
@@ -858,8 +857,8 @@ auto OpenGLDevice::blit_to_image(const ImageHandle source, const ImageHandle des
     -> void {
     // opengl doesn't have image blitting, so we get_create() cached fbos for
     // images and then blit between the fbos.
-    const auto  source_id        = m_state.image_table.fetch(source);
-    const auto  destination_id   = m_state.image_table.fetch(destination);
+    const auto source_id         = m_state.image_table.fetch(source);
+    const auto destination_id    = m_state.image_table.fetch(destination);
     const auto& source_desc      = m_state.image_table.details(source).descriptor;
     const auto& destination_desc = m_state.image_table.details(destination).descriptor;
 

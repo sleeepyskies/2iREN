@@ -64,23 +64,23 @@ auto Window::aspect() const noexcept -> NonZeroPositiveF32 {
     return static_cast<f32>(ex.x) / static_cast<f32>(ex.y);
 }
 
-auto Window::extent() const noexcept -> Extent2u {
+auto Window::extent() const noexcept -> Extent2 {
     i32 x, y;
     glfwGetWindowSize(m_handle, &x, &y);
     ASSERT(x > 0 && y > 0, "glfw error: window extent cannot be negative");
 
-    return Extent2u{
+    return Extent2{
         static_cast<u32>(x),
         static_cast<u32>(y),
     };
 }
 
-auto Window::framebuffer_extent() const noexcept -> Extent2u {
+auto Window::framebuffer_extent() const noexcept -> Extent2 {
     i32 x, y;
     glfwGetFramebufferSize(m_handle, &x, &y);
     ASSERT(x > 0 && y > 0, "glfw error: window framebuffer extent cannot be negative");
 
-    return Extent2u{
+    return Extent2{
         static_cast<u32>(x),
         static_cast<u32>(y),
     };
@@ -175,7 +175,7 @@ auto Window::set_mode(const WindowMode mode) -> void {
     }
 }
 
-auto Window::set_extent(const Extent2u extent) -> void {
+auto Window::set_extent(const Extent2 extent) -> void {
     glfwSetWindowSize(m_handle, static_cast<i32>(extent.x), static_cast<i32>(extent.y));
     log::trace("window extent set to {}.", extent);
 }
@@ -200,7 +200,7 @@ auto Window::on_resize(OnResizeCallback&& callback) -> void {
 
 void Window::glfw_key_callback(
     GLFWwindow* window,
-    const i32   key,
+    const i32 key,
     const i32,
     const i32 action,
     const i32
@@ -219,8 +219,8 @@ void Window::glfw_key_callback(
 
 auto Window::glfw_mouse_button_callback(
     GLFWwindow* window,
-    const i32   button,
-    const i32   action,
+    const i32 button,
+    const i32 action,
     const i32
 ) -> void {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -250,7 +250,7 @@ auto Window::glfw_framebuffer_resize_callback(GLFWwindow* window, const i32 widt
 
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
     if (self->m_resize_callback) {
-        self->m_resize_callback(Extent2u{static_cast<u32>(width), static_cast<u32>(height)});
+        self->m_resize_callback(Extent2{static_cast<u32>(width), static_cast<u32>(height)});
     }
 }
 } // namespace siren

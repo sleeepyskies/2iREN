@@ -30,20 +30,20 @@ struct WindowDescriptor {
     /// @brief The initial title of the window.
     std::string title = "2iREN";
     /// @brief The initial width of the window
-    u32 width = 1280;
+    u32 width         = 1280;
     /// @brief The initial height of the window
-    u32 height = 720;
+    u32 height        = 720;
     /// @brief If the window has a title bar.
-    bool decorated = true;
+    bool decorated    = true;
     /// @brief If the window is resizable.
-    bool resizable = true;
+    bool resizable    = true;
     /// @brief If the window is transparent.
-    bool transparent = false;
+    bool transparent  = false;
     /// @brief The initial mode the window should load as.
-    WindowMode mode = WindowMode::Normal;
+    WindowMode mode   = WindowMode::Normal;
 };
 
-using OnResizeCallback = std::function<void(Extent2u)>;
+using OnResizeCallback = std::function<void(Extent2)>;
 
 class Window {
 public:
@@ -60,11 +60,11 @@ public:
 
     /// @brief Returns the current extent of the window.
     [[nodiscard]]
-    auto extent() const noexcept -> Extent2u;
+    auto extent() const noexcept -> Extent2;
 
     /// @brief Returns the current extent of the windows framebuffer.
     [[nodiscard]]
-    auto framebuffer_extent() const noexcept -> Extent2u;
+    auto framebuffer_extent() const noexcept -> Extent2;
 
     /// @brief Returns the current position of the window.
     [[nodiscard]]
@@ -105,7 +105,7 @@ public:
     auto set_mode(const WindowMode mode) -> void;
 
     /// @brief Sets the extent of the window.
-    auto set_extent(Extent2u extent) -> void;
+    auto set_extent(Extent2 extent) -> void;
 
     /// @brief Sets the position of the window.
     auto set_position(Point2u position) -> void;

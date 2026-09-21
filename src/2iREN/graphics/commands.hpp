@@ -32,26 +32,26 @@ enum class EndOperation : u8 {
     Fuckit,
 };
 
-struct RenderPassColorAttachment {
+struct TargetColorAttachment {
     ImageHandle image;
     Rgba clear_color;
-    BeginOperation begin_operation;
-    EndOperation end_operation;
+    BeginOperation begin_operation = BeginOperation::Clear;
+    EndOperation end_operation     = EndOperation::Store;
 };
 
-using RenderPassColorAttachments = std::vector<RenderPassColorAttachment>;
+using TargetColorAttachments = std::vector<TargetColorAttachment>;
 
-struct RenderPassDepthStenctilAttachment {
+struct TargetDepthStenctilAttachment {
     ImageHandle image;
     f32 clear_depth;
     u32 clear_stencil;
-    BeginOperation begin_operation;
-    EndOperation end_operation;
+    BeginOperation begin_operation = BeginOperation::Clear;
+    EndOperation end_operation     = EndOperation::Store;
 };
 
 struct RenderTarget {
-    RenderPassColorAttachments colors;
-    std::optional<RenderPassDepthStenctilAttachment> depth_stencil;
+    TargetColorAttachments colors                              = {};
+    std::optional<TargetDepthStenctilAttachment> depth_stencil = std::nullopt;
 };
 
 struct RenderPassDescriptor {
@@ -92,7 +92,7 @@ public:
     virtual auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void = 0;
 
-    virtual auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void = 0;
+    virtual auto fill_buffer(BufferHandle buffer, Range<usize> range, u8 value) -> void = 0;
 
     virtual auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data)
         -> void                                                             = 0;
@@ -100,14 +100,14 @@ public:
 
     virtual auto copy_buffer_to_buffer(
         BufferHandle src,
-        RangeUsize src_range,
+        Range<usize> src_range,
         BufferHandle dest,
         usize dest_offset
     ) -> void = 0;
     virtual auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
         -> void = 0;
     virtual auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
-        -> void = 0;
+        -> void                                                                = 0;
     virtual auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void = 0;
 
     [[nodiscard]]

@@ -104,6 +104,12 @@ public:
 
     auto wait_idle() const noexcept -> void override;
 
+    /// @brief Returns the native handle of the metal device.
+    /// @HACK: custom imgui backend would be best
+    auto metal_device() noexcept -> MTL::Device* {
+        return m_device.get();
+    }
+
 private:
     metal::ResourceState m_state = {};
     Limits m_limits              = {};

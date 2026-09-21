@@ -191,7 +191,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                 : channels == 4               ? ImageFormat::RGBA8
                                               : ImageFormat::Unknown;
 
-            const auto extent = Extent3u{width, height, 1};
+            const auto extent = Extent3{width, height, 1};
 
             const u32 max_dim       = std::max(extent.x, extent.y);
             const u32 mipmap_levels = 1 + static_cast<u32>(std::floor(std::log2(max_dim)));

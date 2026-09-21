@@ -47,7 +47,7 @@ struct ImageDescriptor {
     /// @brief The format of the image data (num channels/bytes per channel).
     ImageFormat format;
     /// @brief Extent of the image. The z-axis is used iff the image is an aray.
-    Extent3u extent;
+    Extent3 extent;
     /// @brief The dimensionality of the image.
     ImageDimension dimension = ImageDimension::D2;
     /// @brief How many mip map levels to generate.

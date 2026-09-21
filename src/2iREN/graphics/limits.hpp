@@ -4,6 +4,7 @@
 #include "2iREN/math/vec3.hpp"
 
 namespace siren {
+
 /// @brief Defines the hardware limits of the current backend.
 struct Limits {
     /// @brief Maximum number of uniform buffer binding points.

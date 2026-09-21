@@ -198,8 +198,8 @@ auto main() -> i32 {
                 .target =
                     RenderTarget{
                         .colors =
-                            {
-                                RenderPassColorAttachment{
+                            TargetColorAttachments{
+                                TargetColorAttachment{
                                     .image           = backbuffer,
                                     .clear_color     = siren::Rgba::BLACK(),
                                     .begin_operation = BeginOperation::Clear,

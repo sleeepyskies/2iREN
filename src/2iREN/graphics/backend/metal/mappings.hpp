@@ -263,7 +263,7 @@ constexpr auto texture_usage(const ImageFlags flags) -> MTL::TextureUsage {
 }
 
 [[nodiscard]]
-constexpr auto region(const Extent3u extent) -> MTL::Region {
+constexpr auto region(const Extent3 extent) -> MTL::Region {
     MTL::Region region = {};
 
     region.origin     = MTL::Origin{0, 0, 0};

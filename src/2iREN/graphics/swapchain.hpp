@@ -18,7 +18,7 @@ using FramesInFlight = BoundedU32<1, 3>;
 /// @brief Parameters used to update a @ref Swapchain.
 struct SwapchainDescriptor {
     /// @brief The size of the swapchains underlying framebuffer in pixels.
-    std::optional<Extent2u> extent          = std::nullopt;
+    std::optional<Extent2> extent           = std::nullopt;
     /// @brief If the swapchain should be created with vsync enabled.
     std::optional<bool> vsync               = std::nullopt;
     /// @brief The format of the pixels of the swapchains image.
@@ -29,7 +29,7 @@ struct SwapchainDescriptor {
 /// @brief Parameters of the swapchain.
 struct SwapchainInfo {
     /// @brief The size of the swapchains underlying framebuffer in pixels.
-    Extent2u extent;
+    Extent2 extent;
     /// @brief If the swapchain has vsync enabled.
     bool vsync;
     /// @brief The format of the pixels of the swapchains image.

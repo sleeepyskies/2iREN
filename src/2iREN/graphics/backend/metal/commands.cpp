@@ -32,16 +32,18 @@ auto image_copy_layout(MTL::Texture* texture, ImageFormat format) -> ImageCopyLa
         "buffer/image copies of combined depth/stencil require an explicit plane selection."
     );
 
-    const auto size = MTL::Size{texture->width(), texture->height(), texture->depth()};
+    const auto size          = MTL::Size{texture->width(), texture->height(), texture->depth()};
     const auto bytes_per_row = size.width * format.bytes_per_pixel();
-    const auto is_cube = texture->textureType() == MTL::TextureTypeCube
-        || texture->textureType() == MTL::TextureTypeCubeArray;
+    const auto is_cube       = texture->textureType()
+        == MTL::TextureTypeCube
+        || texture->textureType()
+        == MTL::TextureTypeCubeArray;
 
     return {
-        .size = size,
-        .bytes_per_row = bytes_per_row,
+        .size            = size,
+        .bytes_per_row   = bytes_per_row,
         .bytes_per_slice = bytes_per_row * size.height * size.depth,
-        .slice_count = texture->arrayLength() * (is_cube ? 6 : 1),
+        .slice_count     = texture->arrayLength() * (is_cube ? 6 : 1),
     };
 }
 
@@ -216,7 +218,7 @@ auto CommandBuffer::write_buffer(
     bufcpy(data, static_cast<u8*>(mtlbuf->contents()) + buffer_offset);
 }
 
-auto CommandBuffer::fill_buffer(const BufferHandle buffer, const RangeUsize range, const u8 value)
+auto CommandBuffer::fill_buffer(const BufferHandle buffer, const Range<usize> range, const u8 value)
     -> void {
     // TODO: should we really make a new blit command encoder per upload?
     AUTORELEASE {
@@ -238,7 +240,7 @@ auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView da
     const auto& desc = m_state.images.details(image);
 
     ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly image.");
-    ASSERT(desc.extent.area() >= data.size(), "image is too small to write the requested data.");
+    ASSERT(desc.extent.volume() >= data.size(), "image is too small to write the requested data.");
 
     auto mtlimg = m_state.images.fetch(image);
     ASSERT_NOT_NULL(mtlimg.get());
@@ -249,7 +251,7 @@ auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView da
 
 auto CommandBuffer::copy_buffer_to_buffer(
     BufferHandle src,
-    RangeUsize src_range,
+    Range<usize> src_range,
     BufferHandle dst,
     usize dst_offset
 ) -> void {
@@ -262,16 +264,13 @@ auto CommandBuffer::copy_buffer_to_buffer(
     }
 }
 
-auto CommandBuffer::copy_buffer_to_image(
-    BufferHandle src,
-    usize src_offset,
-    ImageHandle dst
-) -> void {
+auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
+    -> void {
     AUTORELEASE {
-        auto* mtlsrc = m_state.buffers.fetch(src).get();
-        auto* mtldst = m_state.images.fetch(dst).get();
-        const auto format = m_state.images.details(dst).format;
-        const auto layout = image_copy_layout(mtldst, format);
+        auto* mtlsrc          = m_state.buffers.fetch(src).get();
+        auto* mtldst          = m_state.images.fetch(dst).get();
+        const auto format     = m_state.images.details(dst).format;
+        const auto layout     = image_copy_layout(mtldst, format);
         const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
 
         ASSERT(src_offset % format.bytes_per_pixel() == 0, "unaligned source buffer offset.");
@@ -298,16 +297,13 @@ auto CommandBuffer::copy_buffer_to_image(
     }
 }
 
-auto CommandBuffer::copy_image_to_buffer(
-    ImageHandle src,
-    BufferHandle dst,
-    usize dst_offset
-) -> void {
+auto CommandBuffer::copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
+    -> void {
     AUTORELEASE {
-        auto* mtlsrc = m_state.images.fetch(src).get();
-        auto* mtldst = m_state.buffers.fetch(dst).get();
-        const auto format = m_state.images.details(src).format;
-        const auto layout = image_copy_layout(mtlsrc, format);
+        auto* mtlsrc          = m_state.images.fetch(src).get();
+        auto* mtldst          = m_state.buffers.fetch(dst).get();
+        const auto format     = m_state.images.details(src).format;
+        const auto layout     = image_copy_layout(mtlsrc, format);
         const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
 
         ASSERT(dst_offset % format.bytes_per_pixel() == 0, "unaligned destination buffer offset.");
@@ -342,8 +338,14 @@ auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> voi
         ASSERT(mtlsrc->pixelFormat() == mtldst->pixelFormat(), "image formats must match.");
         ASSERT(mtlsrc->textureType() == mtldst->textureType(), "image dimensions must match.");
         ASSERT(
-            mtlsrc->width() == mtldst->width() && mtlsrc->height() == mtldst->height()
-                && mtlsrc->depth() == mtldst->depth() && mtlsrc->arrayLength() == mtldst->arrayLength(),
+            mtlsrc->width()
+                == mtldst->width()
+                && mtlsrc->height()
+                == mtldst->height()
+                && mtlsrc->depth()
+                == mtldst->depth()
+                && mtlsrc->arrayLength()
+                == mtldst->arrayLength(),
             "image extents and slice counts must match."
         );
         ASSERT(mtlsrc->sampleCount() == mtldst->sampleCount(), "image sample counts must match.");
@@ -352,8 +354,10 @@ auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> voi
             "cannot copy a framebuffer only image."
         );
 
-        const auto is_cube = mtlsrc->textureType() == MTL::TextureTypeCube
-            || mtlsrc->textureType() == MTL::TextureTypeCubeArray;
+        const auto is_cube = mtlsrc->textureType()
+            == MTL::TextureTypeCube
+            || mtlsrc->textureType()
+            == MTL::TextureTypeCubeArray;
         const auto slice_count = mtlsrc->arrayLength() * (is_cube ? 6 : 1);
 
         auto* encoder = m_cmdbuffer->blitCommandEncoder();

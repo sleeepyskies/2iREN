@@ -1,7 +1,9 @@
 #pragma once
 
-#include <Metal/MTLCommandBuffer.hpp>
+#include <Metal/MTLRenderCommandEncoder.hpp>
 #include <optional>
+
+#include <Metal/MTLCommandBuffer.hpp>
 
 #include "2iREN/graphics/backend/metal/resource_state.hpp"
 #include "2iREN/graphics/commands.hpp"
@@ -49,7 +51,7 @@ public:
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& function)
         -> void override;
 
-    auto fill_buffer(BufferHandle buffer, RangeUsize range, u8 value) -> void override;
+    auto fill_buffer(BufferHandle buffer, Range<usize> range, u8 value) -> void override;
 
     auto write_buffer(BufferHandle buffer, usize buffer_offset, ByteBufferView data)
         -> void override;
@@ -57,7 +59,7 @@ public:
 
     auto copy_buffer_to_buffer(
         BufferHandle src,
-        RangeUsize src_range,
+        Range<usize> src_range,
         BufferHandle dest,
         usize dest_offset
     ) -> void override;
@@ -66,7 +68,8 @@ public:
     auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset) -> void override;
     auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override;
 
-    auto mtl_command_buffer() -> MTL::CommandBuffer* {
+    /// @HACK: custom imgui backend would be best
+    auto metal_commandbuffer() -> MTL::CommandBuffer* {
         return m_cmdbuffer;
     }
 

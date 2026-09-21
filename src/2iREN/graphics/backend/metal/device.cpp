@@ -44,7 +44,6 @@ namespace {
 
 auto fetch_limits(MTL::Device* device) -> Limits {
     // TODO: what limits can we get? should we remove some? generalize them?
-
     Limits lim;
 
     /// lim.max_uniform_buffer_bindings;
@@ -455,7 +454,7 @@ auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> const Swapchai
 
     const auto size   = layer->drawableSize();
     info.image_format = image_format(layer->pixelFormat());
-    info.extent       = Extent2u{size.width, size.height};
+    info.extent       = Extent2{size.width, size.height};
     info.vsync        = layer->displaySyncEnabled();
 
     return info;
@@ -479,7 +478,7 @@ auto MetalDevice::make_command_buffer() const noexcept -> std::unique_ptr<::sire
 }
 
 auto MetalDevice::submit(std::unique_ptr<siren::CommandBuffer>&& command_buffer) const -> void {
-    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).mtl_command_buffer();
+    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).metal_commandbuffer();
     mtlbuffer->commit();
     check(mtlbuffer);
 }
@@ -504,7 +503,7 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
         ImageDescriptor{
             .label         = "swapchain image",
             .format        = image_format(layer->pixelFormat()),
-            .extent        = Extent2u{size.width, size.height}.to_extent3(),
+            .extent        = Extent2{size.width, size.height}.to_extent3(),
             .dimension     = ImageDimension::D2,
             .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
             .flags         = ImageFlags::empty(), // flags dont acc matter here.
@@ -547,7 +546,7 @@ auto MetalDevice::present(
     SwapchainHandle handle,
     std::unique_ptr<siren::CommandBuffer>&& command_buffer
 ) -> void {
-    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).mtl_command_buffer();
+    auto* mtlbuffer = static_cast<metal::CommandBuffer&>(*command_buffer).metal_commandbuffer();
 
     auto& details = m_state.swapchains.details(handle);
     auto drawable = details.drawable;

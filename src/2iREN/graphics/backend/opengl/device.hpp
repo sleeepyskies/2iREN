@@ -2,21 +2,26 @@
 
 #include <GLFW/glfw3.h>
 
+#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
 #include <glad/gl.h>
+#elifdef SIREN_MACOS
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#endif
 
 #include <unordered_map>
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/query.hpp"
-#include "2iREN/graphics/render_command.hpp"
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
-#include "2iREN/utility/byte_buffer.hpp"
 
 namespace siren {
 
@@ -24,7 +29,7 @@ namespace siren {
 /// Buffer's.
 struct MappedBufferPtr {
     /// @brief The mapped pointer.
-    void* ptr = nullptr;
+    void* ptr  = nullptr;
     /// @brief The size of the buffer.
     usize size = 0;
 };
