@@ -11,6 +11,7 @@
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/sampler.hpp"
+#include "2iREN/graphics/types.hpp"
 #include "2iREN/utility/filesystem.hpp"
 
 /// For docs on GLTF see:
@@ -41,10 +42,10 @@ namespace siren {
 // ============================================================================
 
 [[maybe_unused]]
-static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexFormat {
+static auto gltf_index_type_to_siren(const cgltf_component_type type) -> IndexType {
     switch (type) {
-        case cgltf_component_type_r_16u: return IndexFormat::UInt16;
-        case cgltf_component_type_r_32u: return IndexFormat::UInt32;
+        case cgltf_component_type_r_16u: return IndexType::UInt16;
+        case cgltf_component_type_r_32u: return IndexType::UInt32;
 
         case cgltf_component_type_r_8u:
         case cgltf_component_type_r_8:
@@ -174,8 +175,14 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
             i32 width, height, channels;
 
-            auto image_data =
-                stbi_load_from_memory(bytes, (i32)size, &width, &height, &channels, STBI_default);
+            auto image_data = stbi_load_from_memory(
+                bytes,
+                (i32)size,
+                &width,
+                &height,
+                &channels,
+                STBI_default
+            );
             DEFER {
                 stbi_image_free(image_data);
             };
@@ -213,7 +220,8 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             );
 
             handle = ctx.add_labeled_asset<Texture>(
-                name, std::make_unique<Texture>(name, std::move(img), std::move(sampler))
+                name,
+                std::make_unique<Texture>(name, std::move(img), std::move(sampler))
             );
 
         } else {
@@ -509,7 +517,8 @@ static auto validate_index_type(const cgltf_component_type type) -> AssetLoadErr
         // do nothing, log nothing is fine
     } else {
         log::error(
-            "Invalid glTF index type encountered, cgltf_component_type value: {}.", (u32)type
+            "Invalid glTF index type encountered, cgltf_component_type value: {}.",
+            (u32)type
         );
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
@@ -558,8 +567,12 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
     ByteBuffer buffer;
     buffer.resize_bytes(index_count * sizeof(u32));
 
-    const usize unpacked_count =
-        cgltf_accessor_unpack_indices(indices, buffer.data(), sizeof(u32), index_count);
+    const usize unpacked_count = cgltf_accessor_unpack_indices(
+        indices,
+        buffer.data(),
+        sizeof(u32),
+        index_count
+    );
     ASSERT(
         index_count == unpacked_count,
         "number of parsed indices did not match original accessor index count."
@@ -577,8 +590,8 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
             },
             buffer.view()
         ),
-        .count  = index_count,
-        .format = IndexFormat::UInt32,
+        .count = index_count,
+        .type  = IndexType::UInt32,
     };
 }
 
@@ -852,7 +865,9 @@ static auto load_scenes(
         }
 
         auto scene = std::make_unique<GltfScene>(
-            name, scene_idx - data->scenes_count, std::move(root_nodes)
+            name,
+            scene_idx - data->scenes_count,
+            std::move(root_nodes)
         );
 
         const auto handle = ctx.add_labeled_asset(name, std::move(scene));

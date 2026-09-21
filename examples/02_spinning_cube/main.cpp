@@ -6,6 +6,7 @@
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/shader.hpp"
 #include "2iREN/graphics/swapchain.hpp"
+#include "2iREN/graphics/types.hpp"
 #include "2iREN/math/angle.hpp"
 #include "2iREN/math/mat4x4.hpp"
 #include "2iREN/window/window.hpp"
@@ -180,7 +181,9 @@ auto main() -> i32 {
         window.poll_events();
 
         const auto model = Mat4x4f::rotate(
-            Mat4x4f::IDENTITY(), Degrees{count * 0.1f}.to_radians(), Vec3f{0.5f, 1.0f, 0.0f}
+            Mat4x4f::IDENTITY(),
+            Degrees{count * 0.1f}.to_radians(),
+            Vec3f{0.5f, 1.0f, 0.0f}
         );
         const auto view = Mat4x4f::translate(Mat4x4f::IDENTITY(), Vec3f{0.0f, 0.0f, 5.0f});
         const auto proj = Mat4x4f::perspective(quarter_angle, window.aspect(), 0.1f, 10.f);
@@ -211,10 +214,12 @@ auto main() -> i32 {
             },
             [&](RenderCommandEncoder& pass) -> void {
                 pass.bind_graphics_pipeline(pipeline.handle());
-                pass.bind_vertex_buffer(vertex_buffer.handle(), 0, 0);
-                pass.bind_index_buffer(index_buffer.handle(), IndexFormat::UInt32);
-                pass.bind_uniform_buffer(uniform_buffer.handle(), 0, 1);
-                pass.draw_indexed(indices.size_as<u32>(), 0);
+
+                pass.bind_vertex_buffer(vertex_buffer.handle(), Slot{0});
+                pass.bind_uniform_buffer(uniform_buffer.handle(), Slot{1});
+                pass.bind_index_buffer(index_buffer.handle(), IndexType::UInt32);
+
+                pass.draw_indexed(indices.size_as<u32>());
             }
         );
 

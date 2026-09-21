@@ -46,11 +46,12 @@ auto main() -> i32 {
         },
         vertices.view()
     );
-    const auto layout =
-        LayoutBuilder::make().add(DataType::Float32, 2).add(DataType::Float32, 4).finish();
+    const auto
+        layout = LayoutBuilder::make().add(DataType::Float32, 2).add(DataType::Float32, 4).finish();
 
-    const auto shaderh =
-        server.load<ShaderAsset>("engine://examples/assets/shaders/load_shader.sshg");
+    const auto shaderh = server.load<ShaderAsset>(
+        "engine://examples/assets/shaders/load_shader.sshg"
+    );
     server.wait_until_loaded(shaderh);
 
     const auto pipeline = device->make_graphics_pipeline({
@@ -97,8 +98,8 @@ auto main() -> i32 {
             },
             [&](RenderCommandEncoder& pass) {
                 pass.bind_graphics_pipeline(pipeline.handle());
-                pass.bind_vertex_buffer(buffer.handle(), 0, 0);
-                pass.draw_arrays(0, 3);
+                pass.bind_vertex_buffer(buffer.handle(), Slot{0});
+                pass.draw(3);
             }
         );
 

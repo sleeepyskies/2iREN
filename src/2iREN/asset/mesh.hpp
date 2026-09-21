@@ -19,7 +19,7 @@ struct IndexBuffer {
     /// @brief The number of indices.
     usize count;
     /// @brief The type of the indices.
-    IndexFormat format;
+    IndexType type;
 };
 
 /// @struct VertexBuffer
