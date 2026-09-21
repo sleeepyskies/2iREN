@@ -238,20 +238,28 @@ auto CommandBuffer::write_buffer(
     bufcpy(data, static_cast<u8*>(mtlbuf->contents()) + buffer_offset);
 }
 
-auto CommandBuffer::fill_buffer(const BufferHandle buffer, const Range<usize> range, const u8 value)
+auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const Range<usize> range)
     -> void {
     // TODO: should we really make a new blit command encoder per upload?
-    AUTORELEASE {
-        const auto& desc = m_state.buffers.details(buffer);
-        ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
-        ASSERT(
-            desc.size.get() >= range.length(),
-            "buffer is not large enough to write the requested amount of data."
-        );
-        auto mtlbuf = m_state.buffers.fetch(buffer).get();
 
-        auto encoder = m_cmdbuffer->blitCommandEncoder();
-        encoder->fillBuffer(mtlbuf, NS::Range(range.begin, range.length()), value);
+    AUTORELEASE {
+        const auto& descriptor = m_state.buffers.details(buffer);
+
+        ASSERT(descriptor.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
+
+        auto* buf = m_state.buffers.fetch(buffer).get();
+
+        auto encoder      = m_cmdbuffer->blitCommandEncoder();
+        auto actual_range = range;
+        if (range.is_unbounded()) {
+            actual_range = {0, buf->length()};
+        } else {
+            ASSERT(
+                range.length() <= buf->length(),
+                "buffer is not large enough to write the requested amount of data."
+            );
+        }
+        encoder->fillBuffer(buf, NS::Range(actual_range.begin, actual_range.length()), value);
         encoder->endEncoding();
     }
 }
@@ -275,6 +283,8 @@ auto CommandBuffer::copy_buffer_to_buffer(
     BufferHandle dst,
     usize dst_offset
 ) -> void {
+    // TODO: should we really make a new blit command encoder per upload?
+
     AUTORELEASE {
         auto mtlsrc   = m_state.buffers.fetch(src).get();
         auto mtldst   = m_state.buffers.fetch(dst).get();

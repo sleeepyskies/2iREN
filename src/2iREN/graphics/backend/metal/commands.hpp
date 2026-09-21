@@ -52,7 +52,7 @@ public:
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& function)
         -> void override;
 
-    auto fill_buffer(BufferHandle buffer, Range<usize> range, u8 value) -> void override;
+    auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range) -> void override;
 
     auto write_buffer(BufferHandle buffer, usize buffer_offset, ByteBufferView data)
         -> void override;

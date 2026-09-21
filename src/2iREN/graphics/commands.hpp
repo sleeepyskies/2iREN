@@ -138,7 +138,7 @@ public:
     virtual auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void = 0;
 
-    virtual auto fill_buffer(BufferHandle buffer, Range<usize> range, u8 value) -> void = 0;
+    virtual auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range = {}) -> void = 0;
 
     virtual auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data)
         -> void                                                             = 0;
