@@ -6,10 +6,13 @@ AlignConsecutiveAssignments: AcrossComments
 AlignConsecutiveDeclarations: None
 AlignOperands: DontAlign
 AlignTrailingComments: true
+AllowAllArgumentsOnNextLine: false
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
 AlwaysBreakTemplateDeclarations: Yes
 BreakAfterReturnType: None
+BreakAfterOpenBracketFunction: true
+BreakBeforeCloseBracketFunction: true
 PenaltyReturnTypeOnItsOwnLine: 100000
 AllowAllParametersOfDeclarationOnNextLine: false
 PackParameters:
@@ -62,3 +65,4 @@ SpaceInEmptyBraces: Always
 SpacesInConditionalStatement: false
 SpacesInCStyleCastParentheses: false
 TabWidth: 4
+PenaltyBreakAssignment: 1000

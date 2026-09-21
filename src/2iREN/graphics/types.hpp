@@ -76,10 +76,10 @@ struct DataType {
     }
 };
 
-/// @brief Defines the index format of an index buffer.
-class IndexFormat {
+/// @brief Defines the type of an index buffer/value.
+class IndexType {
 public:
-    IndexFormat() : value(IndexFormat::UInt32) { }
+    IndexType() : value(IndexType::UInt32) { }
 
     enum Value : u8 { UInt16, UInt32 } value;
 
@@ -102,7 +102,7 @@ public:
         }
     }
 
-    IndexFormat(const Value v) : value(v) { }
+    IndexType(const Value v) : value(v) { }
     constexpr operator Value() const {
         return value;
     }

@@ -78,78 +78,98 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
 
 auto RenderCommandEncoder::bind_vertex_buffer(
     const BufferHandle buffer,
-    const u32 offset,
-    const u32 slot
+    const Slot slot,
+    const Range<usize> range
 ) -> void {
+    const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        m_state.buffers.details(buffer).usage.test(BufferFlag::Vertex),
+        descriptor.usage.test(BufferFlag::Vertex),
         "buffer must have BufferFlag::Vertex to be bound as a vetex buffer."
     );
-    auto buf = m_state.buffers.fetch(buffer);
-    m_encoder->setVertexBuffer(buf.get(), offset, slot);
+
+    auto* buf = m_state.buffers.fetch(buffer).get();
+    ASSERT(
+        range.is_unbounded() or range.length() <= buf->length(),
+        "binding invalid range of vertex buffer."
+    );
+
+    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
 }
 
-auto RenderCommandEncoder::bind_index_buffer(
-    const BufferHandle buffer,
-    const IndexFormat index_format
-) -> void {
+auto RenderCommandEncoder::bind_index_buffer(BufferHandle buffer, IndexType type) -> void {
+    const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        m_state.buffers.details(buffer).usage.test(BufferFlag::Index),
+        descriptor.usage.test(BufferFlag::Index),
         "buffer must have BufferFlag::Index to be bound as an index buffer."
     );
-    m_bindings.index = BindIdxBuf{buffer, index_format};
+    m_bindings.index = BindIdxBuf{buffer, type};
 }
 
-auto RenderCommandEncoder::bind_uniform_buffer(
-    const BufferHandle buffer,
-    const u32 offset,
-    const u32 slot
-) -> void {
+auto RenderCommandEncoder::bind_uniform_buffer(BufferHandle buffer, Slot slot, Range<usize> range)
+    -> void {
+    const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        m_state.buffers.details(buffer).usage.test(BufferFlag::Uniform),
+        descriptor.usage.test(BufferFlag::Uniform),
         "buffer must have BufferFlag::Uniform to be bound as a uniform buffer."
     );
-    // TODO: should we use setVertexBytes for uniform buffers instead?
-    auto buf = m_state.buffers.fetch(buffer);
-    m_encoder->setVertexBuffer(buf.get(), offset, slot);
+
+    auto* buf = m_state.buffers.fetch(buffer).get();
+    ASSERT(
+        range.is_unbounded() or range.length() <= buf->length(),
+        "binding invalid range of vertex buffer."
+    );
+
+    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
 }
 
-auto RenderCommandEncoder::bind_storage_buffer(const BufferHandle buffer, const u32) -> void {
+auto RenderCommandEncoder::bind_storage_buffer(
+    const BufferHandle buffer,
+    const Slot,
+    const Range<usize>
+) -> void {
+    const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        m_state.buffers.details(buffer).usage.test(BufferFlag::Storage),
+        descriptor.usage.test(BufferFlag::Storage),
         "buffer must have BufferFlag::Storage to be bound as a storage buffer."
     );
     UNIMPLEMENTED();
 }
 
-auto RenderCommandEncoder::bind_image(const ImageHandle image, const u32 slot) -> void {
+auto RenderCommandEncoder::bind_image(const ImageHandle image, const Slot slot) -> void {
     // TODO: do we want this in the fragment too/instead?
     // TODO: do we want to bind always to all stages?
     auto img = m_state.images.fetch(image).get();
-    m_encoder->setVertexTexture(img, slot);
-    m_encoder->setFragmentTexture(img, slot);
+    m_encoder->setVertexTexture(img, slot.value);
+    m_encoder->setFragmentTexture(img, slot.value);
 }
 
-auto RenderCommandEncoder::bind_sampler(const SamplerHandle sampler, const u32 slot) -> void {
+auto RenderCommandEncoder::bind_sampler(const SamplerHandle sampler, const Slot slot) -> void {
     // TODO: do we want to bind always to all stages?
     auto* ss = m_state.samplers.fetch(sampler).get();
-    m_encoder->setVertexSamplerState(ss, slot);
-    m_encoder->setFragmentSamplerState(ss, slot);
+    m_encoder->setVertexSamplerState(ss, slot.value);
+    m_encoder->setFragmentSamplerState(ss, slot.value);
 }
 
-auto RenderCommandEncoder::draw_arrays(const u32 start, const u32 count) -> void {
-    m_encoder->drawPrimitives(primitive_type(m_bindings.pipeline->topology), start, count);
+auto RenderCommandEncoder::draw(u32 count, u32 start, u32 instance_count, u32 instance_start)
+    -> void {
+    m_encoder->drawPrimitives(
+        primitive_type(m_bindings.pipeline->topology),
+        start,
+        count,
+        instance_count,
+        instance_start
+    );
 }
 
-auto RenderCommandEncoder::draw_indexed(const u32 index_count, const u32 first_index) -> void {
+auto RenderCommandEncoder::draw_indexed(const u32 count, const u32 start) -> void {
     auto* buf = m_state.buffers.fetch(m_bindings.index->buffer).get();
 
     m_encoder->drawIndexedPrimitives(
         primitive_type(m_bindings.pipeline->topology),
-        index_count,
+        count,
         index_type(m_bindings.index->format),
         buf,
-        m_bindings.index->format.size_bytes() * first_index
+        m_bindings.index->format.size_bytes() * start
     );
 }
 

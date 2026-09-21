@@ -37,6 +37,17 @@ public:
         return LayoutBuilder{};
     }
 
+    /// @brief Adds a new component to the vertex layout.
+    /// @param type The datatype of the attributes components.
+    /// @param count The number of components
+    /// @return A reference to the builder.
+    [[nodiscard]]
+    auto add(const DataType type, const u32 count) -> LayoutBuilder& {
+        m_components.emplace_back(type, count, m_offset, m_components.size());
+        m_offset += type.size_bytes() * count;
+        return *this;
+    }
+
     /// @brief Finishes the construction and returns a @ref VertexLayout instance.
     [[nodiscard]]
     constexpr auto finish() noexcept -> Layout {
@@ -46,20 +57,9 @@ public:
         };
     }
 
-    /// @brief Adds a new component to the vertex layout.
-    /// @param type The datatype of the attributes components.
-    /// @param count The number of components
-    /// @return A reference to the builder.
-    [[nodiscard]]
-    auto add(DataType type, u32 count) -> LayoutBuilder& {
-        m_components.emplace_back(type, count, m_offset, m_components.size());
-        m_offset += type.size_bytes() * count;
-        return *this;
-    }
-
 private:
-    std::vector<Component> m_components{};
-    usize m_offset{0};
+    std::vector<Component> m_components = {};
+    usize m_offset                      = 0;
 };
 
 /// @brief The default vertex layout of 2iREN. This is a temp solution, but

@@ -9,6 +9,7 @@
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/layout.hpp"
 #include "2iREN/graphics/sampler.hpp"
+#include "2iREN/graphics/types.hpp"
 
 namespace siren::metal {
 
@@ -114,10 +115,10 @@ constexpr auto primitive_type(const PrimitiveTopology topology) -> MTL::Primitiv
     }
 }
 
-constexpr auto index_type(const IndexFormat format) -> MTL::IndexType {
+constexpr auto index_type(const IndexType format) -> MTL::IndexType {
     switch (format) {
-        case IndexFormat::UInt16: return MTL::IndexType::IndexTypeUInt16;
-        case IndexFormat::UInt32: return MTL::IndexType::IndexTypeUInt32; break;
+        case IndexType::UInt16: return MTL::IndexType::IndexTypeUInt16;
+        case IndexType::UInt32: return MTL::IndexType::IndexTypeUInt32; break;
     }
 }
 
