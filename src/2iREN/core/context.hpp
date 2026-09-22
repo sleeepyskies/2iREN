@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -14,6 +13,8 @@ struct WindowDescriptor;
 struct ContextDescriptor {
     /// @brief Sets the minimum log severity level emitted by the framework.
     log::Level level;
+    /// @brief Whether to enable validation layers for the backend.
+    bool validation;
 };
 
 /// @brief The entry point and root object of the 2iREN framework.

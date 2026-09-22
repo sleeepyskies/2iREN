@@ -56,7 +56,7 @@ public:
 
     auto write_buffer(BufferHandle buffer, usize buffer_offset, ByteBufferView data)
         -> void override;
-    auto write_image(ImageHandle image, ByteBufferView data) -> void override;
+    auto write_image(ImageHandle image, ByteBufferView data, u32 layer) -> void override;
 
     auto copy_buffer_to_buffer(
         BufferHandle src,

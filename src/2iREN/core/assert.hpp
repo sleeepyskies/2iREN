@@ -8,11 +8,8 @@
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <version>
 
-#ifdef __cpp_lib_stacktrace
-#include <stacktrace>
-#endif
+#include "2iREN/core/stacktrace.hpp"
 
 namespace siren::impl {
 
@@ -35,7 +32,10 @@ inline auto report_and_terminate(
     const std::string_view message
 ) -> void {
     const std::string locationstring = std::format(
-        "{}:{}:{}", strip_path(location.file_name()), location.line(), location.column()
+        "{}:{}:{}",
+        strip_path(location.file_name()),
+        location.line(),
+        location.column()
     );
 
     std::println(
@@ -54,11 +54,9 @@ inline auto report_and_terminate(
         std::println(std::cerr, "message: {}", message);
     }
 
-#ifdef __cpp_lib_stacktrace
-    if (const auto trace = std::stacktrace::current(1); !trace.empty()) {
+    if (const auto trace = Stacktrace::make(1); !trace.empty()) {
         std::println(std::cerr, "stack trace:\n{}", trace);
     }
-#endif
 
     std::abort();
 }
@@ -149,7 +147,8 @@ inline auto do_assertion_failed(
     do {                                                                                           \
         if (!(condition)) [[unlikely]] {                                                           \
             siren::impl::do_assertion_failed(                                                      \
-                std::source_location::current(), #condition __VA_OPT__(, ) __VA_ARGS__             \
+                std::source_location::current(),                                                   \
+                #condition __VA_OPT__(, ) __VA_ARGS__                                              \
             );                                                                                     \
         }                                                                                          \
     } while (false)

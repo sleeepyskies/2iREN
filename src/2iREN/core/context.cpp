@@ -1,6 +1,7 @@
 #include "context.hpp"
 
 #include <GLFW/glfw3.h>
+#include <_stdlib.h>
 #include <stb_image.h>
 
 #include "2iREN/concurrency/thread_pool.hpp"
@@ -10,7 +11,7 @@
 #include "2iREN/utility/time.hpp"
 #include "2iREN/window/window.hpp"
 
-#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+#if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
 #include "2iREN/graphics/backend/opengl/device.hpp"
 #elifdef SIREN_MACOS
 #include "2iREN/graphics/backend/metal/device.hpp"
@@ -40,7 +41,7 @@ auto initialize_glfw() -> void {
         siren::log::info("using windowing platform Win32.");
     }
 
-#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+#if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
     siren::log::info("selecting OpenGL backend.");
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -57,6 +58,11 @@ namespace siren {
 
 Context::Context(const ContextDescriptor& descriptor) {
     log::initialize(descriptor.level);
+
+    // TODO: should handle this based on the descriptor param
+
+    setenv("MTL_DEBUG_LAYER", "1", true);
+    setenv("MTL_SHADER_VALIDATION", "1", true);
 
     time::initialize();
 
@@ -80,7 +86,7 @@ Context::~Context() {
 }
 
 auto Context::make_device() -> std::unique_ptr<Device> {
-#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+#if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
     return std::make_unique<OpenGLDevice>();
 #elifdef SIREN_MACOS
     return std::make_unique<MetalDevice>();
@@ -92,7 +98,7 @@ auto Context::make_window(const WindowDescriptor& descriptor) const -> Window {
     ASSERT(!called, "a window has already been created");
     called = true;
 
-#if defined(SIREN_LINUX) || defined(SIREN_WINDOWS)
+#if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
     return Window{descriptor, Backend::OpenGL};
 #elifdef SIREN_MACOS
     return Window{descriptor, Backend::Metal};

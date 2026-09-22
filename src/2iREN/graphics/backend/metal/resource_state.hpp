@@ -15,7 +15,7 @@ namespace siren::metal {
 
 struct ShaderDetails {
     ShaderDescriptor descriptor;
-    MTL4::Compiler* compiler;
+    NS::SharedPtr<MTL4::Compiler> compiler;
 };
 
 struct SwapchainDetails {

@@ -55,7 +55,7 @@ struct ImageDescriptor {
     /// @brief Defines if the Cpu and the Gpu mauy access to image.
     MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
     /// @brief Flags specifying how the @ref Image will be used.
-    ImageFlags flags;
+    ImageFlags flags         = ImageFlags::empty();
 };
 
 /// @brief A gpu resource representing image data.

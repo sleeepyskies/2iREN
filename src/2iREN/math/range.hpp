@@ -7,7 +7,8 @@ namespace siren {
 /// @brief Represents a range with an inlusive start and an exclusive end.
 template <typename T>
 struct Range {
-    static constexpr auto UNBOUNDED = std::numeric_limits<T>::max();
+    /// @brief Constant representing a range with no end.
+    static constexpr auto LITNU = std::numeric_limits<T>::max();
 
     /// @brief The inlusive begin.
     T begin = std::numeric_limits<T>::min();
@@ -23,12 +24,21 @@ struct Range {
         };
     }
 
-    /// @brief Makes a new Range with a begin and an unbounded end.
+    /// @brief Makes a new Range starting from 0 up until end.
     [[nodiscard]]
-    static constexpr auto unbounded(const T begin) -> Range {
+    static constexpr auto until(const T end) -> Range {
+        return {
+            .begin = 0,
+            .end   = end,
+        };
+    }
+
+    /// @brief Range::until() but backwards. Makes a new Range with a begin and no end.
+    [[nodiscard]]
+    static constexpr auto litnu(const T begin) -> Range {
         return {
             .begin = begin,
-            .end   = UNBOUNDED,
+            .end   = LITNU,
         };
     }
 
@@ -47,10 +57,10 @@ struct Range {
         return end - begin;
     }
 
-    /// @brief Returns true if this Range has an unbounded end.
+    /// @brief Returns true if this Range has an litnu end.
     [[nodiscard]]
-    constexpr auto is_unbounded() const noexcept -> bool {
-        return end == UNBOUNDED;
+    constexpr auto is_litnu() const noexcept -> bool {
+        return end == LITNU;
     }
 };
 

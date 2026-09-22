@@ -6,6 +6,7 @@
 #include "2iREN/asset/material.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/types.hpp"
 
 // todo: do we want to store buffer data CPU side as well?
 
@@ -19,7 +20,7 @@ struct IndexBuffer {
     /// @brief The number of indices.
     usize count;
     /// @brief The type of the indices.
-    IndexType type;
+    IndexType type = IndexType::UInt32;
 };
 
 /// @struct VertexBuffer

@@ -31,8 +31,16 @@ auto Buffer::descriptor() const noexcept -> const BufferDescriptor& {
     return m_device->buffer_descriptor(m_handle);
 }
 
-auto Buffer::upload(const ByteBufferView, const u32) const noexcept -> void {
-    UNIMPLEMENTED();
+auto Buffer::upload(const ByteBufferView data, const u32 offset) const noexcept -> void {
+    auto cmds = m_device->make_command_buffer();
+    cmds->write_buffer(m_handle, offset, data);
+    m_device->submit(std::move(cmds));
+}
+
+auto Buffer::fill(const u8 value, const Range<usize> range) const noexcept -> void {
+    auto cmds = m_device->make_command_buffer();
+    cmds->fill_buffer(m_handle, value, range);
+    m_device->submit(std::move(cmds));
 }
 
 } // namespace siren

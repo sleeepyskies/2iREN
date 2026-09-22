@@ -3,6 +3,7 @@
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
+#include <variant>
 
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/assert.hpp"
@@ -11,6 +12,7 @@
 #include "2iREN/graphics/backend/metal/resource_state.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
 
 namespace siren::metal {
@@ -33,10 +35,10 @@ auto image_copy_layout(MTL::Texture* texture, ImageFormat format) -> ImageCopyLa
     );
 
     const auto size          = MTL::Size{texture->width(), texture->height(), texture->depth()};
-    const auto bytes_per_row = size.width * format.bytes_per_pixel();
+    const auto bytes_per_row = size.width * format.size_bytes();
     const auto is_cube       = texture->textureType()
         == MTL::TextureTypeCube
-        || texture->textureType()
+        or texture->textureType()
         == MTL::TextureTypeCubeArray;
 
     return {
@@ -78,7 +80,7 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
 
 auto RenderCommandEncoder::bind_vertex_buffer(
     const BufferHandle buffer,
-    const Slot slot,
+    [[maybe_unused]] const Slot slot,
     const Range<usize> range
 ) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
@@ -89,11 +91,14 @@ auto RenderCommandEncoder::bind_vertex_buffer(
 
     auto* buf = m_state.buffers.fetch(buffer).get();
     ASSERT(
-        range.is_unbounded() or range.length() <= buf->length(),
+        range.is_litnu() or range.length() <= buf->length(),
         "binding invalid range of vertex buffer."
     );
 
-    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
+    // HACK: we choose 30 as sentinel value for vertex buffers.
+    // see MetalDevice::make_graphics_pipeline() as well
+    m_encoder->setVertexBuffer(buf, range.begin, 30);
+    m_encoder->setFragmentBuffer(buf, range.begin, 30);
 }
 
 auto RenderCommandEncoder::bind_index_buffer(BufferHandle buffer, IndexType type) -> void {
@@ -115,24 +120,33 @@ auto RenderCommandEncoder::bind_uniform_buffer(BufferHandle buffer, Slot slot, R
 
     auto* buf = m_state.buffers.fetch(buffer).get();
     ASSERT(
-        range.is_unbounded() or range.length() <= buf->length(),
-        "binding invalid range of vertex buffer."
+        range.is_litnu() or range.length() <= buf->length(),
+        "binding invalid range of uniform buffer."
     );
 
     m_encoder->setVertexBuffer(buf, range.begin, slot.value);
+    m_encoder->setFragmentBuffer(buf, range.begin, slot.value);
 }
 
 auto RenderCommandEncoder::bind_storage_buffer(
     const BufferHandle buffer,
-    const Slot,
-    const Range<usize>
+    const Slot slot,
+    const Range<usize> range
 ) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
         descriptor.usage.test(BufferFlag::Storage),
         "buffer must have BufferFlag::Storage to be bound as a storage buffer."
     );
-    UNIMPLEMENTED();
+
+    auto* buf = m_state.buffers.fetch(buffer).get();
+    ASSERT(
+        range.is_litnu() or range.length() <= buf->length(),
+        "binding invalid range of storage buffer."
+    );
+
+    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
+    m_encoder->setFragmentBuffer(buf, range.begin, slot.value);
 }
 
 auto RenderCommandEncoder::bind_image(const ImageHandle image, const Slot slot) -> void {
@@ -179,37 +193,47 @@ auto CommandBuffer::render_pass(
 ) -> void {
     auto desc = transfer_ptr(MTL::RenderPassDescriptor::alloc()->init());
 
-    // setup color attachments
-    for (usize i = 0; i < descriptor.target.colors.size(); i++) {
-        auto& attachment     = descriptor.target.colors[i];
-        auto* mtl_attachment = desc->colorAttachments()->object(i);
-        auto mtl_texture     = m_state.images.fetch(attachment.image);
+    if (auto* target = std::get_if<RenderTargetless>(&descriptor.target)) {
+        desc->setRenderTargetWidth(target->extent.x);
+        desc->setRenderTargetHeight(target->extent.y);
+        desc->setDefaultRasterSampleCount(1);
+    } else if (auto* target = std::get_if<RenderTarget>(&descriptor.target)) {
+        ASSERT(!target->colors.empty() or target->depth_stencil.has_value());
 
-        const auto& rgba = attachment.clear_color;
+        // setarget tup color attachments
+        for (usize i = 0; i < target->colors.size(); i++) {
+            auto& attachment     = target->colors[i];
+            auto* mtl_attachment = desc->colorAttachments()->object(i);
+            auto mtl_texture     = m_state.images.fetch(attachment.image);
 
-        mtl_attachment->setTexture(mtl_texture.get());
-        mtl_attachment->setClearColor(MTL::ClearColor::Make(rgba.r, rgba.g, rgba.b, rgba.a));
-        mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
-        mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
-    }
+            const auto& rgba = attachment.clear_color;
 
-    // setup depth stencil
-    if (descriptor.target.depth_stencil) {
-        auto& attachment = *descriptor.target.depth_stencil;
-        auto* depth      = desc->depthAttachment();
-        auto depth_txt   = m_state.images.fetch(attachment.image);
-        auto* stencil    = desc->stencilAttachment();
-        auto stencil_txt = m_state.images.fetch(attachment.image);
+            mtl_attachment->setTexture(mtl_texture.get());
+            mtl_attachment->setClearColor(MTL::ClearColor::Make(rgba.r, rgba.g, rgba.b, rgba.a));
+            mtl_attachment->setLoadAction(metal::load_action(attachment.begin_operation));
+            mtl_attachment->setStoreAction(metal::store_action(attachment.end_operation));
+        }
 
-        depth->setTexture(depth_txt.get());
-        depth->setLoadAction(metal::load_action(attachment.begin_operation));
-        depth->setClearDepth(attachment.clear_depth);
-        depth->setStoreAction(metal::store_action(attachment.end_operation));
+        // setup depth stencil
+        if (target->depth_stencil) {
+            auto& attachment = *target->depth_stencil;
+            auto* depth      = desc->depthAttachment();
+            auto depth_txt   = m_state.images.fetch(attachment.image);
+            auto* stencil    = desc->stencilAttachment();
+            auto stencil_txt = m_state.images.fetch(attachment.image);
 
-        stencil->setTexture(stencil_txt.get());
-        stencil->setLoadAction(metal::load_action(attachment.begin_operation));
-        stencil->setClearStencil(attachment.clear_stencil);
-        stencil->setStoreAction(metal::store_action(attachment.end_operation));
+            depth->setTexture(depth_txt.get());
+            depth->setLoadAction(metal::load_action(attachment.begin_operation));
+            depth->setClearDepth(attachment.clear_depth);
+            depth->setStoreAction(metal::store_action(attachment.end_operation));
+
+            stencil->setTexture(stencil_txt.get());
+            stencil->setLoadAction(metal::load_action(attachment.begin_operation));
+            stencil->setClearStencil(attachment.clear_stencil);
+            stencil->setStoreAction(metal::store_action(attachment.end_operation));
+        }
+    } else {
+        PANIC();
     }
 
     auto mtlencoder     = transfer_ptr(m_cmdbuffer->renderCommandEncoder(desc.get()));
@@ -228,7 +252,7 @@ auto CommandBuffer::write_buffer(
 
     ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
     ASSERT(
-        buffer_offset <= desc.size.get() && data.size() <= desc.size.get() - buffer_offset,
+        buffer_offset <= desc.size.get() and data.size() <= desc.size.get() - buffer_offset,
         "buffer is too small to write the requested data."
     );
 
@@ -251,7 +275,7 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
 
         auto encoder      = m_cmdbuffer->blitCommandEncoder();
         auto actual_range = range;
-        if (range.is_unbounded()) {
+        if (range.is_litnu()) {
             actual_range = {0, buf->length()};
         } else {
             ASSERT(
@@ -264,17 +288,35 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
     }
 }
 
-auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView data) -> void {
-    const auto& desc = m_state.images.details(image);
-
-    ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly image.");
-    ASSERT(desc.extent.volume() >= data.size(), "image is too small to write the requested data.");
+auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView data, const u32 layer)
+    -> void {
+    const auto& descriptor = m_state.images.details(image);
+    ASSERT(descriptor.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly image.");
+    ASSERT(
+        descriptor.extent.volume() >= data.size(),
+        "image is too small to write the requested data."
+    );
 
     auto mtlimg = m_state.images.fetch(image);
-    ASSERT_NOT_NULL(mtlimg.get());
 
-    const auto bytes_per_row = desc.extent.x * desc.format.bytes_per_pixel();
-    mtlimg->replaceRegion(region(desc.extent), 0, data.data(), bytes_per_row);
+    switch (descriptor.dimension) {
+        case ImageDimension::D1:
+        case ImageDimension::D2:
+        case ImageDimension::D3: {
+            const auto bytes_per_row = descriptor.extent.x * descriptor.format.size_bytes();
+            mtlimg->replaceRegion(region(descriptor.extent), layer, data.data(), bytes_per_row);
+            break;
+        }
+        case ImageDimension::Cube: {
+            const usize bytes_per_row = usize(descriptor.extent.x) * descriptor.format.size_bytes();
+            const auto region = MTL::Region::Make2D(0, 0, descriptor.extent.x, descriptor.extent.y);
+
+            mtlimg->replaceRegion(region, 0, layer, data.data(), bytes_per_row, 0);
+            break;
+        }
+    }
+
+    ASSERT_NOT_NULL(mtlimg.get());
 }
 
 auto CommandBuffer::copy_buffer_to_buffer(
@@ -303,10 +345,12 @@ auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, Ima
         const auto layout     = image_copy_layout(mtldst, format);
         const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
 
-        ASSERT(src_offset % format.bytes_per_pixel() == 0, "unaligned source buffer offset.");
+        ASSERT(src_offset % format.size_bytes() == 0, "unaligned source buffer offset.");
         ASSERT(
-            src_offset <= mtlsrc->length() && size_bytes <= mtlsrc->length() - src_offset,
-            "source buffer is too small to copy the image."
+            src_offset <= mtlsrc->length() and size_bytes <= mtlsrc->length() - src_offset,
+            "source buffer({}bytes) is too small to copy the image({}bytes).",
+            mtlsrc->length() - src_offset,
+            size_bytes
         );
 
         auto* encoder = m_cmdbuffer->blitCommandEncoder();
@@ -336,9 +380,9 @@ auto CommandBuffer::copy_image_to_buffer(ImageHandle src, BufferHandle dst, usiz
         const auto layout     = image_copy_layout(mtlsrc, format);
         const auto size_bytes = layout.bytes_per_slice * layout.slice_count;
 
-        ASSERT(dst_offset % format.bytes_per_pixel() == 0, "unaligned destination buffer offset.");
+        ASSERT(dst_offset % format.size_bytes() == 0, "unaligned destination buffer offset.");
         ASSERT(
-            dst_offset <= mtldst->length() && size_bytes <= mtldst->length() - dst_offset,
+            dst_offset <= mtldst->length() and size_bytes <= mtldst->length() - dst_offset,
             "destination buffer is too small to copy the image."
         );
 
@@ -361,6 +405,7 @@ auto CommandBuffer::copy_image_to_buffer(ImageHandle src, BufferHandle dst, usiz
 }
 
 auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> void {
+    // TODO: check this, mr chatgptits did this
     AUTORELEASE {
         auto* mtlsrc = m_state.images.fetch(src).get();
         auto* mtldst = m_state.images.fetch(dst).get();
@@ -370,23 +415,23 @@ auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> voi
         ASSERT(
             mtlsrc->width()
                 == mtldst->width()
-                && mtlsrc->height()
+                and mtlsrc->height()
                 == mtldst->height()
-                && mtlsrc->depth()
+                and mtlsrc->depth()
                 == mtldst->depth()
-                && mtlsrc->arrayLength()
+                and mtlsrc->arrayLength()
                 == mtldst->arrayLength(),
             "image extents and slice counts must match."
         );
         ASSERT(mtlsrc->sampleCount() == mtldst->sampleCount(), "image sample counts must match.");
         ASSERT(
-            !mtlsrc->isFramebufferOnly() && !mtldst->isFramebufferOnly(),
+            !mtlsrc->isFramebufferOnly() and !mtldst->isFramebufferOnly(),
             "cannot copy a framebuffer only image."
         );
 
         const auto is_cube = mtlsrc->textureType()
             == MTL::TextureTypeCube
-            || mtlsrc->textureType()
+            or mtlsrc->textureType()
             == MTL::TextureTypeCubeArray;
         const auto slice_count = mtlsrc->arrayLength() * (is_cube ? 6 : 1);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <variant>
 
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
@@ -8,6 +9,7 @@
 #include "2iREN/graphics/statistics.hpp"
 #include "2iREN/graphics/types.hpp"
 #include "2iREN/math/color.hpp"
+#include "2iREN/math/extent.hpp"
 #include "2iREN/math/range.hpp"
 
 namespace siren {
@@ -34,29 +36,35 @@ enum class EndOperation : u8 {
 
 struct TargetColorAttachment {
     ImageHandle image;
-    Rgba clear_color;
+    Rgba clear_color               = Rgba::ZERO();
     BeginOperation begin_operation = BeginOperation::Clear;
     EndOperation end_operation     = EndOperation::Store;
 };
 
 using TargetColorAttachments = std::vector<TargetColorAttachment>;
 
-struct TargetDepthStenctilAttachment {
+struct TargetDepthStencilAttachment {
     ImageHandle image;
-    f32 clear_depth;
-    u32 clear_stencil;
+    f32 clear_depth                = 1.f;
+    u32 clear_stencil              = 0u;
     BeginOperation begin_operation = BeginOperation::Clear;
     EndOperation end_operation     = EndOperation::Store;
 };
 
 struct RenderTarget {
-    TargetColorAttachments colors                              = {};
-    std::optional<TargetDepthStenctilAttachment> depth_stencil = std::nullopt;
+    TargetColorAttachments colors                             = {};
+    std::optional<TargetDepthStencilAttachment> depth_stencil = std::nullopt;
 };
 
+struct RenderTargetless {
+    Extent2 extent;
+};
+
+using RenderTargetVariant = std::variant<RenderTarget, RenderTargetless>;
+
 struct RenderPassDescriptor {
-    Label label = std::nullopt;
-    RenderTarget target;
+    Label label                = std::nullopt;
+    RenderTargetVariant target = {};
 };
 
 /// @brief Value holding a slot binding.
@@ -141,8 +149,8 @@ public:
     virtual auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range = {}) -> void = 0;
 
     virtual auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data)
-        -> void                                                             = 0;
-    virtual auto write_image(ImageHandle dest, ByteBufferView data) -> void = 0;
+        -> void                                                                            = 0;
+    virtual auto write_image(ImageHandle dest, ByteBufferView data, u32 layer = 0) -> void = 0;
 
     virtual auto copy_buffer_to_buffer(
         BufferHandle src,

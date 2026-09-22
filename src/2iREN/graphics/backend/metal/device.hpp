@@ -110,9 +110,11 @@ public:
         return m_device.get();
     }
 
+    /// @HACK: custom imgui backend would be best
+    auto metal_texture(ImageHandle img) noexcept -> MTL::Texture*;
+
 private:
     metal::ResourceState m_state = {};
-    Limits m_limits              = {};
 
     NS::SharedPtr<MTL::Device> m_device          = nullptr;
     NS::SharedPtr<MTL::CommandQueue> m_cmd_queue = nullptr;

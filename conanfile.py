@@ -23,7 +23,7 @@ class ConanApplication(ConanFile):
 
     def requirements(self):
         self.requires("opengl/system")
-        self.requires("glfw/3.4")  # with_wayland = False is default value in recipe
+        self.requires("glfw/3.4")
 
         self.requires("cgltf/1.15")
         self.requires("yaml-cpp/0.9.0")

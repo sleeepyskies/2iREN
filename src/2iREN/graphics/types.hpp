@@ -149,7 +149,8 @@ public:
     }
 
     /// @brief Returns the number of bytes per pixel for this format.
-    [[nodiscard]] constexpr auto bytes_per_pixel() const -> u32 {
+    [[nodiscard]]
+    constexpr auto size_bytes() const -> u32 {
         switch (value) {
             case R8: return 1;
 
@@ -168,7 +169,8 @@ public:
     }
 
     /// @brief Returns the number of components this format can hold.
-    [[nodiscard]] constexpr auto num_components() const -> u32 {
+    [[nodiscard]]
+    constexpr auto num_components() const -> u32 {
         switch (value) {
             case R32UI:
             case Depth32f:

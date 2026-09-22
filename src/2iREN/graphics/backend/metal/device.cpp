@@ -49,8 +49,8 @@ auto fetch_limits(MTL::Device* device) -> Limits {
     /// lim.max_uniform_buffer_bindings;
     /// lim.max_shader_storage_buffer_bindings;
     /// lim.max_uniform_block_size;
-    /// lim.max_shader_storage_block_size;
-    /// lim.uniform_buffer_offset_alignment;
+    lim.max_shader_storage_block_size   = device->maxBufferLength();
+    lim.uniform_buffer_offset_alignment = 256;
     /// lim.shader_storage_buffer_offset_alignment;
     /// lim.max_vertex_attributes;
     /// lim.max_texture_size;
@@ -78,7 +78,7 @@ MetalDevice::MetalDevice() : Device(Backend::Metal) {
 }
 
 MetalDevice::~MetalDevice() {
-    // TODO: this will crash if called
+    // FIXME: this will crash if called
     // wait_idle();
 }
 
@@ -109,7 +109,9 @@ auto MetalDevice::make_buffer(
                 }
                 case MemoryUsage::GpuOnly: {
                     auto staging = transfer_ptr(m_device->newBuffer(
-                        initial->data(), initial->size(), MTL::ResourceStorageModeShared
+                        initial->data(),
+                        initial->size(),
+                        MTL::ResourceStorageModeShared
                     ));
 
                     auto blitdescriptor = transfer_ptr(MTL::BlitPassDescriptor::alloc()->init());
@@ -128,8 +130,10 @@ auto MetalDevice::make_buffer(
             }
         }
 
-        const auto handle =
-            m_state.buffers.reserve_link(std::move(buffer), BufferDescriptor{descriptor});
+        const auto handle = m_state.buffers.reserve_link(
+            std::move(buffer),
+            BufferDescriptor{descriptor}
+        );
 
         log::trace("created buffer {}", handle);
         return Buffer{this, handle};
@@ -145,6 +149,11 @@ auto MetalDevice::make_image(
     const ImageDescriptor& descriptor,
     std::optional<ByteBufferView> initial
 ) -> Image {
+    if (descriptor.dimension == ImageDimension::Cube) {
+        ASSERT(descriptor.extent.x == descriptor.extent.y, "cube map must have square dimenions.");
+        ASSERT(descriptor.extent.z == 6, "cube map must have 6 layers.");
+    }
+
     AUTORELEASE {
         // TODO: cannot upload direct to private buffers, need staging for that
         auto texture_desc = transfer_ptr(MTL::TextureDescriptor::alloc()->init());
@@ -161,7 +170,7 @@ auto MetalDevice::make_image(
         set_label(texture, descriptor.label);
 
         if (initial.has_value()) {
-            const auto bytes_per_row = descriptor.extent.x * descriptor.format.bytes_per_pixel();
+            const auto bytes_per_row = descriptor.extent.x * descriptor.format.size_bytes();
             texture->replaceRegion(region(descriptor.extent), 0, initial->data(), bytes_per_row);
         }
 
@@ -211,39 +220,51 @@ auto MetalDevice::destroy_sampler(SamplerHandle handle) -> void {
 }
 
 auto MetalDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
+    ASSERT(
+        descriptor.source.contains(ShaderStage::Vertex),
+        "cannot create a shader without a vertex shader"
+    );
+    ASSERT(
+        descriptor.source.contains(ShaderStage::Fragment),
+        "cannot create a shader without a fragment shader"
+    );
+
+    const auto& vertex   = descriptor.source.at(ShaderStage::Vertex);
+    const auto& fragment = descriptor.source.at(ShaderStage::Fragment);
+
+    // FIXME: eventually we should support more than this specific combination
+    ASSERT(
+        vertex.source == fragment.source,
+        "metal backend expects all stages to have the same source (for now)."
+    );
+
     AUTORELEASE {
         auto* err = (NS::Error*)nullptr;
-        ASSERT(
-            descriptor.source.contains(ShaderStage::Vertex),
-            "cannot create a shader without a vertex shader"
-        );
-        ASSERT(
-            descriptor.source.contains(ShaderStage::Fragment),
-            "cannot create a shader without a fragment shader"
-        );
 
         // create shader compiler
         auto compiler_descriptor = transfer_ptr(MTL4::CompilerDescriptor::alloc()->init());
-        auto compiler            = m_device->newCompiler(compiler_descriptor.get(), &err);
-
-        check_error(compiler, err);
+        auto* compiler_raw       = m_device->newCompiler(compiler_descriptor.get(), &err);
+        check_error(compiler_raw, err);
+        auto compiler = transfer_ptr(compiler_raw);
 
         // create shader library
         auto compile_opts = transfer_ptr(MTL::CompileOptions::alloc()->init());
-        compile_opts->setEnableLogging(true);
-
         auto library_desc = transfer_ptr(MTL4::LibraryDescriptor::alloc()->init());
+
         library_desc->setSource(utf8_string(descriptor.source.at(ShaderStage::Vertex).source));
         library_desc->setOptions(compile_opts.get());
         if (descriptor.label) {
             library_desc->setName(utf8_string(*descriptor.label));
         }
 
-        auto library = transfer_ptr(compiler->newLibrary(library_desc.get(), &err));
-        check_error(library, err);
+        auto* library_raw = compiler->newLibrary(library_desc.get(), &err);
+        check_error(library_raw, err);
+        auto library = transfer_ptr(library_raw);
 
-        const auto handle =
-            m_state.shaders.reserve_link(library, ShaderDetails{descriptor, compiler});
+        const auto handle = m_state.shaders.reserve_link(
+            library,
+            ShaderDetails{descriptor, compiler}
+        );
 
         log::trace("created shader {}", handle);
 
@@ -323,8 +344,9 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
     AUTORELEASE {
         auto* err = (NS::Error*)nullptr;
 
-        auto renderpipeline_descriptor =
-            transfer_ptr(MTL4::RenderPipelineDescriptor::alloc()->init());
+        auto renderpipeline_descriptor = transfer_ptr(
+            MTL4::RenderPipelineDescriptor::alloc()->init()
+        );
 
         if (descriptor.label) {
             renderpipeline_descriptor->setLabel(utf8_string(*descriptor.label));
@@ -379,10 +401,14 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
                 auto& component = descriptor.layout.components[i];
                 vertex->setFormat(vertex_format(component));
                 vertex->setOffset(component.offset);
-                vertex->setBufferIndex(0);
+                // HACK: we use 30 as a sentinel value for vertex buffer binding.
+                // shouldnt really do this but yolo
+                // see metal::RenderCommandEncoder::bind_vertex_buffer() as well
+                vertex->setBufferIndex(30);
             }
 
-            auto* buf_layout = layout->layouts()->object(0);
+            // HACK: same hack here :D
+            auto* buf_layout = layout->layouts()->object(30);
             buf_layout->setStepFunction(MTL::VertexStepFunctionPerVertex);
             buf_layout->setStride(descriptor.layout.stride);
             buf_layout->setStepRate(1);
@@ -415,8 +441,10 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         );
         check_error(render_pipeline, err);
 
-        const auto handle =
-            m_state.pipelines.reserve_link(render_pipeline, GraphicsPipelineDescriptor{descriptor});
+        const auto handle = m_state.pipelines.reserve_link(
+            render_pipeline,
+            GraphicsPipelineDescriptor{descriptor}
+        );
         log::trace("created graphics pipeline {}", handle);
         return GraphicsPipeline{this, handle};
     }
@@ -564,6 +592,10 @@ auto MetalDevice::present(
         m_state.images.release(*details.image);
     }
     details.image = std::nullopt;
+}
+
+auto MetalDevice::metal_texture(ImageHandle img) noexcept -> MTL::Texture* {
+    return m_state.images.fetch(img).get();
 }
 
 } // namespace siren

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Metal/MTLRenderPipeline.hpp>
 #include <Metal/Metal.hpp>
 
 #include <utility>
@@ -179,7 +180,7 @@ constexpr auto blend_factor(const BlendFactor factor) -> MTL::BlendFactor {
         case BlendFactor::SourceAlpha: return MTL::BlendFactorSourceAlpha;
         case BlendFactor::DestinationAlpha: return MTL::BlendFactorDestinationAlpha;
         case BlendFactor::OneMinusSourceAlpha: return MTL::BlendFactorOneMinusSourceAlpha;
-        case BlendFactor::OneMinusDestinationAlpha: return MTL::BlendFactorDestinationAlpha;
+        case BlendFactor::OneMinusDestinationAlpha: return MTL::BlendFactorOneMinusDestinationAlpha;
     }
 }
 

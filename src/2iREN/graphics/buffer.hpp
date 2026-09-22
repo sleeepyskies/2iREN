@@ -59,7 +59,12 @@ public:
     [[nodiscard]]
     auto descriptor() const noexcept -> const BufferDescriptor&;
 
-    /// @brief Utility function to upload data to this Buffer.
+    /// @brief Uploads the Cpu data to this Gpu buffer.
+    /// @note If performing many uploads, prefer to use CommandBuffer instead.
     auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
+
+    /// @brief Fills the specified range of the buffer with the provided value.
+    /// @note If performing many uploads, prefer to use CommandBuffer instead.
+    auto fill(u8 value, Range<usize> range) const noexcept -> void;
 };
 } // namespace siren

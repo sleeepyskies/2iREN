@@ -8,6 +8,7 @@
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
+#include "2iREN/graphics/image.hpp"
 #include "2iREN/utility/filesystem.hpp"
 #include "2iREN/utility/log.hpp"
 
@@ -133,10 +134,10 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const auto format = determine_format(*config, ctx.path().extension());
 
     i32 width = 0, height = 0, channels = 0;
-    u8* data          = stbi_load(path->c_str(), &width, &height, &channels, 0);
-    const auto extent = Extent3{width, height, 1};
-    const u32 mipmap_levels =
-        config->generate_mipmap_levels ? calc_mipmap_levels(width, height) : 1;
+    u8* data                = stbi_load(path->c_str(), &width, &height, &channels, 0);
+    const auto extent       = Extent3{width, height, 1};
+    const u32 mipmap_levels = config->generate_mipmap_levels ? calc_mipmap_levels(width, height)
+                                                             : 1;
     if (!data) {
         log::warn("could not load, reason: {}", stbi_failure_reason());
     }
@@ -150,6 +151,7 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
             .extent        = extent,
             .dimension     = ImageDimension::D2,
             .mipmap_levels = mipmap_levels,
+            .flags         = ImageFlags::empty(),
         },
         bytebuffer.view()
     );
@@ -199,7 +201,7 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
                 size = width;
             }
 
-            if (!data || width != size || height != size) {
+            if (!data or width != size or height != size) {
                 if (data) {
                     stbi_image_free(data);
                 }
@@ -217,17 +219,18 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
     }
 
     auto image = ctx.device().make_image({
-        .label         = map_name,
-        .format        = ImageFormat::RGBA8,
-        .extent        = Extent3{size, size, 6},
-        .dimension     = ImageDimension::Cube,
-        .mipmap_levels = 1,
+        .label     = map_name,
+        .format    = ImageFormat::RGBA8,
+        .extent    = Extent3{size, size, 6},
+        .dimension = ImageDimension::Cube,
     });
 
+    auto cmds = ctx.device().make_command_buffer();
     for (u32 i = 0; i < faces.size(); i++) {
         auto& [key, databuffer] = faces[i];
-        image.upload(databuffer.view(), i);
+        cmds->write_image(image.handle(), databuffer.view(), i);
     }
+    ctx.device().submit(std::move(cmds));
 
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config.sampler)));
 
