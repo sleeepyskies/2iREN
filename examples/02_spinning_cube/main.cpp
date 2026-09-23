@@ -136,7 +136,7 @@ auto main() -> i32 {
         {
             .label        = "Cube Vertices",
             .size         = vertices.size_bytes(),
-            .usage        = BufferFlags::from(BufferFlag::Vertex),
+            .usage        = BufferFlags::make(BufferFlag::Vertex),
             .memory_usage = MemoryUsage::CpuAndGpu,
         },
         vertices.view()
@@ -145,7 +145,7 @@ auto main() -> i32 {
         {
             .label        = "Cube Indicies",
             .size         = indices.size_bytes(),
-            .usage        = BufferFlags::from(BufferFlag::Index),
+            .usage        = BufferFlags::make(BufferFlag::Index),
             .memory_usage = MemoryUsage::CpuAndGpu,
         },
         indices.view()
@@ -153,7 +153,7 @@ auto main() -> i32 {
     const auto uniform_buffer = device->make_buffer({
         .label        = "Uniform Buffer",
         .size         = sizeof(UboData),
-        .usage        = BufferFlags::from(BufferFlag::Uniform),
+        .usage        = BufferFlags::make(BufferFlag::Uniform),
         .memory_usage = MemoryUsage::CpuAndGpu,
     });
     const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();

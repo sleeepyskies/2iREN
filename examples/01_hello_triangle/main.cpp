@@ -112,7 +112,7 @@ auto main() -> i32 {
         {
             .label        = "Vertex Buffer",
             .size         = vertices.size_bytes(),
-            .usage        = BufferFlags::from(BufferFlag::Vertex),
+            .usage        = BufferFlag::Vertex | BufferFlag::Vertex | BufferFlag::Vertex,
             .memory_usage = MemoryUsage::CpuAndGpu,
         },
         vertices.view()
@@ -129,7 +129,7 @@ auto main() -> i32 {
         .dimension     = ImageDimension::D2,
         .mipmap_levels = 1,
         .memory_usage  = MemoryUsage::CpuAndGpu,
-        .flags         = ImageFlags::from(ImageFlag::RenderAttachment),
+        .flags         = ImageFlags::make(ImageFlag::RenderAttachment),
     });
 
     const auto pipeline = device->make_graphics_pipeline({
