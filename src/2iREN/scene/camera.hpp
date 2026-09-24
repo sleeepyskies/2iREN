@@ -13,7 +13,7 @@ namespace siren {
 /// @brief A degree value clamped to the range [-89, 89] represting camera yaw.
 using Pitch = Bounded<Degrees, Degrees{-89.f}, Degrees{89.f}, ClampBoundsPolicy>;
 /// @brief A degree value clamped to [0, 500] representing the camera fov.
-using Fov = Bounded<Degrees, Degrees{0}, Degrees{500}, ClampBoundsPolicy>;
+using Fov   = Bounded<Degrees, Degrees{0}, Degrees{500}, ClampBoundsPolicy>;
 
 struct CameraDescriptor {
     Point3f position          = Point3f{0.f, 0.f, 0.f};
@@ -21,7 +21,7 @@ struct CameraDescriptor {
     Degrees yaw               = Degrees{0.f};
     Fov fov                   = Degrees{75.f};
     NonZeroPositiveF32 aspect = 1280.f / 720.f;
-    f32 nearplane             = 0.1f;
+    f32 nearplane             = 1.f;
     f32 farplane              = 1000.f;
 };
 

@@ -150,6 +150,8 @@ auto main() -> i32 {
         .cull_mode     = CullMode::Back,
     });
 
+    log::info("{}", BufferFlag::Index | BufferFlag::Vertex);
+
     while (!window.should_close()) {
         window.poll_events();
 

@@ -151,7 +151,7 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
             .extent        = extent,
             .dimension     = ImageDimension::D2,
             .mipmap_levels = mipmap_levels,
-            .flags         = ImageFlags::empty(),
+            .flags         = ImageFlags::make(),
         },
         bytebuffer.view()
     );

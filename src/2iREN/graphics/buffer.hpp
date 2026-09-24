@@ -1,15 +1,13 @@
 #pragma once
 
+#include "2iREN/container/bitflags.hpp"
 #include "2iREN/container/byte_buffer.hpp"
-#include "2iREN/container/flag_set.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/types.hpp"
 #include "2iREN/math/bounded.hpp"
 
 namespace siren {
-
-class ByteBuffer;
 
 /// @brief Defines the usage of a Buffer.
 enum class BufferFlag {
@@ -26,7 +24,7 @@ enum class BufferFlag {
 };
 
 /// @brief Set of flags defining how a buffer may be used.
-using BufferFlags = FlagSet<BufferFlag>;
+using BufferFlags = BitFlags<BufferFlag>;
 
 /// @brief Describes a @ref Buffer. Used for object creation via @ref Device.
 /// @todo pass in the data as a separate buffer in the device->create_buffer(),
@@ -37,7 +35,7 @@ struct BufferDescriptor {
     /// @brief The initial size of the buffer in bytes.
     NonZeroUsize size;
     /// @brief Flag set of this buffers uses.
-    BufferFlags usage        = BufferFlags::empty();
+    BufferFlags usage        = BufferFlags::make();
     /// @brief Denotes what components may access the buffer.
     MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
 };

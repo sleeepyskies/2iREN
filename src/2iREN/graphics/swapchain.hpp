@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 
 #include "2iREN/graphics/device.hpp"
@@ -23,6 +24,7 @@ struct SwapchainDescriptor {
     std::optional<bool> vsync               = std::nullopt;
     /// @brief The format of the pixels of the swapchains image.
     std::optional<ImageFormat> image_format = std::nullopt;
+    /// @brief TODO: impl
     // std::optional<FramesInFlight> frames_in_flight = std::nullopt;
 };
 
@@ -52,8 +54,8 @@ public:
     [[nodiscard]]
     auto info() const -> const SwapchainInfo&;
 
-    /// @brief Resizes the swapchain.
-    auto update(const SwapchainDescriptor& new_values) -> void;
+    /// @brief Reconfigures the Swapchains parameters.
+    auto reconfigure(const SwapchainDescriptor& new_values) -> void;
 
     /// @brief Returns the next free image managed by this @ref Swapchain to
     /// render to.

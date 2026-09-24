@@ -36,13 +36,9 @@ struct ResourceHandle : Identifier<ResourceHandle<Tag>> {
     }
 
     /// @brief Stringifies the ResourceHandle.
-    [[nodiscard]] constexpr auto to_string() const noexcept -> std::string {
-        return std::format(
-            "{}Handle(index={}, generation={})",
-            typename_of<Tag>(),
-            this->index(),
-            this->generation()
-        );
+    [[nodiscard]]
+    constexpr auto to_string() const noexcept -> std::string {
+        return std::format("{}Handle({})", typename_of<Tag>(), this->packed());
     }
 };
 
@@ -82,7 +78,7 @@ public:
         return m_handle;
     }
 
-    /// @brief Returns the string representation of this ResourceHandle.
+    /// @brief Returns the string representation of this RenderResource.
     [[nodiscard]]
     auto to_string() const noexcept -> std::string {
         return std::format("{}({})", typename_of<Resource>(), m_handle.packed());
@@ -134,7 +130,8 @@ private:
 public:
     /// @brief Creates and returns a new proxy handle with no api handle
     /// associated with it.
-    [[nodiscard]] auto reserve() -> HandleType {
+    [[nodiscard]]
+    auto reserve() -> HandleType {
         IndexType index;
 
         if (!m_free_list.empty()) {
@@ -172,7 +169,9 @@ public:
     /// @brief Frees the proxy handle.
     auto release(const HandleType proxy_handle) -> void {
         ASSERT(
-            is_valid_id(proxy_handle), "cannot free an invalid ProxyHandleType: {}", proxy_handle
+            is_valid_id(proxy_handle),
+            "cannot free an invalid ProxyHandleType: {}",
+            proxy_handle
         );
         TableEntry& table_entry = m_table[proxy_handle.index()];
         m_free_list.emplace_back(proxy_handle.index());

@@ -98,7 +98,6 @@ auto RenderCommandEncoder::bind_vertex_buffer(
     // HACK: we choose 30 as sentinel value for vertex buffers.
     // see MetalDevice::make_graphics_pipeline() as well
     m_encoder->setVertexBuffer(buf, range.begin, 30);
-    m_encoder->setFragmentBuffer(buf, range.begin, 30);
 }
 
 auto RenderCommandEncoder::bind_index_buffer(BufferHandle buffer, IndexType type) -> void {

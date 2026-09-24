@@ -4,12 +4,14 @@
 // do not remove this include!!
 #include "2iREN/core/format.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <format>
 #include <optional>
 #include <print>
+#include <ranges>
 #include <source_location>
-#include <thread>
 #include <type_traits>
 
 #include "2iREN/core/assert.hpp"
@@ -62,18 +64,20 @@ struct Level {
 };
 
 namespace impl {
+
 inline Level level{Level::None};
+
 [[nodiscard]]
-constexpr auto strip_path(const std::string_view path) -> std::string_view {
-    // TODO: can we trim path better? not always gonna be 2iREN
-    const auto pos = path.find("2iREN/");
-
-    if (pos != std::string_view::npos) {
-        return path.substr(pos);
-    }
-
-    return path; // fallback to original path if we cant trim somehow
+inline auto prettify_path(std::string_view path) -> std::string {
+    return std::filesystem::path(path)
+        | std::views::reverse
+        | std::views::take(2)
+        | std::views::transform([](const std::filesystem::path& part) { return part.string(); })
+        | std::views::reverse
+        | std::views::join_with(std::string_view{"/"})
+        | std::ranges::to<std::string>();
 }
+
 } // namespace impl
 
 /// @brief Inits the siren logger with the provided level.
@@ -89,29 +93,29 @@ inline auto initialize(const Level lvl) -> void {
 /// @param fmt The format string.
 /// @param args The type-erased format arguments.
 inline void log(
-    const Level                 lvl,
-    const u32                   color_code,
+    const Level lvl,
+    const u32 color_code,
     const std::source_location& loc,
-    const std::string_view      fmt,
-    const std::format_args      args
+    const std::string_view fmt,
+    const std::format_args args
 ) {
     if (lvl < impl::level) {
         return;
     }
 
-    const auto usermsg = std::vformat(fmt, args);
-    const auto now =
-        std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
-    const auto        threadid = std::this_thread::get_id();
-    const std::string locationstring =
-        std::format("{}:{}:{}", impl::strip_path(loc.file_name()), loc.line(), loc.column());
+    const auto usermsg               = std::vformat(fmt, args);
+    const auto now                   = std::chrono::system_clock::now();
+    const std::string locationstring = std::format(
+        "{}",
+        impl::prettify_path(loc.file_name()),
+        loc.function_name()
+    );
 
     const auto msg = std::format(
-        "[{:%F %T}] \033[{}m[{:<5}]\033[0m [thread:{:<15}] [{:<45}] {}",
+        "\033[38;5;242m{:%FT:%T}\033[0m \033[{}m{:>5}\033[0m \033[38;5;242m{}\033[0m {}",
         now,
         color_code,
         lvl.to_string(),
-        threadid,
         locationstring,
         usermsg
     );
@@ -122,11 +126,11 @@ inline void log(
 template <typename... Args>
 struct LogMessage {
     std::format_string<Args...> fmt;
-    std::source_location        sl;
+    std::source_location sl;
 
     template <typename T>
     consteval LogMessage(
-        const T&                   s,
+        const T& s,
         const std::source_location loc = std::source_location::current()
     ) : fmt(s), sl(loc) { }
 };
@@ -140,7 +144,7 @@ struct LogMessage {
 /// @brief Logs a message at the Level::Trace level.
 /// @param msg Message wrapper.
 /// @param args Variadic arguments to be formatted.
-LOG_FUNCTION(trace, Level::Trace, 90)
+LOG_FUNCTION(trace, Level::Trace, 35)
 
 /// @brief Logs a message at the Level::Debug level.
 /// @param msg Message wrapper.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <format>
 #include <type_traits>
 #include <utility>
 
@@ -93,6 +94,12 @@ public:
     [[nodiscard]]
     constexpr auto none() const noexcept -> bool {
         return m_values.none();
+    }
+
+    /// @brief Returns a string representation of this BitFlags.
+    [[nodiscard]]
+    constexpr auto to_string() const noexcept -> std::string {
+        return std::format("BitFlags<{}>({})", typename_of<F>(), m_values.to_string());
     }
 
 private:

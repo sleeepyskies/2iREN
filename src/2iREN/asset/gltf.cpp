@@ -214,7 +214,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                     .extent        = extent,
                     .dimension     = ImageDimension::D2,
                     .mipmap_levels = mipmap_levels,
-                    .flags         = ImageFlags::empty(), // TODO: what flags here?
+                    .flags         = ImageFlags::make(), // TODO: what flags here?
                 },
                 bytebuffer.view()
             );
@@ -585,7 +585,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
             {
                 .label        = std::format("Index Buffer {}", bufferid),
                 .size         = buffer.size_bytes(),
-                .usage        = BufferFlags::from(BufferFlag::Index),
+                .usage        = BufferFlags::make(BufferFlag::Index),
                 .memory_usage = MemoryUsage::CpuAndGpu,
             },
             buffer.view()
@@ -706,7 +706,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
             {
                 .label        = std::format("Vertex Buffer {}", bufferid++),
                 .size         = buffer.size_bytes(),
-                .usage        = BufferFlags::from(BufferFlag::Vertex),
+                .usage        = BufferFlags::make(BufferFlag::Vertex),
                 .memory_usage = MemoryUsage::CpuAndGpu,
             },
             buffer.view()
@@ -883,68 +883,60 @@ auto GltfLoader::load(LoadContext&& ctx, std::optional<ConfigType>) const -> Ass
 
     // const auto config_ = config.value_or(ConfigType{ });
 
-    // @formatter:off
-    struct cgltf_delete {
-        auto operator()(cgltf_data* data) const -> void {
-            cgltf_free(data);
-        }
-    };
-    using cgltf_ptr = std::unique_ptr<cgltf_data, cgltf_delete>;
-    // @formatter:on
-
     // load the gltf file using cgltf
     auto physical_path_opt = FileSystem::to_physical(ctx.path().full_path());
-    cgltf_data* raw        = nullptr;
+    cgltf_data* data       = nullptr;
+    DEFER {
+        cgltf_free(data);
+    };
 
     if (physical_path_opt) {
         const Path& p = *physical_path_opt;
         cgltf_options options{};
 
-        if (cgltf_parse_file(&options, p.string().c_str(), &raw) != cgltf_result_success) {
+        if (cgltf_parse_file(&options, p.string().c_str(), &data) != cgltf_result_success) {
             log::warn("Could not parse gltf at {}", p.string());
-        } else if (cgltf_validate(raw) != cgltf_result_success) {
+        } else if (cgltf_validate(data) != cgltf_result_success) {
             log::warn("Could not validate gltf at {}", p.string());
-            cgltf_free(raw);
-            raw = nullptr;
-        } else if (cgltf_load_buffers(&options, raw, p.string().c_str()) != cgltf_result_success) {
+            cgltf_free(data);
+            data = nullptr;
+        } else if (cgltf_load_buffers(&options, data, p.string().c_str()) != cgltf_result_success) {
             log::warn("Could not load gltf buffers at {}", p.string());
-            cgltf_free(raw);
-            raw = nullptr;
+            cgltf_free(data);
+            data = nullptr;
         }
     }
-
-    const auto data = cgltf_ptr(raw);
 
     if (!data) {
         log::warn("Could not load gltf at {}, vfs path does not exist.", ctx.path());
         return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
 
-    const auto textures = load_textures(data.get(), ctx);
+    const auto textures = load_textures(data, ctx);
     if (!textures.has_value()) {
         log::warn("Could not load gltf at {}, textures could not be loaded.", ctx.path());
         return std::unexpected(textures.error());
     }
 
-    auto materials = load_materials(data.get(), *textures, ctx);
+    auto materials = load_materials(data, *textures, ctx);
     if (!materials.has_value()) {
         log::warn("Could not load gltf at {}, materials could not be loaded.", ctx.path());
         return std::unexpected(materials.error());
     }
 
-    auto meshes = load_meshes(data.get(), *materials, ctx);
+    auto meshes = load_meshes(data, *materials, ctx);
     if (!meshes.has_value()) {
         log::warn("Could not load gltf at {}, meshes could not be loaded.", ctx.path());
         return std::unexpected(meshes.error());
     }
 
-    auto nodes = load_nodes(data.get(), *meshes, ctx);
+    auto nodes = load_nodes(data, *meshes, ctx);
     if (!nodes.has_value()) {
         log::warn("Could not load gltf at {}, nodes could not be loaded.", ctx.path());
         return std::unexpected(nodes.error());
     }
 
-    auto scenes = load_scenes(data.get(), *nodes, ctx);
+    auto scenes = load_scenes(data, *nodes, ctx);
     if (!scenes.has_value()) {
         log::warn("Could not load gltf at {}, scenes could not be loaded.", ctx.path());
         return std::unexpected(scenes.error());

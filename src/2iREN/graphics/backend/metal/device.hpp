@@ -19,7 +19,7 @@ namespace siren {
 
 class MetalDevice final : public Device {
 public:
-    explicit MetalDevice();
+    MetalDevice();
     ~MetalDevice() override;
 
     [[nodiscard]]
@@ -44,7 +44,7 @@ public:
     auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain override;
 
-    auto update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
+    auto reconfigure_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
         -> void override;
 
     [[nodiscard]]

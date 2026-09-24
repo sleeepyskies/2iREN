@@ -5,6 +5,8 @@
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/utility/log.hpp"
 
+;
+
 namespace siren {
 
 struct WindowDescriptor;

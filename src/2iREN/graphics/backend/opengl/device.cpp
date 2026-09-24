@@ -80,16 +80,14 @@ auto fetch_limits() -> Limits {
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &values[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &values[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &values[2]);
-    limits.max_compute_work_group_count = {
-        static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])
-    };
+    limits.max_compute_work_group_count =
+        {static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])};
 
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &values[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &values[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &values[2]);
-    limits.max_compute_work_group_size = {
-        static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])
-    };
+    limits.max_compute_work_group_size =
+        {static_cast<u32>(values[0]), static_cast<u32>(values[1]), static_cast<u32>(values[2])};
 
     return limits;
 }
@@ -102,8 +100,9 @@ auto FramebufferCache::get_create_for(const RenderTarget& target) -> GLuint {
         .colors = target.colors
             | std::views::transform(&ColorAttachment::image)
             | std::ranges::to<std::vector>(),
-        .depth_stencil =
-            target.depth_stencil.transform([](auto a) { return a.image; }).value_or(NullHandle),
+        .depth_stencil = target.depth_stencil.transform(
+                                                 [](auto a) { return a.image; }
+        ).value_or(NullHandle),
     };
     if (const auto it = m_cache.find(key); it != m_cache.end()) {
         return it->second;
@@ -330,13 +329,19 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
     );
 
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_S, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.s_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_S,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.s_wrap))
     );
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_T, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.t_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_T,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.t_wrap))
     );
     glSamplerParameteri(
-        sampler, GL_TEXTURE_WRAP_R, static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.r_wrap))
+        sampler,
+        GL_TEXTURE_WRAP_R,
+        static_cast<GLint>(opengl::img_wrap_to_gl(descriptor.r_wrap))
     );
 
     glSamplerParameterf(sampler, GL_TEXTURE_MIN_LOD, descriptor.lod_min);
@@ -351,7 +356,9 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
     }
 
     glSamplerParameteri(
-        sampler, GL_TEXTURE_COMPARE_MODE, opengl::img_compare_mode_to_gl(descriptor.compare_mode)
+        sampler,
+        GL_TEXTURE_COMPARE_MODE,
+        opengl::img_compare_mode_to_gl(descriptor.compare_mode)
     );
     glSamplerParameteri(
         sampler,
@@ -359,9 +366,8 @@ auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler 
         static_cast<GLint>(opengl::img_compare_fn_to_gl(descriptor.compare_fn))
     );
 
-    this->m_state.sampler_table.link(
-        sampler_handle, sampler, GlSamplerDetails{.descriptor = descriptor}
-    );
+    this->m_state.sampler_table
+        .link(sampler_handle, sampler, GlSamplerDetails{.descriptor = descriptor});
 
     log::trace("{} created.", sampler_handle);
     return Sampler{this, sampler_handle};
@@ -450,7 +456,9 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         GLsizei count       = 0;
         GLenum type         = GL_NONE;
         glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_length);
-        const auto uniform_name = std::make_unique<char[]>(static_cast<usize>(max_name_length));
+        const auto uniform_name = std::unique_ptr<char[]>::make(
+            static_cast<usize>(max_name_length)
+        );
 
         for (i32 i = 0; i < uniform_count; i++) {
             glGetActiveUniform(
@@ -480,7 +488,9 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
     }
 
     this->m_state.shader_table.link(
-        shader_handle, program, GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
+        shader_handle,
+        program,
+        GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
     );
 
     log::trace("{} created.", shader_handle);
@@ -585,9 +595,8 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
         glVertexArrayAttribBinding(vertex_array, static_cast<GLuint>(index), 0);
     }
 
-    m_state.graphics_pipeline_table.link(
-        pipeline_handle, vertex_array, GlGraphicsPipelineDetails{.descriptor = descriptor}
-    );
+    m_state.graphics_pipeline_table
+        .link(pipeline_handle, vertex_array, GlGraphicsPipelineDetails{.descriptor = descriptor});
 
     log::trace("{} created.", pipeline_handle);
     return GraphicsPipeline{this, pipeline_handle};
@@ -771,7 +780,10 @@ auto OpenGLDevice::upload_to_buffer(
             GLuint staging_buffer;
             glCreateBuffers(1, &staging_buffer);
             glNamedBufferStorage(
-                staging_buffer, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), 0
+                staging_buffer,
+                static_cast<GLsizeiptr>(data.size_bytes()),
+                data.data(),
+                0
             );
 
             // perform transfer
@@ -812,7 +824,11 @@ auto OpenGLDevice::clear_image(const ImageHandle image, const ClearValue clearva
 
     if (std::holds_alternative<Rgba>(clearvalue)) {
         glClearTexImage(
-            img, 0, opengl::img_format_to_gl_layout(format), GL_FLOAT, &std::get<Rgba>(clearvalue).r
+            img,
+            0,
+            opengl::img_format_to_gl_layout(format),
+            GL_FLOAT,
+            &std::get<Rgba>(clearvalue).r
         );
     } else if (std::holds_alternative<u32>(clearvalue)) {
         glClearTexImage(img, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, &std::get<u32>(clearvalue));
@@ -917,7 +933,12 @@ auto OpenGLDevice::read_image(const ImageHandle image) const -> std::vector<u8> 
     const auto gl_image = m_state.image_table.fetch(image);
 
     glGetTextureImage(
-        gl_image, 0, GL_RGBA, GL_UNSIGNED_BYTE, static_cast<GLsizei>(buffer.size()), buffer.data()
+        gl_image,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        static_cast<GLsizei>(buffer.size()),
+        buffer.data()
     );
 
     return buffer;

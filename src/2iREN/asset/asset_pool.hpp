@@ -36,7 +36,7 @@ public:
 
     using OnCleanupFunction = std::function<void(AssetId)>;
 
-    explicit AssetPool(OnCleanupFunction&& m_on_cleanup) : m_on_cleanup{m_on_cleanup} {};
+    explicit AssetPool(OnCleanupFunction&& m_on_cleanup) : m_on_cleanup{m_on_cleanup} { };
     ~AssetPool() override = default;
 
 private:
@@ -49,11 +49,11 @@ private:
     /// @brief A storage element in the AssetPool.
     struct PoolEntry {
         /// @brief The stored asset.
-        std::unique_ptr<A> asset = nullptr;
+        std::unique_ptr<A> asset  = nullptr;
         /// @brief The generation of this storage slot. Useful for reusing slots.
         GenerationType generation = 0;
         /// @brief The number of handles referencing this asset.
-        RefCount ref_count = 0;
+        RefCount ref_count        = 0;
 
         // @formatter:off
         void kill() {

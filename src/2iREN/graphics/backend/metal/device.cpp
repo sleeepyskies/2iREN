@@ -308,8 +308,10 @@ auto MetalDevice::make_swapchain(const Window& window, const SwapchainDescriptor
     return Swapchain{this, handle};
 }
 
-auto MetalDevice::update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
-    -> void {
+auto MetalDevice::reconfigure_swapchain(
+    SwapchainHandle handle,
+    const SwapchainDescriptor& new_values
+) -> void {
     auto* layer = m_state.swapchains.fetch(handle);
     auto& old   = m_state.swapchains.details(handle).descriptor;
 
@@ -532,9 +534,7 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
             .label         = "swapchain image",
             .format        = image_format(layer->pixelFormat()),
             .extent        = Extent2{size.width, size.height}.to_extent3(),
-            .dimension     = ImageDimension::D2,
             .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
-            .flags         = ImageFlags::empty(), // flags dont acc matter here.
         }
     );
 

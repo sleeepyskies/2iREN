@@ -69,8 +69,8 @@ static auto fetch_source_code(const YAML::Node& node, const Path& base_dir)
 }
 
 auto ShaderLoader::load_glsl(
-    LoadContext&&      ctx,
-    const YAML::Node&  glsl,
+    LoadContext&& ctx,
+    const YAML::Node& glsl,
     const std::string& name
 ) const -> AssetLoadError {
     if (!glsl[keys::STAGES] || !glsl[keys::STAGES].IsMap() || glsl[keys::STAGES].size() == 0) {
@@ -118,8 +118,8 @@ auto ShaderLoader::load_glsl(
 }
 
 auto ShaderLoader::load_msl(
-    LoadContext&&      ctx,
-    const YAML::Node&  msl,
+    LoadContext&& ctx,
+    const YAML::Node& msl,
     const std::string& shader_name
 ) const -> AssetLoadError {
     const auto base_dir = Path{ctx.path().full_path()}.parent_path();

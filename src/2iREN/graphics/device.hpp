@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -57,9 +59,11 @@ public:
     virtual auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain = 0;
 
-    /// @brief Updates the given swapchains values.
-    virtual auto update_swapchain(SwapchainHandle handle, const SwapchainDescriptor& new_values)
-        -> void = 0;
+    /// @brief Reconfigures the given swapchains values.
+    virtual auto reconfigure_swapchain(
+        SwapchainHandle handle,
+        const SwapchainDescriptor& new_values
+    ) -> void = 0;
 
     /// @brief Creates and returns a new @ref Query.
     [[nodiscard]]
@@ -87,8 +91,8 @@ public:
     virtual auto destroy_query(QueryHandle handle) -> void = 0;
 
     /// @brief Returns the @ref BufferDescriptor associated with this handle.
-    [[nodiscard]]
-    virtual auto buffer_descriptor(BufferHandle handle) const -> const BufferDescriptor& = 0;
+    [[nodiscard]] virtual auto buffer_descriptor(BufferHandle handle) const
+        -> const BufferDescriptor& = 0;
 
     /// @brief Returns the @ref ImageDescriptor associated with this handle.
     [[nodiscard]]

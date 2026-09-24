@@ -1,7 +1,6 @@
 #include "context.hpp"
 
 #include <GLFW/glfw3.h>
-#include <_stdlib.h>
 #include <stb_image.h>
 
 #include "2iREN/concurrency/thread_pool.hpp"
@@ -60,9 +59,8 @@ Context::Context(const ContextDescriptor& descriptor) {
     log::initialize(descriptor.level);
 
     // TODO: should handle this based on the descriptor param
-
-    setenv("MTL_DEBUG_LAYER", "1", true);
-    setenv("MTL_SHADER_VALIDATION", "1", true);
+    // setenv("MTL_DEBUG_LAYER", "1", true);
+    // setenv("MTL_SHADER_VALIDATION", "1", true);
 
     time::initialize();
 
@@ -87,7 +85,7 @@ Context::~Context() {
 
 auto Context::make_device() -> std::unique_ptr<Device> {
 #if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
-    return std::make_unique<OpenGLDevice>();
+    return std::unique_ptr<OpenGLDevice>::make();
 #elifdef SIREN_MACOS
     return std::make_unique<MetalDevice>();
 #endif

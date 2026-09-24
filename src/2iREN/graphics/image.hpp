@@ -2,8 +2,8 @@
 
 #include <optional>
 
+#include "2iREN/container/bitflags.hpp"
 #include "2iREN/container/byte_buffer.hpp"
-#include "2iREN/container/flag_set.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/types.hpp"
 #include "2iREN/math/extent.hpp"
@@ -38,7 +38,7 @@ enum class ImageFlag {
 };
 
 /// @brief Set of flags defining how a buffer may be used.
-using ImageFlags = FlagSet<ImageFlag>;
+using ImageFlags = BitFlags<ImageFlag>;
 
 /// @brief Describes an @ref Image for creation.
 struct ImageDescriptor {
@@ -55,7 +55,7 @@ struct ImageDescriptor {
     /// @brief Defines if the Cpu and the Gpu mauy access to image.
     MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
     /// @brief Flags specifying how the @ref Image will be used.
-    ImageFlags flags         = ImageFlags::empty();
+    ImageFlags flags         = ImageFlags::make();
 };
 
 /// @brief A gpu resource representing image data.

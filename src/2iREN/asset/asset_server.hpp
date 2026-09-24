@@ -38,7 +38,9 @@ enum class LoadStatus {
 /// @brief Simple state machine utility class for managing LoadStatus.
 class LoadState {
 public:
-    [[nodiscard]] constexpr auto get_main() const noexcept -> LoadStatus { return m_main; }
+    [[nodiscard]] constexpr auto get_main() const noexcept -> LoadStatus {
+        return m_main;
+    }
 
     constexpr auto set_main(const LoadStatus status) noexcept -> void {
         if (m_main == LoadStatus::Fail || m_dependencies == LoadStatus::Fail) {
@@ -53,7 +55,9 @@ public:
         m_main = status;
     }
 
-    [[nodiscard]] constexpr auto get_deps() const noexcept -> LoadStatus { return m_dependencies; }
+    [[nodiscard]] constexpr auto get_deps() const noexcept -> LoadStatus {
+        return m_dependencies;
+    }
 
     constexpr auto set_deps(const LoadStatus status) noexcept -> void {
         if (m_main == LoadStatus::Fail || m_dependencies == LoadStatus::Fail) {
@@ -119,8 +123,8 @@ class AssetServer {
         RwLock<std::unordered_map<TypeID, std::unique_ptr<AssetPoolBase>>> storage{};
         /// @brief All active loaders.
         /// @note The reason we do not use any sync primitives here, is that Loaders are
-        /// in principle stateless. Furthermore, we assume all loaders are registered at engine init.
-        /// If this is not the case, and loaders are added at runtime, there can be issues.
+        /// in principle stateless. Furthermore, we assume all loaders are registered at engine
+        /// init. If this is not the case, and loaders are added at runtime, there can be issues.
         Loaders loaders;
         /// @brief Cache of at most a single default handle per asset type.
         /// @todo do we have to use std::any? not great imo, but @ref WeakHandle is not ref counted,
@@ -221,8 +225,8 @@ public:
     /// @brief Directly adds the provided asset into storage, if a pool exists for its type.
     /// @tparam A The type of the asset being added.
     /// @param asset The asset to add.
-    /// @param path An optional path parameter. Useful if adding as asset that was loaded external to
-    /// the server.
+    /// @param path An optional path parameter. Useful if adding as asset that was loaded external
+    /// to the server.
     /// @return A @ref StrongHandle referencing the newly added asset.
     template <IsAsset A>
     [[nodiscard]] auto add(std::unique_ptr<A>&& asset, const AssetPath& path = AssetPath::invalid())
@@ -234,7 +238,8 @@ public:
             const auto it = storage.find(AssetId::type_id<A>());
             if (it == storage.end()) {
                 log::error(
-                    "Could not find an appropriate asset pool for type {}", typename_of<A>()
+                    "Could not find an appropriate asset pool for type {}",
+                    typename_of<A>()
                 );
                 return StrongHandle<A>::invalid();
             }
@@ -336,7 +341,9 @@ public:
     auto register_default(std::unique_ptr<A>&& asset) -> void {
         StrongHandle<A> handle = add(std::move(asset));
         log::info(
-            "Registering a new default for type {}. Default handle: {}", typename_of<A>(), handle
+            "Registering a new default for type {}. Default handle: {}",
+            typename_of<A>(),
+            handle
         );
         m_data.default_handles.run_exclusive(
             [handle](std::unordered_map<TypeID, std::any>& default_handles) {
@@ -351,8 +358,8 @@ private:
     auto on_asset_unload(const AssetId id) -> void {
         log::debug("Unloading asset {}", id);
 
-        auto hashed_string =
-            m_data.id_to_path.run_exclusive([&](auto& map) -> std::optional<HashedString> {
+        auto hashed_string = m_data.id_to_path.run_exclusive(
+            [&](auto& map) -> std::optional<HashedString> {
                 const auto it = map.find(id);
                 if (it == map.end()) {
                     return std::nullopt;
@@ -360,14 +367,17 @@ private:
                 const auto hs = it->second;
                 map.erase(it);
                 return hs;
-            });
+            }
+        );
 
         if (!hashed_string) {
             return;
         }
 
         log::debug(
-            "Asset from cache with path {} and id {} unloaded", hashed_string.value().data(), id
+            "Asset from cache with path {} and id {} unloaded",
+            hashed_string.value().data(),
+            id
         );
 
         m_data.asset_infos.run_exclusive([&](auto& map) {
@@ -465,7 +475,7 @@ public:
         const AssetPath& path,
         const WeakHandle& handle,
         Device& device
-    ) : m_server(server), m_handle(handle), m_path(path), m_device(device) {}
+    ) : m_server(server), m_handle(handle), m_path(path), m_device(device) { }
 
     template <IsAsset A>
     [[nodiscard]] auto add_labeled_asset(const std::string& label, std::unique_ptr<A>&& asset)
@@ -547,9 +557,13 @@ public:
         return m_handle.path();
     }
     /// @brief Returns the @ref Device this LoadContext is using.
-    [[nodiscard]] constexpr auto device() noexcept -> Device& { return m_device; }
+    [[nodiscard]] constexpr auto device() noexcept -> Device& {
+        return m_device;
+    }
     /// @brief Returns the @ref WeakHandle this LoadContext was made to load an asset for.
-    [[nodiscard]] constexpr auto handle() noexcept -> WeakHandle { return m_handle; }
+    [[nodiscard]] constexpr auto handle() noexcept -> WeakHandle {
+        return m_handle;
+    }
 
 private:
     auto notify_dependents(
@@ -619,7 +633,8 @@ template <IsAsset A>
     auto loader = fetch_loader<A>(path.extension());
     if (!loader) {
         log::warn(
-            "Could not load asset of type {}, as there exists no loader for it.", typename_of<A>()
+            "Could not load asset of type {}, as there exists no loader for it.",
+            typename_of<A>()
         );
         return StrongHandle<A>::invalid();
     }
@@ -652,15 +667,15 @@ template <IsAsset A>
     });
 
     // spawn new loading task
-    ThreadPool::get().submit(
-        [this, path, loader, weak_handle, config = std::move(config)] mutable {
-            const auto result =
-                loader->load(LoadContext{*this, path, weak_handle, m_device}, std::move(config));
-            if (!result) {
-                log::error("Asset loading failed.", result.error());
-            }
+    ThreadPool::get().submit([this, path, loader, weak_handle, config = std::move(config)] mutable {
+        const auto result = loader->load(
+            LoadContext{*this, path, weak_handle, m_device},
+            std::move(config)
+        );
+        if (!result) {
+            log::error("Asset loading failed.", result.error());
         }
-    );
+    });
 
     return make_strong<A>(weak_handle);
 }
