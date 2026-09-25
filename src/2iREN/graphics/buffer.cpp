@@ -31,7 +31,7 @@ auto Buffer::descriptor() const noexcept -> const BufferDescriptor& {
     return m_device->buffer_descriptor(m_handle);
 }
 
-auto Buffer::upload(const ByteBufferView data, const u32 offset) const noexcept -> void {
+auto Buffer::write(const ByteBufferView data, const u32 offset) const noexcept -> void {
     auto cmds = m_device->make_command_buffer();
     cmds->write_buffer(m_handle, offset, data);
     m_device->submit(std::move(cmds));

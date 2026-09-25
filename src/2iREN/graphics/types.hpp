@@ -10,10 +10,10 @@ namespace siren {
 
 /// @brief Specifies the GPU and CPU access permissions.
 enum class MemoryUsage {
-    /// @brief The buffer can be accessed by the CPU and the GPU.
-    CpuAndGpu,
-    /// @brief The buffer can be accessed by only the GPU.
-    GpuOnly,
+    /// @brief The resources memory may only be accessed by the Gpu.
+    Private,
+    /// @brief The resources memory is accessible via the Gpu and the Cpu.
+    Shared,
 };
 
 /// @brief General type representing various numeric data types.

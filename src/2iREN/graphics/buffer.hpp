@@ -19,6 +19,8 @@ enum class BufferFlag {
     Uniform,
     /// @brief The buffer may be used as a storage buffer for large read-write data.
     Storage,
+    /// @brief The buffer may be used to capture query results.
+    Query,
 
     Max,
 };
@@ -37,7 +39,7 @@ struct BufferDescriptor {
     /// @brief Flag set of this buffers uses.
     BufferFlags usage        = BufferFlags::make();
     /// @brief Denotes what components may access the buffer.
-    MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
+    MemoryUsage memory_usage = MemoryUsage::Shared;
 };
 
 /// @brief A Buffer represents a typeless memory allocation on the GPU. The

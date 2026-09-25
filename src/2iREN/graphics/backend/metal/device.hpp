@@ -4,6 +4,7 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 
+#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/graphics/backend/metal/fwd.hpp"
 #include "2iREN/graphics/backend/metal/resource_state.hpp"
 #include "2iREN/graphics/buffer.hpp"

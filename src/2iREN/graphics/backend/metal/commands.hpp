@@ -12,6 +12,9 @@
 
 namespace siren::metal {
 
+// TODO: again here, it would be nice to have a general 2iREN validation layer 
+// that checks calls, and then forwards to the api.
+
 /// @brief Metal implementation of the siren::RenderCommandEncoder.
 class RenderCommandEncoder final : public ::siren::RenderCommandEncoder {
 public:

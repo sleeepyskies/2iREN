@@ -53,7 +53,7 @@ struct ImageDescriptor {
     /// @brief How many mip map levels to generate.
     u32 mipmap_levels        = 1;
     /// @brief Defines if the Cpu and the Gpu mauy access to image.
-    MemoryUsage memory_usage = MemoryUsage::CpuAndGpu;
+    MemoryUsage memory_usage = MemoryUsage::Shared;
     /// @brief Flags specifying how the @ref Image will be used.
     ImageFlags flags         = ImageFlags::make();
 };

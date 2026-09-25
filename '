@@ -1,6 +1,5 @@
 #include "device.hpp"
 
-#include <glad/gl.h>
 #include <optional>
 #include <utility>
 
@@ -125,7 +124,7 @@ auto OpenGLDevice::make_buffer(
         buffer_bitfield(descriptor.memory_usage)
     );
 
-    const auto handle = m_state.buffers.reserve_link(buffer, BufferDescriptor{descriptor});
+    const auto handle = m_state.buffers.reserve_link(buffer, BufferDetails{descriptor});
 
     log::trace("{} created", handle);
     return Buffer{this, handle};
@@ -138,16 +137,12 @@ auto OpenGLDevice::destroy_buffer(const BufferHandle handle) -> void {
 }
 
 auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
-    // NOTE: opengl has no way to restrict the access of texture memory access,
-    // so for the opengl backend we enforce this restriction via cpu side checks.
     ASSERT(
         descriptor.extent.x > 0 and descriptor.extent.y > 0 and descriptor.extent.z > 0,
         "cannot create an empty image"
     );
 
-    const auto target          = img_to_target_gl(descriptor.extent, descriptor.dimension);
-    const auto internal_format = img_format_to_gl_internal(descriptor.format);
-    const auto& extent         = descriptor.extent;
+    const auto target       = img_to_target_gl(descriptor.extent, descriptor.dimension);
 
     GLuint image;
     glCreateTextures(target, 1, &image);
@@ -156,6 +151,10 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         glObjectLabel(GL_TEXTURE, image, label->size(), label->data());
     }
 
+    const auto internal_format = img_format_to_gl_internal(descriptor.format);
+    const auto& extent         = descriptor.extent;
+
+    // allocate enough memory
     switch (target) {
         case GL_TEXTURE_1D:
             glTextureStorage1D(
@@ -167,7 +166,7 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
             break;
         case GL_TEXTURE_1D_ARRAY:
         case GL_TEXTURE_2D:
-        case GL_TEXTURE_CUBE_MAP:
+        case GL_TEXTURE_CUBE_MAP: // Cubemaps use 2D storage
             glTextureStorage2D(
                 image,
                 static_cast<GLsizei>(descriptor.mipmap_levels),
@@ -204,29 +203,63 @@ auto OpenGLDevice::destroy_image(const ImageHandle handle) -> void {
 }
 
 auto OpenGLDevice::make_sampler(const SamplerDescriptor& descriptor) -> Sampler {
+    const auto sampler_handle = m_state.samplers.reserve();
+
     GLuint sampler;
     glCreateSamplers(1, &sampler);
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_MIN_FILTER,
+        static_cast<GLint>(
+            min_img_filter_to_gl(descriptor.min_filter, descriptor.mipmap_filter)
+        )
+    );
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_MAG_FILTER,
+        static_cast<GLint>(img_filter_to_gl(descriptor.min_filter))
+    );
 
-    glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, img_filter_to_gl(descriptor.min_filter));
-    glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, img_filter_to_gl(descriptor.mag_filter));
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_WRAP_S,
+        static_cast<GLint>(img_wrap_to_gl(descriptor.s_wrap))
+    );
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_WRAP_T,
+        static_cast<GLint>(img_wrap_to_gl(descriptor.t_wrap))
+    );
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_WRAP_R,
+        static_cast<GLint>(img_wrap_to_gl(descriptor.r_wrap))
+    );
 
-    glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, img_wrap_to_gl(descriptor.s_wrap));
-    glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, img_wrap_to_gl(descriptor.t_wrap));
-    glSamplerParameteri(sampler, GL_TEXTURE_WRAP_R, img_wrap_to_gl(descriptor.r_wrap));
-    
-    if (const auto label = descriptor.label; label.has_value()) {
-        glObjectLabel(GL_SAMPLER, sampler, label->length(), label->data());
-    }
+    glSamplerParameterf(sampler, GL_TEXTURE_MIN_LOD, descriptor.lod_min);
+    glSamplerParameterf(sampler, GL_TEXTURE_MAX_LOD, descriptor.lod_max);
 
-    const auto handle = m_state.samplers.reserve_link(sampler, SamplerDescriptor{descriptor});
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_COMPARE_MODE,
+        img_compare_mode_to_gl(descriptor.compare_mode)
+    );
+    glSamplerParameteri(
+        sampler,
+        GL_TEXTURE_COMPARE_FUNC,
+        static_cast<GLint>(img_compare_fn_to_gl(descriptor.compare_fn))
+    );
 
-    log::trace("{} created.", handle);
-    return Sampler{this, handle};
+    this->m_state.sampler_table
+        .link(sampler_handle, sampler, GlSamplerDetails{.descriptor = descriptor});
+
+    log::trace("{} created.", sampler_handle);
+    return Sampler{this, sampler_handle};
 }
 
 auto OpenGLDevice::destroy_sampler(const SamplerHandle handle) -> void {
-    const auto glhandle = m_state.samplers.fetch_release(handle);
-    glDeleteSamplers(1, &glhandle);
+    const auto api_handle = m_state.sampler_table.fetch_release(handle);
+    glDeleteSamplers(1, &api_handle);
     log::trace("{} deleted.", handle);
 }
 
@@ -240,18 +273,22 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         "cannot create a shader without a fragment shader"
     );
 
-    // NOTE: debug callbacks dont handle shader compilation
+    const auto shader_handle = m_state.shader_table.reserve();
+
+    // debug callbacks dont handle shader compilation
     GLint success;
     char err_info[512];
 
-    std::vector<GLuint> shader_ids = { };
+    std::vector<GLuint> shader_ids;
     shader_ids.reserve(descriptor.source.size());
 
-    // compile shaders
+    // process all stages, we can be sure we have at least vertex + fragment
+    // here
     for (const auto& [stage, stage_data] : descriptor.source) {
         const GLuint shader = glCreateShader(shader_stage_to_gl(stage));
         const char* raw     = stage_data.source.c_str();
 
+        // compile and check status of shader
         glShaderSource(shader, 1, &raw, nullptr);
         glCompileShader(shader);
 
@@ -261,14 +298,20 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
             log::warn("{} Shader compilation from failed with error message: {}", stage, err_info);
         }
 
-        if (const auto label = stage_data.label; label.has_value()) {
-            glObjectLabel(GL_SHADER, shader, label->size(), label->data());
+        // optionally label the shader
+        if (stage_data.label.has_value()) {
+            glObjectLabel(
+                GL_SHADER,
+                shader,
+                static_cast<GLsizei>(stage_data.label.value().size()),
+                stage_data.label.value().c_str()
+            );
         }
 
         shader_ids.push_back(shader);
     }
 
-    // link shaders
+    // link all stages together into a program
     const auto program = glCreateProgram();
     for (const auto& shader : shader_ids) {
         glAttachShader(program, shader);
@@ -281,48 +324,98 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
         log::warn("Shader linking failed with error message: {}", err_info);
     }
 
-    std::ranges::for_each(shader_ids, glDeleteShader);
-
-    if (const auto label = descriptor.label; label.has_value()) {
-        glObjectLabel(GL_PROGRAM, program, label->size(), label->data());
+    // delete all shaders since they are linked to program
+    for (const auto& shader : shader_ids) {
+        glDeleteShader(shader);
     }
 
-    const auto handle = m_state.shaders.reserve_link(program, ShaderDescriptor{descriptor});
+    // cache uniforms
+    i32 uniform_count = 0;
+    std::unordered_map<std::string, GLint> cache;
 
-    log::trace("{} created.", handle);
-    return Shader{this, handle};
+    glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniform_count);
+    if (uniform_count != 0) {
+        i32 max_name_length = 0;
+        GLsizei length      = 0;
+        GLsizei count       = 0;
+        GLenum type         = GL_NONE;
+        glGetProgramiv(program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_length);
+        const auto uniform_name = std::unique_ptr<char[]>::make(
+            static_cast<usize>(max_name_length)
+        );
+
+        for (i32 i = 0; i < uniform_count; i++) {
+            glGetActiveUniform(
+                program,
+                static_cast<GLuint>(i),
+                max_name_length,
+                &length,
+                &count,
+                &type,
+                uniform_name.get()
+            );
+            const i32 location = glGetUniformLocation(program, uniform_name.get());
+            if (location != -1) {
+                cache[std::string(uniform_name.get(), static_cast<usize>(length))] = location;
+            }
+        }
+    }
+
+    // optionally label the shader program
+    if (descriptor.label.has_value()) {
+        glObjectLabel(
+            GL_PROGRAM,
+            program,
+            static_cast<GLsizei>(descriptor.label.value().size()),
+            descriptor.label.value().data()
+        );
+    }
+
+    this->m_state.shader_table.link(
+        shader_handle,
+        program,
+        GlShaderDetails{.descriptor = descriptor, .uniform_cache = cache}
+    );
+
+    log::trace("{} created.", shader_handle);
+    return Shader{this, shader_handle};
 }
 
 auto OpenGLDevice::destroy_shader(const ShaderHandle handle) -> void {
-    const auto glhandle = m_state.shaders.fetch_release(handle);
-    glDeleteProgram(glhandle);
+    const auto api_handle = m_state.shader_table.fetch_release(handle);
+    glDeleteProgram(api_handle);
     log::trace("{} deleted.", handle);
 }
 
 auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
     -> Swapchain {
-    GLuint framebuffer;
-    glCreateFramebuffers(1, &framebuffer);
+    // so OpenGL doesn't expose any concept of a swapchain, so the opengl
+    // swapchain in 2iREN is just an offscreen image. on Device::present() we
+    // just blit this image to window.
 
-    GLuint renderbuffer;
-    glCreateRenderbuffers(1, &renderbuffer);
+    const auto swapchain_handle = m_state.swapchain_table.reserve();
+    const auto windowfb_extent  = window.framebuffer_extent();
 
-    // TODO: if we add triple buffering, create more images here!
     auto image = make_image({
-        .label         = "Swapchain Image 01",
-        .format        = descriptor.image_format.value_or(ImageFormat::RGBA8),
-        .extent        = descriptor.extent.value_or(window.extent()).to_extent3(),
-        .flags         = ImageFlags::make(ImageFlag::RenderAttachment),
+        .format        = ImageFormat::RGBA8,
+        .extent        = Extent3{windowfb_extent.x, windowfb_extent.y, 1},
+        .dimension     = ImageDimension::D2,
+        .mipmap_levels = 1,
     });
 
-    auto attachment = TargetColorAttachment{.image = image.handle()};
+    auto attachment = ColorAttachment{
+        .image           = image.handle(),
+        .begin_operation = BeginOperation::Clear,
+        .clear_color     = Rgba::BLACK(),
+    };
 
-    const auto handle = m_state.swapchains.reserve_link(
+    m_state.swapchain_table.link(
+        swapchain_handle,
         nullptr,
-        SwapchainDetails{
+        GlSwapchainDetails{
             .descriptor    = descriptor,
             .native_handle = window.native_handle(),
-            .target        = SwapchainDetails::Target{
+            .target        = GlSwapchainDetails::Target{
                 .render_target = RenderTarget{.colors = {attachment}},
                 .image         = std::move(image),
             },
@@ -331,8 +424,8 @@ auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescripto
 
     glfwSwapInterval(descriptor.vsync);
 
-    log::trace("{} created.", handle);
-    return Swapchain{this, handle};
+    log::trace("{} created.", swapchain_handle);
+    return Swapchain{this, swapchain_handle};
 }
 
 auto OpenGLDevice::destroy_swapchain(const SwapchainHandle handle) -> void {
@@ -634,9 +727,9 @@ auto OpenGLDevice::acquire_next_swapchain_image(const SwapchainHandle handle) ->
 
 auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) -> void {
     // blit the offscreen image to the default framebuffer, then swap buffers
-    auto* window         = m_state.swapchains.details(handle).native_handle;
-    const auto& target   = m_state.swapchains.details(handle).target->render_target;
-    const auto [w, h, _] = m_state.images.details(target.colors[0].image).descriptor.extent;
+    auto* window         = m_state.swapchain_table.details(handle).native_handle;
+    const auto& target   = m_state.swapchain_table.details(handle).target->render_target;
+    const auto [w, h, _] = m_state.image_table.details(target.colors[0].image).descriptor.extent;
 
     // basically, we just blit swapchain image fbo to default fbo
     const auto offscreen_fb = m_state.framebuffer_cache.get_create_for(target);

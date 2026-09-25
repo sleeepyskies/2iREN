@@ -5,8 +5,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
+#include "2iREN/core/assert.hpp"
 #include "2iREN/math/range.hpp"
 
 namespace siren {
@@ -22,7 +22,7 @@ namespace siren {
 class ByteBuffer;
 
 /// @brief A non owning view into a @ref ByteBuffer.
-using ByteBufferView = std::span<const u8>;
+using ByteBufferView = std::span<const byte>;
 
 class ByteBuffer {
 public:
@@ -117,7 +117,7 @@ public:
     /// @brief Writes the binary representation of the item into the buffer.
     template <typename T>
     auto write(const T& item) -> void {
-        const auto* bytes = reinterpret_cast<const u8*>(&item);
+        const auto* bytes = bytecast(item);
         m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
     }
 
@@ -125,10 +125,10 @@ public:
     template <typename T>
     auto write(const T& item, const usize align_as) -> void {
         ASSERT(align_as >= sizeof(T));
-        const auto* bytes = reinterpret_cast<const u8*>(&item);
+        const auto* bytes = bytecast(item);
         m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
         const auto padding = align_as - sizeof(T);
-        m_data.resize(m_data.size() + padding, u8{0});
+        m_data.resize(m_data.size() + padding, byte{0});
     }
 
     /// @brief Writes the items into the buffer.
@@ -175,12 +175,12 @@ public:
 
     /// @brief Returns a non owning sub-view into this buffer.
     [[nodiscard]]
-    constexpr auto subview(const usize start, const usize size) const noexcept -> ByteBufferView {
-        return view().subspan(start, size);
+    constexpr auto subview(const Range<usize> range) const noexcept -> ByteBufferView {
+        return view().subspan(range.begin, range.length());
     }
 
 private:
-    std::vector<u8> m_data;
+    std::vector<byte> m_data;
 
     template <typename T>
     constexpr auto assert_size() const -> void {

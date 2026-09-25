@@ -14,9 +14,19 @@ class Window;
 
 using ClearValue = std::variant<Rgba, u32>;
 
-/// @brief The Device manages the lifetime of @ref RenderResource objects.
-/// Furthermore, it is the primary entry point for all interactions with the
-/// GPU.
+/// @brief Controls if 2iREN will perform generic api usage validation.
+enum class ValidationMode {
+    Disabled = false,
+    Enabled = true,
+};
+
+/// @brief The Device is the main way to communicate to the Gpu and abstracts 
+/// over the specific backend that is being used. It manages resource lifetime,
+/// as well as providing access to command buffers for recording Gpu work.
+/// TODO: it would be nice to add an optional 2iREN validation layer.
+/// This would be a rather rigourous checking of input data such that each 
+/// backend doesn't need to implement this themselves. This could also handle 
+/// some general logging etc to reduce boilerplate of each backend impl.
 class Device {
 public:
     virtual ~Device() = default;
@@ -32,10 +42,7 @@ public:
     /// @brief Creates and returns a new @ref Image given an @ref
     /// ImageDescriptor.
     [[nodiscard]]
-    virtual auto make_image(
-        const ImageDescriptor& descriptor,
-        std::optional<ByteBufferView> initial = std::nullopt
-    ) -> Image = 0;
+    virtual auto make_image(const ImageDescriptor& descriptor) -> Image = 0;
 
     /// @brief Creates and returns a new @ref Image given an @ref
     /// ImageDescriptor.
@@ -173,5 +180,8 @@ protected:
     mutable Limits m_limits         = {};
     mutable Statistics m_statistics = {};
     Backend m_backend;
+
+    [[nodiscard]]
+    auto invalid_buffer() -> Buffer;
 };
 } // namespace siren

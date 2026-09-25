@@ -37,6 +37,9 @@ using f64 = double;
 /// @brief An unsigned integer capable of holding the largest memory address.
 using usize = std::size_t;
 
+/// @brief A single unsigned byte.
+using byte = std::byte;
+
 /// @brief An optional label.
 using Label = std::optional<std::string>;
 
@@ -63,4 +66,11 @@ constexpr auto range(const usize start, const usize end) {
 constexpr auto align_up(const usize size, const usize alignment) -> usize {
     return (size + alignment - 1) / alignment * alignment;
 }
+
+template <typename T>
+[[nodiscard]]
+constexpr auto bytecast(const T& value) -> const byte* {
+    return reinterpret_cast<const byte*>(&value);
+}
+
 } // namespace siren

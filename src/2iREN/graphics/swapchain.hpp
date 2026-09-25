@@ -24,7 +24,7 @@ struct SwapchainDescriptor {
     std::optional<bool> vsync               = std::nullopt;
     /// @brief The format of the pixels of the swapchains image.
     std::optional<ImageFormat> image_format = std::nullopt;
-    /// @brief TODO: impl
+    /// TODO: impl
     // std::optional<FramesInFlight> frames_in_flight = std::nullopt;
 };
 
