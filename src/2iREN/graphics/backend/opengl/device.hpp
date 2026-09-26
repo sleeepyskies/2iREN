@@ -1,10 +1,9 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
-#include "2iREN/graphics/backend/opengl/resource_state.hpp"
-#include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/graphics/backend/opengl/opengl.hpp"
+
+#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/device.hpp"
@@ -16,7 +15,6 @@
 #include "2iREN/graphics/swapchain.hpp"
 
 namespace siren {
-
 
 class OpenGLDevice final : public Device {
 public:

@@ -17,15 +17,15 @@ using ClearValue = std::variant<Rgba, u32>;
 /// @brief Controls if 2iREN will perform generic api usage validation.
 enum class ValidationMode {
     Disabled = false,
-    Enabled = true,
+    Enabled  = true,
 };
 
-/// @brief The Device is the main way to communicate to the Gpu and abstracts 
+/// @brief The Device is the main way to communicate to the Gpu and abstracts
 /// over the specific backend that is being used. It manages resource lifetime,
 /// as well as providing access to command buffers for recording Gpu work.
 /// TODO: it would be nice to add an optional 2iREN validation layer.
-/// This would be a rather rigourous checking of input data such that each 
-/// backend doesn't need to implement this themselves. This could also handle 
+/// This would be a rather rigourous checking of input data such that each
+/// backend doesn't need to implement this themselves. This could also handle
 /// some general logging etc to reduce boilerplate of each backend impl.
 class Device {
 public:
@@ -66,15 +66,13 @@ public:
     virtual auto make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
         -> Swapchain = 0;
 
-    /// @brief Reconfigures the given swapchains values.
-    virtual auto reconfigure_swapchain(
-        SwapchainHandle handle,
-        const SwapchainDescriptor& new_values
-    ) -> void = 0;
-
     /// @brief Creates and returns a new @ref Query.
     [[nodiscard]]
     virtual auto make_query(const QueryDescriptor& descriptor) -> Query = 0;
+
+    /// @brief Returns a new command buffer.
+    [[nodiscard]]
+    virtual auto make_command_buffer() const noexcept -> std::unique_ptr<CommandBuffer> = 0;
 
     /// @brief Queues the given @ref Buffer for deletion.
     virtual auto destroy_buffer(BufferHandle handle) -> void = 0;
@@ -113,23 +111,30 @@ public:
     [[nodiscard]]
     virtual auto shader_descriptor(ShaderHandle handle) const -> const ShaderDescriptor& = 0;
 
+    /// @brief Returns the @ref QueryDescriptor associated with this handle.
+    [[nodiscard]]
+    virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
+
     /// @brief Returns the @ref GraphicsPipelineDescriptor associated with this
     /// handle.
     [[nodiscard]]
     virtual auto graphics_pipeline_descriptor(GraphicsPipelineHandle handle) const
         -> const GraphicsPipelineDescriptor& = 0;
 
+    /// @brief Reconfigures the given swapchains values.
+    virtual auto reconfigure_swapchain(
+        SwapchainHandle handle,
+        const SwapchainDescriptor& new_values
+    ) -> void = 0;
+
     /// @brief Returns information about the swapchain.
     [[nodiscard]]
     virtual auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& = 0;
 
-    /// @brief Returns the @ref QueryDescriptor associated with this handle.
+    /// @brief Returns the next @ref Image target managed by this framebuffer to
+    /// render to.
     [[nodiscard]]
-    virtual auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& = 0;
-
-    /// @brief Returns a new command buffer.
-    [[nodiscard]]
-    virtual auto make_command_buffer() const noexcept -> std::unique_ptr<CommandBuffer> = 0;
+    virtual auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle = 0;
 
     /// @brief Submits the commands to the Gpu for execution.
     virtual auto submit(std::unique_ptr<CommandBuffer>&& command_buffer) const -> void = 0;
@@ -142,11 +147,6 @@ public:
     /// @brief Presents the back buffer of the given swapchain to the screen.
     virtual auto present(SwapchainHandle handle, std::unique_ptr<CommandBuffer>&& command_buffer)
         -> void = 0;
-
-    /// @brief Returns the next @ref Image target managed by this framebuffer to
-    /// render to.
-    [[nodiscard]]
-    virtual auto acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle = 0;
 
     /// @brief Copies the Gpu buffer data into a Cpu buffer.
     [[nodiscard]]
@@ -164,8 +164,8 @@ public:
     /// @brief Returns the accumulated rendering statistics since the last time
     /// this function was called.
     [[nodiscard]]
-    auto statistics() const noexcept -> Statistics {
-        return std::exchange(m_statistics, {});
+    auto statistics() const noexcept -> const Statistics& {
+        return m_statistics;
     }
 
     /// @brief Returns the active backend kind.

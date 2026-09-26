@@ -5,8 +5,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "2iREN/core/base.hpp"
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/math/range.hpp"
 
 namespace siren {
@@ -29,9 +29,29 @@ public:
     /// @brief Constructs an empty ByteBuffer.
     constexpr ByteBuffer() = default;
 
+    /// @brief Makes a new buffer containing the given list of items.
     template <typename T>
+    [[nodiscard]]
     static constexpr inline auto make(std::initializer_list<T> items) -> ByteBuffer {
         return ByteBuffer(items);
+    }
+
+    /// @brief Makes a new buffer containing the given list of items.
+    template <typename T>
+    [[nodiscard]]
+    static constexpr inline auto with_size_bytes(const u32 size_bytes) -> ByteBuffer {
+        auto buf = ByteBuffer{};
+        buf.reserve_bytes(size_bytes);
+        return buf;
+    }
+
+    template <typename... Args>
+    [[nodiscard]]
+    static constexpr inline auto make(Args&&... args) -> ByteBuffer {
+        // TODO: does this work? write some tests!
+        auto buf = ByteBuffer{};
+        (..., buf.write(args));
+        return buf;
     }
 
     /// @brief Constructs a ByteBuffer a span of elements and writes them into the buffer.
@@ -150,7 +170,7 @@ public:
     /// @brief Returns a pointer to the underlying storage.
     template <typename Self>
     [[nodiscard]]
-    constexpr auto data(this Self&& self) {
+    constexpr auto data(this Self&& self) -> auto {
         return std::forward<Self>(self).m_data.data();
     }
 
@@ -162,8 +182,8 @@ public:
     constexpr auto as(this Self&& self) {
         std::forward<Self>(self).template assert_size<T>();
         std::forward<Self>(self).template assert_alignment<T>();
-        using Value =
-            std::conditional_t<std::is_const_v<std::remove_reference_t<Self>>, const T, T>;
+        using Value = std::
+            conditional_t<std::is_const_v<std::remove_reference_t<Self>>, const T, T>;
         return reinterpret_cast<Value*>(std::forward<Self>(self).data());
     }
 

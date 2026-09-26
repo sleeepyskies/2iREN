@@ -1,23 +1,22 @@
-#pragma once 
+#pragma once
 
 #include <GLFW/glfw3.h>
 
+#include "2iREN/graphics/backend/opengl/opengl.hpp"
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
+#include "2iREN/graphics/query.hpp"
 #include "2iREN/graphics/resource.hpp"
 #include "2iREN/graphics/sampler.hpp"
 #include "2iREN/graphics/shader.hpp"
-#include "2iREN/graphics/graphics_pipeline.hpp"
-#include "2iREN/graphics/query.hpp"
 #include "2iREN/graphics/swapchain.hpp"
-#include "2iREN/graphics/backend/opengl/opengl.hpp"
 
 namespace siren::opengl {
 
 struct SwapchainDetails {
     SwapchainDescriptor descriptor;
     GLFWwindow* native_handle;
-    GLuint framebuffer;
 };
 
 struct QueryDetails {
@@ -45,4 +44,4 @@ struct ResourceState {
     // mutable FramebufferCache framebuffer_cache{image_table};
 };
 
-}
+} // namespace siren::opengl

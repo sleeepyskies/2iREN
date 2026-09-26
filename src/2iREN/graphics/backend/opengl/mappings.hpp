@@ -1,10 +1,10 @@
-#pragma once 
+#pragma once
 
 #include "2iREN/graphics/backend/opengl/opengl.hpp"
+#include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/query.hpp"
 #include "2iREN/graphics/sampler.hpp"
-#include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/types.hpp"
 
 namespace siren::opengl {
@@ -13,11 +13,12 @@ namespace siren::opengl {
 constexpr auto buffer_bitfield(const MemoryUsage usage) -> GLbitfield {
     switch (usage) {
         case MemoryUsage::Private: return 0;
-        case MemoryUsage::Shared: return GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT;
+        case MemoryUsage::Shared:
+            return GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT;
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_filter_to_gl(const FilterMode mode) -> GLenum {
     switch (mode) {
         case FilterMode::Nearest: return GL_NEAREST;
@@ -26,18 +27,15 @@ constexpr auto img_filter_to_gl(const FilterMode mode) -> GLenum {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
-constexpr auto min_img_filter_to_gl(
-    const FilterMode min,
-    const FilterMode lod
-) -> GLenum {
+[[nodiscard]]
+constexpr auto min_img_filter_to_gl(const FilterMode min, const FilterMode lod) -> GLenum {
     if (min == FilterMode::Linear) {
         return lod == FilterMode::Linear ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
     }
     return lod == FilterMode::Linear ? GL_NEAREST_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_NEAREST;
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_filter_to_siren(const GLenum mode) -> FilterMode {
     switch (mode) {
         case GL_NEAREST: return FilterMode::Nearest;
@@ -46,7 +44,7 @@ constexpr auto img_filter_to_siren(const GLenum mode) -> FilterMode {
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_wrap_to_gl(const WrapMode mode) -> GLint {
     switch (mode) {
         case WrapMode::Repeat: return GL_REPEAT;
@@ -57,7 +55,7 @@ constexpr auto img_wrap_to_gl(const WrapMode mode) -> GLint {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_wrap_to_siren(const GLenum mode) -> WrapMode {
     switch (mode) {
         case GL_REPEAT: return WrapMode::Repeat;
@@ -68,7 +66,7 @@ constexpr auto img_wrap_to_siren(const GLenum mode) -> WrapMode {
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_dim_to_gl(const ImageDimension dim) -> GLenum {
     switch (dim) {
         case ImageDimension::D1: return GL_TEXTURE_1D;
@@ -79,7 +77,7 @@ constexpr auto img_dim_to_gl(const ImageDimension dim) -> GLenum {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_dim_to_siren(const GLenum dim) -> ImageDimension {
     switch (dim) {
         case GL_TEXTURE_1D: return ImageDimension::D1;
@@ -89,7 +87,7 @@ constexpr auto img_dim_to_siren(const GLenum dim) -> ImageDimension {
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
     switch (format) {
         case ImageFormat::Unknown: return GL_INVALID_ENUM;
@@ -123,7 +121,6 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case GL_DEPTH_COMPONENT32F: return ImageFormat::Depth32f;
         default: PANIC();
     }
-
 }
 
 /// @brief Maps a 2iREN format to the OpenGL pixel layout (format/type).
@@ -144,12 +141,11 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case ImageFormat::Depth24Stencil8:
         case ImageFormat::Depth32f: return GL_DEPTH_STENCIL;
 
-        case ImageFormat::Unknown: PANIC();
-          break;
-        }
+        case ImageFormat::Unknown: PANIC(); break;
+    }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto compare_function_to_gl(const CompareFunction func) -> GLenum {
     switch (func) {
         case CompareFunction::Always: return GL_ALWAYS;
@@ -163,7 +159,7 @@ constexpr auto compare_function_to_gl(const CompareFunction func) -> GLenum {
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_compare_fn_to_siren(const GLenum func) -> CompareFunction {
     switch (func) {
         case GL_ALWAYS: return CompareFunction::Always;
@@ -179,7 +175,7 @@ constexpr auto img_compare_fn_to_siren(const GLenum func) -> CompareFunction {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto img_to_target_gl(const Extent3 extent, const ImageDimension dimension) -> GLenum {
     switch (dimension) {
         case ImageDimension::D1: return (extent.z > 1) ? GL_TEXTURE_1D_ARRAY : GL_TEXTURE_1D;
@@ -196,7 +192,7 @@ constexpr auto img_to_target_gl(const Extent3 extent, const ImageDimension dimen
 /// @brief Converts a siren @ref ShaderStage to its native GLenum version.
 /// @param shader_stage The @ref ShaderStage to convert.
 /// @return A converted GLenum.
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto shader_stage_to_gl(const ShaderStage shader_stage) -> GLenum {
     switch (shader_stage) {
         case ShaderStage::Vertex: return GL_VERTEX_SHADER;
@@ -204,7 +200,7 @@ constexpr auto shader_stage_to_gl(const ShaderStage shader_stage) -> GLenum {
     }
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto blend_function_to_gl(const BlendFunction blend_function) -> GLenum {
     switch (blend_function) {
         case BlendFunction::Add: return GL_FUNC_ADD;
@@ -216,7 +212,7 @@ constexpr auto blend_function_to_gl(const BlendFunction blend_function) -> GLenu
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto blend_factor_to_gl(const BlendFactor factor) -> GLenum {
     switch (factor) {
         case BlendFactor::Zero: return GL_ZERO;
@@ -229,7 +225,7 @@ constexpr auto blend_factor_to_gl(const BlendFactor factor) -> GLenum {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto topology_to_gl(const PrimitiveTopology topology) -> GLenum {
     switch (topology) {
         case PrimitiveTopology::Points: return GL_POINTS;
@@ -242,7 +238,7 @@ constexpr auto topology_to_gl(const PrimitiveTopology topology) -> GLenum {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto index_format_to_gl(const IndexType type) -> GLenum {
     switch (type) {
         case IndexType::UInt16: GL_UNSIGNED_SHORT;
@@ -252,27 +248,29 @@ constexpr auto index_format_to_gl(const IndexType type) -> GLenum {
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto siren_datatype_to_gl(const DataType type) -> GLenum {
     switch (type) {
         case DataType::Int8: return GL_BYTE;
         case DataType::Int16: return GL_SHORT;
         case DataType::Int32: return GL_INT;
-        case DataType::Int64: return GL_INT64_ARB;
 
         case DataType::UInt8: return GL_UNSIGNED_BYTE;
         case DataType::UInt16: return GL_UNSIGNED_SHORT;
         case DataType::UInt32: return GL_UNSIGNED_INT;
-        case DataType::UInt64: return GL_UNSIGNED_INT64_ARB;
 
         case DataType::Float16: return GL_HALF_FLOAT;
         case DataType::Float32: return GL_FLOAT;
-        case DataType::Float64: return GL_DOUBLE;
+
+        case DataType::Int64:
+        case DataType::UInt64:
+        case DataType::Float64:
+            PANIC("2iREN does not support 64 bit data types for vertex attributes");
     }
     UNREACHABLE();
 }
 
-[[nodiscard]] 
+[[nodiscard]]
 constexpr auto query_kind_to_gl(const QueryKind kind) -> GLenum {
     switch (kind) {
         case QueryKind::SamplesPassed: return GL_SAMPLES_PASSED;
@@ -282,4 +280,4 @@ constexpr auto query_kind_to_gl(const QueryKind kind) -> GLenum {
     }
 }
 
-}
+} // namespace siren::opengl

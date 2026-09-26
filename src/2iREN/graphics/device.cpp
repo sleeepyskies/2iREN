@@ -4,8 +4,6 @@
 
 namespace siren {
 
-Device::Device(ValidationMode validation) : m_validation(validation) { }
-
 /*
 auto Device::make_buffer(
     const BufferDescriptor& descriptor,
@@ -13,7 +11,8 @@ auto Device::make_buffer(
 ) -> Buffer {
     VALIDATION {
         if (initial.has_value()) {
-            ASSERT(initial->size() == descriptor.size.get(), "initial buffer data must exactly match the requested buffer size");
+            ASSERT(initial->size() == descriptor.size.get(), "initial buffer data must exactly match
+the requested buffer size");
         }
     }
 
