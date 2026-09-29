@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 #include <GL/gl.h>
 
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"

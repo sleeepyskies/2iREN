@@ -6,7 +6,7 @@
 
 #include <doctest/doctest.h>
 
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 
 TEST_SUITE("ByteBuffer") {
     TEST_CASE("default") {
@@ -170,10 +170,10 @@ TEST_SUITE("ByteBuffer") {
     TEST_CASE("data") {
         auto buffer = siren::ByteBuffer::make<siren::u8>({1, 2, 3});
 
-        static_assert(std::same_as<decltype(buffer.data()), siren::u8*>);
-        static_assert(std::same_as<decltype(std::as_const(buffer).data()), const siren::u8*>);
+        static_assert(std::same_as<decltype(buffer.data()), siren::byte*>);
+        static_assert(std::same_as<decltype(std::as_const(buffer).data()), const siren::byte*>);
 
-        buffer.data()[1] = 42;
+        buffer.data()[1] = std::byte{42};
 
         CHECK_EQ(buffer.data()[0], 1);
         CHECK_EQ(buffer.data()[1], 42);
@@ -202,7 +202,7 @@ TEST_SUITE("ByteBuffer") {
         const auto original = siren::ByteBuffer::make<siren::u8>({1, 2, 3});
         auto       copy     = original;
 
-        copy.data()[0] = 42;
+        copy.data()[0] = std::byte{42};
 
         CHECK_EQ(original.data()[0], 1);
         CHECK_EQ(copy.data()[0], 42);

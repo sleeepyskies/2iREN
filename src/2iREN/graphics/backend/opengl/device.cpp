@@ -110,7 +110,7 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         case GL_TEXTURE_1D:
             glTextureStorage1D(
                 image,
-                static_cast<GLsizei>(descriptor.mipmap_levels),
+                1,
                 internal_format,
                 static_cast<GLsizei>(extent.x)
             );
@@ -120,7 +120,7 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         case GL_TEXTURE_CUBE_MAP:
             glTextureStorage2D(
                 image,
-                static_cast<GLsizei>(descriptor.mipmap_levels),
+                1,
                 internal_format,
                 static_cast<GLsizei>(extent.x),
                 static_cast<GLsizei>(extent.y)
@@ -131,7 +131,7 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         case GL_TEXTURE_CUBE_MAP_ARRAY:
             glTextureStorage3D(
                 image,
-                static_cast<GLsizei>(descriptor.mipmap_levels),
+                1,
                 internal_format,
                 static_cast<GLsizei>(extent.x),
                 static_cast<GLsizei>(extent.y),

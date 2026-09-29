@@ -1,7 +1,7 @@
 #include <optional>
 #include <unordered_map>
 
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
@@ -62,7 +62,7 @@ const ShaderData vertex_shader{
         layout(location = 0) out vec4 v_color;
 
         void main() {
-            gl_Position = vec4(a_pos, 0.0, 1.0);
+            gl_Position = vec4(a_pos, 1.0);
             v_color = a_color;
         })",
 };
@@ -112,8 +112,8 @@ auto main() -> i32 {
         {
             .label        = "Vertex Buffer",
             .size         = vertices.size_bytes(),
-            .usage        = BufferFlag::Vertex | BufferFlag::Vertex | BufferFlag::Vertex,
-            .memory_usage = MemoryUsage::CpuAndGpu,
+            .flags = BufferFlag::Vertex | BufferFlag::Vertex | BufferFlag::Vertex,
+            .memory_usage = MemoryUsage::Shared,
         },
         vertices.view()
     );
@@ -127,8 +127,7 @@ auto main() -> i32 {
         .format        = swapchain.info().image_format,
         .extent        = swapchain.info().extent.to_extent3(),
         .dimension     = ImageDimension::D2,
-        .mipmap_levels = 1,
-        .memory_usage  = MemoryUsage::CpuAndGpu,
+        .memory_usage  = MemoryUsage::Shared,
         .flags         = ImageFlags::make(ImageFlag::RenderAttachment),
     });
 

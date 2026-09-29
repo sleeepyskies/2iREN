@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/limits.hpp"

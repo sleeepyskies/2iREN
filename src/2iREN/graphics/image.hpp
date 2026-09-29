@@ -3,7 +3,7 @@
 #include <optional>
 
 #include "2iREN/container/bitflags.hpp"
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/types.hpp"
 #include "2iREN/math/extent.hpp"

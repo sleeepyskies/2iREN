@@ -1,5 +1,6 @@
 #include "shader.hpp"
 
+#include <expected>
 #include <string>
 #include <yaml-cpp/yaml.h>
 
@@ -187,5 +188,7 @@ auto ShaderLoader::load(LoadContext&& ctx, const std::optional<ConfigType>) cons
     } catch (const YAML::BadFile& e) {
         return file_not_found(path->string());
     }
+
+    return std::unexpected(AssetErrorCode::InvalidSchema);
 }
 } // namespace siren

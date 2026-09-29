@@ -56,6 +56,7 @@ struct DataType {
             case UInt64:
             case Float64: return 8;
         }
+        UNREACHABLE();
     }
     /// @brief Returns the string representation of this value.
     [[nodiscard]]
@@ -224,6 +225,7 @@ struct ShaderStage {
             case Vertex: return "Vertex";
             case Fragment: return "Fragment";
         }
+        UNREACHABLE();
     }
 
     [[nodiscard]]

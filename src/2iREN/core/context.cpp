@@ -85,7 +85,7 @@ Context::~Context() {
 
 auto Context::make_device() -> std::unique_ptr<Device> {
 #if defined(SIREN_LINUX) or defined(SIREN_WINDOWS)
-    return std::unique_ptr<OpenGLDevice>::make();
+    return std::make_unique<OpenGLDevice>();
 #elifdef SIREN_MACOS
     return std::make_unique<MetalDevice>();
 #endif

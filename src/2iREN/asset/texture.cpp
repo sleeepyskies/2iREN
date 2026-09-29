@@ -5,7 +5,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "2iREN/asset/asset_server.hpp"
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -37,37 +37,38 @@ constexpr std::string PZ = "pz";
 
 // todo: this only loads 2d images
 
-static auto fetch_optional(const YAML::Node& node, const std::string_view key)
+namespace {
+
+auto fetch_optional(const YAML::Node& node, const std::string_view key)
     -> std::optional<std::string> {
     return node[key] ? std::make_optional(node[key].as<std::string>()) : std::nullopt;
 }
 
-static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
+auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     log::warn("invalid schema found: {}", msg);
     return std::unexpected(AssetErrorCode::InvalidSchema);
 }
 
-[[nodiscard]] static auto calc_mipmap_levels(const u32, const u32) -> u32 {
-    // todo: mipmap levels are never generated atm
-    return 1;
-}
-
-[[nodiscard]] static auto no_config() -> AssetLoadError {
+[[nodiscard]] 
+auto no_config() -> AssetLoadError {
     log::warn("no config was provided, cannot proceed with loading texture.");
     return std::unexpected(AssetErrorCode::NoConfig);
 }
 
-[[nodiscard]] static auto file_not_found(const AssetPath& path) -> AssetLoadError {
+[[nodiscard]] 
+auto file_not_found(const AssetPath& path) -> AssetLoadError {
     log::warn("file could not be found at: {}", path);
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
-[[nodiscard]] static auto file_not_found(const std::string_view path) -> AssetLoadError {
+[[nodiscard]] 
+auto file_not_found(const std::string_view path) -> AssetLoadError {
     log::warn("file not found at path: {}", path);
     return std::unexpected(AssetErrorCode::FileNotFound);
 }
 
-[[nodiscard]] static auto invalid_format(
+[[nodiscard]] 
+auto invalid_format(
     const std::string_view path,
     const std::string_view msg = ""
 ) -> AssetLoadError {
@@ -75,7 +76,8 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     return std::unexpected(AssetErrorCode::InvalidFormat);
 }
 
-[[nodiscard]] static auto determine_format(
+[[nodiscard]] 
+auto determine_format(
     const TextureLoader::ConfigType& cfg,
     const std::string& ext
 ) -> ImageFormat {
@@ -97,7 +99,9 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
     return ImageFormat::Unknown;
 }
 
-[[maybe_unused]] [[nodiscard]] static auto determine_srgb(const ImageFormat format) -> bool {
+[[nodiscard]] 
+[[maybe_unused]] 
+auto determine_srgb(const ImageFormat format) -> bool {
     switch (format) {
         case ImageFormat::sRGBA8: return true;
 
@@ -110,6 +114,9 @@ static auto invalid_schema(const std::string_view msg) -> AssetLoadError {
         default: UNREACHABLE("Could not determine srgb from ImageFormat");
     }
 }
+
+} // namespace 
+
 
 auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) const
     -> AssetLoadError {
@@ -136,8 +143,6 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     i32 width = 0, height = 0, channels = 0;
     u8* data                = stbi_load(path->c_str(), &width, &height, &channels, 0);
     const auto extent       = Extent3{width, height, 1};
-    const u32 mipmap_levels = config->generate_mipmap_levels ? calc_mipmap_levels(width, height)
-                                                             : 1;
     if (!data) {
         log::warn("could not load, reason: {}", stbi_failure_reason());
     }
@@ -149,7 +154,6 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
         .format        = format,
         .extent        = extent,
         .dimension     = ImageDimension::D2,
-        .mipmap_levels = mipmap_levels,
         .flags         = ImageFlags::make(),
     });
     auto cmds = ctx.device().make_command_buffer();

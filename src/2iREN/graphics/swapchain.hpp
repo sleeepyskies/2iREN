@@ -52,7 +52,7 @@ public:
 
     /// @brief Returns the descriptor of this @ref Swapchain.
     [[nodiscard]]
-    auto info() const -> const SwapchainInfo&;
+    auto info() const -> SwapchainInfo;
 
     /// @brief Reconfigures the Swapchains parameters.
     auto reconfigure(const SwapchainDescriptor& new_values) -> void;

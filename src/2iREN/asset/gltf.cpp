@@ -5,7 +5,7 @@
 #include <stb_image.h>
 
 #include "2iREN/asset/asset_server.hpp"
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/defer.hpp"
 #include "2iREN/graphics/buffer.hpp"
@@ -200,9 +200,6 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
 
             const auto extent = Extent3{width, height, 1};
 
-            const u32 max_dim       = std::max(extent.x, extent.y);
-            const u32 mipmap_levels = 1 + static_cast<u32>(std::floor(std::log2(max_dim)));
-
             // todo: add name?
 
             auto bytebuffer = ByteBuffer{std::span(image_data, img_data_size)};
@@ -213,7 +210,6 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                     .format        = format,
                     .extent        = extent,
                     .dimension     = ImageDimension::D2,
-                    .mipmap_levels = mipmap_levels,
                     .flags         = ImageFlags::make(), // TODO: what flags here?
                 }
             );
@@ -589,7 +585,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
             {
                 .label        = std::format("Index Buffer {}", bufferid),
                 .size         = buffer.size_bytes(),
-                .usage        = BufferFlags::make(BufferFlag::Index),
+                .flags        = BufferFlags::make(BufferFlag::Index),
                 .memory_usage = MemoryUsage::Shared,
             },
             buffer.view()
@@ -710,7 +706,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
             {
                 .label        = std::format("Vertex Buffer {}", bufferid++),
                 .size         = buffer.size_bytes(),
-                .usage        = BufferFlags::make(BufferFlag::Vertex),
+                .flags        = BufferFlags::make(BufferFlag::Vertex),
                 .memory_usage = MemoryUsage::Shared,
             },
             buffer.view()

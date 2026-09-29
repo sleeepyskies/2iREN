@@ -2,6 +2,7 @@
 
 #include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/commands.hpp"
+#include "2iREN/graphics/fwd.hpp"
 
 namespace siren::opengl {
 
@@ -10,54 +11,48 @@ namespace siren::opengl {
 
 class RenderCommandEncoder final : public ::siren::RenderCommandEncoder {
 public:
-    auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_graphics_pipeline` is not implemented.");
-    }
+    RenderCommandEncoder(const ResourceState& state) : m_state(state) { }
+    ~RenderCommandEncoder();
 
-    auto bind_vertex_buffer(BufferHandle buffer, Slot slot, Range<usize> range = {})
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_vertex_buffer` is not implemented.");
-    }
+    auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void override;
 
-    auto bind_index_buffer(BufferHandle buffer, IndexType type) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_index_buffer` is not implemented.");
-    }
+    auto bind_vertex_buffer(BufferHandle buffer, Slot slot, const u32 offset) -> void override;
 
-    auto bind_uniform_buffer(BufferHandle buffer, Slot slot, Range<usize> range = {})
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_uniform_buffer` is not implemented.");
-    }
+    auto bind_index_buffer(BufferHandle buffer, IndexType type) -> void override;
 
-    auto bind_storage_buffer(BufferHandle buffer, Slot slot, Range<usize> range = {})
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_storage_buffer` is not implemented.");
-    }
+    auto bind_uniform_buffer(BufferHandle buffer, Slot slot, u32 offset = 0) -> void override;
 
-    auto bind_image(ImageHandle image, Slot slot) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_image` is not implemented.");
-    }
+    auto bind_storage_buffer(BufferHandle buffer, Slot slot, u32 offset = 0) -> void override;
 
-    auto bind_sampler(SamplerHandle sampler, Slot slot) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `bind_sampler` is not implemented.");
-    }
+    auto bind_sampled_image(ImageHandle image, SamplerHandle sampler, Slot slot) -> void override;
 
-    auto draw(u32 count, u32 start = 0, u32 instance_count = 1, u32 instance_start = 0)
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `draw` is not implemented.");
-    }
+    auto bind_storage_image(ImageHandle image, Slot slot) -> void override;
 
-    auto draw_indexed(u32 count, u32 start = 0) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `draw_indexed` is not implemented.");
-    }
+    auto draw(u32 count, u32 start = 0, u32 instance_count = 1, u32 instance_start = 0) -> void override;
+
+    auto draw_indexed(u32 count, u32 start = 0) -> void override;
+
+private:
+    auto reset_pipeline_state() const -> void;
+
+    struct IndexBinding {
+        BufferHandle buffer;
+        IndexType type;
+    };
+
+    mutable struct TrackedState {
+        std::optional<GraphicsPipelineHandle> bound_pipeline = std::nullopt;
+        std::optional<GLuint> bound_vao                         = std::nullopt;
+        std::optional<IndexBinding> bound_index                 = std::nullopt;
+
+        auto reset() -> void {
+            bound_pipeline.reset();
+            bound_vao.reset();
+            bound_index.reset();
+        }
+    } m_tracked;
+
+    const ResourceState& m_state;
 };
 
 class CommandBuffer final : public ::siren::CommandBuffer {

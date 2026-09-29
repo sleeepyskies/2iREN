@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "2iREN/utility/concepts.hpp"
+#include "2iREN/utility/type_info.hpp"
 
 namespace siren {
 

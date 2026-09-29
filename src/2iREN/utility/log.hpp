@@ -106,9 +106,9 @@ inline void log(
     const auto usermsg               = std::vformat(fmt, args);
     const auto now                   = std::chrono::system_clock::now();
     const std::string locationstring = std::format(
-        "{}",
+        "{}:{}",
         impl::prettify_path(loc.file_name()),
-        loc.function_name()
+        loc.line()
     );
 
     const auto msg = std::format(

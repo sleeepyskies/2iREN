@@ -6,7 +6,7 @@ add_executable(
 )
 
 add_subdirectory(math)
-add_subdirectory(utility)
+add_subdirectory(container)
 
 target_link_libraries(
     2iREN_tests

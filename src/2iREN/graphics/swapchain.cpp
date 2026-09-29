@@ -26,7 +26,7 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
     return *this;
 }
 
-auto Swapchain::info() const -> const SwapchainInfo& {
+auto Swapchain::info() const -> SwapchainInfo {
     return m_device->swapchain_info(m_handle);
 }
 

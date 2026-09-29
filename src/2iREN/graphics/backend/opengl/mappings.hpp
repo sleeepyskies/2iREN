@@ -18,6 +18,7 @@ constexpr auto buffer_bitfield(const MemoryUsage usage) -> GLbitfield {
         case MemoryUsage::Shared:
             return GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT;
     }
+    UNREACHABLE();
 }
 
 [[nodiscard]]
@@ -162,11 +163,12 @@ constexpr auto image_format_channel_type(const ImageFormat format) -> GLenum {
 
         case ImageFormat::BGRA8: return GL_BGRA;
 
-        case ImageFormat::Depth24Stencil8:
-        case ImageFormat::Depth32f: return GL_DEPTH_STENCIL;
+        case ImageFormat::Depth24Stencil8: return GL_DEPTH_STENCIL;
+        case ImageFormat::Depth32f: return GL_DEPTH_COMPONENT;
 
         case ImageFormat::Unknown: PANIC(); break;
     }
+    UNREACHABLE();
 }
 
 [[nodiscard]]
@@ -181,6 +183,7 @@ constexpr auto compare_function_to_gl(const CompareFunction func) -> GLenum {
         case CompareFunction::NotEqual: return GL_NOTEQUAL;
         case CompareFunction::GreaterEqual: return GL_GEQUAL;
     }
+    UNREACHABLE();
 }
 
 [[nodiscard]]
@@ -222,6 +225,7 @@ constexpr auto shader_stage_to_gl(const ShaderStage shader_stage) -> GLenum {
         case ShaderStage::Vertex: return GL_VERTEX_SHADER;
         case ShaderStage::Fragment: return GL_FRAGMENT_SHADER;
     }
+    UNREACHABLE();
 }
 
 [[nodiscard]]
@@ -265,8 +269,8 @@ constexpr auto topology_to_gl(const PrimitiveTopology topology) -> GLenum {
 [[nodiscard]]
 constexpr auto index_format_to_gl(const IndexType type) -> GLenum {
     switch (type) {
-        case IndexType::UInt16: GL_UNSIGNED_SHORT;
-        case IndexType::UInt32: GL_UNSIGNED_INT;
+        case IndexType::UInt16: return GL_UNSIGNED_SHORT;
+        case IndexType::UInt32: return GL_UNSIGNED_INT;
     }
 
     UNREACHABLE();

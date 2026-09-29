@@ -1,4 +1,4 @@
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/context.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
@@ -136,8 +136,8 @@ auto main() -> i32 {
         {
             .label        = "Cube Vertices",
             .size         = vertices.size_bytes(),
-            .usage        = BufferFlags::make(BufferFlag::Vertex),
-            .memory_usage = MemoryUsage::CpuAndGpu,
+            .flags        = BufferFlags::make(BufferFlag::Vertex),
+            .memory_usage = MemoryUsage::Shared,
         },
         vertices.view()
     );
@@ -145,16 +145,16 @@ auto main() -> i32 {
         {
             .label        = "Cube Indicies",
             .size         = indices.size_bytes(),
-            .usage        = BufferFlags::make(BufferFlag::Index),
-            .memory_usage = MemoryUsage::CpuAndGpu,
+            .flags        = BufferFlags::make(BufferFlag::Index),
+            .memory_usage = MemoryUsage::Shared,
         },
         indices.view()
     );
     const auto uniform_buffer = device->make_buffer({
         .label        = "Uniform Buffer",
         .size         = sizeof(UboData),
-        .usage        = BufferFlags::make(BufferFlag::Uniform),
-        .memory_usage = MemoryUsage::CpuAndGpu,
+        .flags        = BufferFlags::make(BufferFlag::Uniform),
+        .memory_usage = MemoryUsage::Shared,
     });
     const auto layout         = LayoutBuilder::make().add(DataType::Float32, 3).finish();
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "2iREN/container/bitflags.hpp"
-#include "2iREN/container/byte_buffer.hpp"
+#include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/types.hpp"
@@ -37,7 +37,7 @@ struct BufferDescriptor {
     /// @brief The initial size of the buffer in bytes.
     NonZeroUsize size;
     /// @brief Flag set of this buffers uses.
-    BufferFlags usage        = BufferFlags::make();
+    BufferFlags flags = BufferFlags::make();
     /// @brief Denotes what components may access the buffer.
     MemoryUsage memory_usage = MemoryUsage::Shared;
 };
@@ -61,7 +61,7 @@ public:
 
     /// @brief Uploads the Cpu data to this Gpu buffer.
     /// @note If performing many uploads, prefer to use CommandBuffer instead.
-    auto upload(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
+    auto write(const ByteBufferView data, const u32 offset = 0) const noexcept -> void;
 
     /// @brief Fills the specified range of the buffer with the provided value.
     /// @note If performing many uploads, prefer to use CommandBuffer instead.

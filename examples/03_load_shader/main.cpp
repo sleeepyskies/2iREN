@@ -41,8 +41,8 @@ auto main() -> i32 {
         {
             .label        = "Vertex Buffer",
             .size         = vertices.size_bytes(),
-            .usage        = BufferFlags::make(BufferFlag::Vertex),
-            .memory_usage = MemoryUsage::CpuAndGpu,
+            .flags        = BufferFlags::make(BufferFlag::Vertex),
+            .memory_usage = MemoryUsage::Shared,
         },
         vertices.view()
     );
