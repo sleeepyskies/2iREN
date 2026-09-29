@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include <glad/gl.h>
+#include <vector>
 
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
@@ -14,7 +15,6 @@
 namespace siren::opengl {
 
 // == RenderCommandEncoder ==
-
 RenderCommandEncoder::~RenderCommandEncoder() {
     reset_pipeline_state();
 }
@@ -93,8 +93,7 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
         }
     }
 
-    // configure depth buffer update
-    if (const auto& ds = descriptor.depth_stencil) {
+    if (const auto& ds = descriptor.depth_stencil; ds and m_has_depth_attachment) {
         glEnable(GL_DEPTH_TEST);
         ds->depth_write ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
         glDepthFunc(compare_function_to_gl(ds->compare_function));
@@ -292,12 +291,195 @@ auto RenderCommandEncoder::draw_indexed(const u32 count, const u32 start) -> voi
 
 // == CommandBuffer ==
 
+auto CommandBuffer::begin_render_pass(
+    const RenderPassDescriptor& descriptor
+) const -> RenderPassState {
+    // reset some state ty imgui
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    glStencilMask(0xFFFFFFFF);
+
+    // we might want to do targetless rendering
+    if (const auto* targetless = std::get_if<RenderTargetless>(&descriptor.target)) {
+        const auto framebuffer = m_framebuffer_cache.get_create_targetless(targetless->extent);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        glViewport(
+            0,
+            0,
+            static_cast<GLsizei>(targetless->extent.x),
+            static_cast<GLsizei>(targetless->extent.y)
+        );
+
+        return {
+            .framebuffer          = framebuffer,
+            .default_framebuffer  = false,
+            .has_depth_attachment = false,
+        };
+    }
+
+    const auto* target = std::get_if<RenderTarget>(&descriptor.target);
+    ASSERT(target, "render pass has an invalid target");
+    ASSERT(
+        !target->colors.empty() or target->depth_stencil.has_value(),
+        "render pass requires at least one attachment"
+    );
+
+    const auto first_image = !target->colors.empty()
+        ? target->colors.front().image
+        : target->depth_stencil->image;
+    const auto extent = m_state.images.details(first_image).descriptor.extent.to_extent2();
+
+    auto uses_default_framebuffer = false;
+    const auto validate_attachment = [&](const ImageHandle image) {
+        const auto& details = m_state.images.details(image);
+
+        ASSERT(
+            details.descriptor.flags.test(ImageFlag::RenderAttachment),
+            "render pass image requires ImageFlag::RenderAttachment"
+        );
+        ASSERT(
+            details.descriptor.extent.to_extent2() == extent,
+            "render pass attachments must have matching extents"
+        );
+
+        uses_default_framebuffer |= details.default_framebuffer;
+    };
+
+    for (const auto& color : target->colors) {
+        validate_attachment(color.image);
+    }
+    if (target->depth_stencil) {
+        validate_attachment(target->depth_stencil->image);
+    }
+
+    GLuint framebuffer = 0;
+    if (uses_default_framebuffer) {
+        ASSERT(
+            target->colors.size() == 1
+                and m_state.images.details(target->colors.front().image).default_framebuffer,
+            "the default framebuffer must be the only color attachment"
+        );
+        ASSERT(
+            !target->depth_stencil.has_value(),
+            "the default framebuffer cannot be mixed with a texture depth attachment"
+        );
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glDrawBuffer(GL_BACK);
+    } else {
+        framebuffer = m_framebuffer_cache.get_create_for(*target);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+    }
+
+    const auto state = RenderPassState{
+        .framebuffer          = framebuffer,
+        .default_framebuffer  = uses_default_framebuffer,
+        .has_depth_attachment = target->depth_stencil.has_value(),
+    };
+
+    glViewport(0, 0, (GLsizei)extent.x, (GLsizei)extent.y);
+
+    for (usize i = 0; i < target->colors.size(); i++) {
+        const auto& attachment = target->colors[i];
+
+        if (attachment.begin_operation != BeginOperation::Clear) {
+            continue;
+        }
+
+        glClearBufferfv(GL_COLOR, (GLint)i, attachment.clear_color.data());
+    }
+
+    if (target->depth_stencil and target->depth_stencil->begin_operation == BeginOperation::Clear) {
+        const auto& attachment = *target->depth_stencil;
+        const auto& descriptor = m_state.images.details(attachment.image).descriptor;
+
+        switch (descriptor.format) {
+            case ImageFormat::Depth32f: {
+                glClearBufferfv(GL_DEPTH, 0, &attachment.clear_depth);
+                break;
+            }
+            case ImageFormat::Depth24Stencil8: {
+                glClearBufferfi(GL_DEPTH_STENCIL, 0, attachment.clear_depth, (GLint)attachment.clear_stencil);
+                break;
+            }
+
+            default: PANIC("invalid depth stencil attachment format");
+        }
+    }
+
+    return state;
+}
+
+auto CommandBuffer::end_render_pass(
+    const RenderPassDescriptor& descriptor,
+    const RenderPassState& state
+) const -> void {
+    if (const auto* target = std::get_if<RenderTarget>(&descriptor.target)) {
+        auto invalidated = std::vector<GLenum>{};
+
+        for (usize index = 0; index < target->colors.size(); ++index) {
+            if (target->colors[index].end_operation != EndOperation::Fuckit) {
+                continue;
+            }
+
+            invalidated.push_back(
+                state.default_framebuffer
+                    ? GL_COLOR
+                    : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index)
+            );
+        }
+
+        if (
+            target->depth_stencil
+            && target->depth_stencil->end_operation == EndOperation::Fuckit
+        ) {
+            const auto format = m_state.images
+                .details(target->depth_stencil->image)
+                .descriptor.format;
+
+            if (state.default_framebuffer) {
+                invalidated.push_back(GL_DEPTH);
+
+                if (format == ImageFormat::Depth24Stencil8) {
+                    invalidated.push_back(GL_STENCIL);
+                }
+            } else {
+                invalidated.push_back(GL_DEPTH_ATTACHMENT);
+
+                if (format == ImageFormat::Depth24Stencil8) {
+                    invalidated.push_back(GL_STENCIL_ATTACHMENT);
+                }
+            }
+        }
+
+        if (!invalidated.empty()) {
+            glInvalidateFramebuffer(
+                GL_DRAW_FRAMEBUFFER,
+                static_cast<GLsizei>(invalidated.size()),
+                invalidated.data()
+            );
+        }
+    }
+
+    if (!state.default_framebuffer) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    }
+}
+
 auto CommandBuffer::render_pass(
-    [[maybe_unused]] const RenderPassDescriptor& descriptor,
+    const RenderPassDescriptor& descriptor,
     RenderPassFunction&& encode
 ) -> void {
-    auto command_encoder = RenderCommandEncoder{m_state};
-    std::invoke(encode, command_encoder);
+    const auto state = begin_render_pass(descriptor);
+
+    {
+        auto command_encoder = RenderCommandEncoder{m_state, state.has_depth_attachment};
+        std::invoke(encode, command_encoder);
+    }
+
+    end_render_pass(descriptor, state);
 }
 
 auto CommandBuffer::fill_buffer(BufferHandle buffer, u8 value, Range<usize> range) -> void {

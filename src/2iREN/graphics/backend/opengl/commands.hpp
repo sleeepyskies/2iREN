@@ -1,5 +1,6 @@
 #pragma once
 
+#include "2iREN/graphics/backend/opengl/framebuffer_cache.hpp"
 #include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/commands.hpp"
 #include "2iREN/graphics/fwd.hpp"
@@ -11,7 +12,8 @@ namespace siren::opengl {
 
 class RenderCommandEncoder final : public ::siren::RenderCommandEncoder {
 public:
-    RenderCommandEncoder(const ResourceState& state) : m_state(state) { }
+    RenderCommandEncoder(const ResourceState& state, const bool has_depth_attachment) :
+        m_state(state), m_has_depth_attachment(has_depth_attachment) { }
     ~RenderCommandEncoder();
 
     auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void override;
@@ -53,11 +55,13 @@ private:
     } m_tracked;
 
     const ResourceState& m_state;
+    bool m_has_depth_attachment;
 };
 
 class CommandBuffer final : public ::siren::CommandBuffer {
 public:
-    CommandBuffer(const ResourceState& state) : m_state(state) { }
+    CommandBuffer(const ResourceState& state, FramebufferCache& framebuffer_cache) :
+        m_state(state), m_framebuffer_cache(framebuffer_cache) { }
 
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void override;
@@ -85,7 +89,22 @@ public:
     auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override;
 
 private:
+    struct RenderPassState {
+        GLuint framebuffer          = 0;
+        bool default_framebuffer    = false;
+        bool has_depth_attachment   = false;
+    };
+
+    [[nodiscard]]
+    auto begin_render_pass(const RenderPassDescriptor& descriptor) const -> RenderPassState;
+
+    auto end_render_pass(
+        const RenderPassDescriptor& descriptor,
+        const RenderPassState& state
+    ) const -> void;
+
     const ResourceState& m_state;
+    FramebufferCache& m_framebuffer_cache;
 };
 
 } // namespace siren::opengl

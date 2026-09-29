@@ -48,7 +48,8 @@ auto fetch_limits() -> Limits {
 
 } // namespace
 
-OpenGLDevice::OpenGLDevice() : Device(Backend::OpenGL) {
+OpenGLDevice::OpenGLDevice() :
+    Device(Backend::OpenGL), m_framebuffer_cache(m_state.images) {
     gladLoadGL(glfwGetProcAddress);
     m_limits = fetch_limits();
     log::info("opengl device made");
@@ -336,7 +337,7 @@ auto OpenGLDevice::make_query(const QueryDescriptor&) -> Query {
 }
 
 auto OpenGLDevice::make_command_buffer() const noexcept -> std::unique_ptr<::siren::CommandBuffer> {
-    return std::make_unique<opengl::CommandBuffer>(m_state);
+    return std::make_unique<opengl::CommandBuffer>(m_state, m_framebuffer_cache);
 }
 
 auto OpenGLDevice::destroy_buffer(const BufferHandle handle) -> void {
@@ -346,6 +347,7 @@ auto OpenGLDevice::destroy_buffer(const BufferHandle handle) -> void {
 }
 
 auto OpenGLDevice::destroy_image(const ImageHandle handle) -> void {
+    m_framebuffer_cache.invalidate(handle);
     const auto glhandle = m_state.images.fetch_release(handle);
     glDeleteTextures(1, &glhandle);
     log::trace("{} deleted.", handle);

@@ -4,5 +4,6 @@ if(NOT SIREN_MACOS)
         commands.cpp
         debug.cpp
         device.cpp
+        framebuffer_cache.cpp
     )
 endif()

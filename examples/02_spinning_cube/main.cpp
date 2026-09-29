@@ -71,7 +71,7 @@ const auto vertex_shader = ShaderData{
         layout(location = 0) in vec3 a_pos;
         layout(location = 0) out vec3 v_pos;
 
-        layout(binding = 0) uniform UBO {
+        layout(binding = 1) uniform UBO {
             mat4 rot;
         };
 

@@ -4,6 +4,7 @@
 #include <GL/gl.h>
 
 #include "2iREN/container/bytebuffer.hpp"
+#include "2iREN/graphics/backend/opengl/framebuffer_cache.hpp"
 #include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
@@ -105,6 +106,7 @@ public:
 
 private:
     opengl::ResourceState m_state;
+    mutable opengl::FramebufferCache m_framebuffer_cache;
 };
 
 } // namespace siren
