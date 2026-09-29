@@ -25,7 +25,7 @@ const auto vertices = ByteBuffer{
 
 auto main() -> i32 {
     auto ctx             = Context::make({.level = log::Level::Trace});
-    auto window          = ctx.make_window({.title = "Example 01"});
+    auto window          = ctx.make_window({.title = "Example 03"});
     const auto device    = ctx.make_device();
     const auto swapchain = device->make_swapchain(
         window,
