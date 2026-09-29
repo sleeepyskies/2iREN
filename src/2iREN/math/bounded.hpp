@@ -145,8 +145,8 @@ public:
     template <typename S, S OtherMin, S OtherMax>
         requires(CanConvert<std::remove_cvref_t<S>, Type>)
     [[nodiscard]]
-    constexpr auto operator<=>(const Bounded<S, OtherMax, OtherMin>& other) const noexcept -> auto {
-        other.m_value <=> m_value;
+    constexpr auto operator<=>(const Bounded<S, OtherMin, OtherMax>& other) const noexcept {
+        return other.m_value <=> m_value;
     }
 
     template <typename S>

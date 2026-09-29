@@ -84,7 +84,7 @@ struct Vec3 {
     /// @brief Defines the left unit vector of 2iREN's coordinate system.
     [[nodiscard]]
     static constexpr auto LEFT() noexcept -> Vec3 {
-        return Vec3{-1, 1, 0};
+        return Vec3{-1, 0, 0};
     }
     /// @brief Defines the right unit vector of 2iREN's coordinate system.
     [[nodiscard]]

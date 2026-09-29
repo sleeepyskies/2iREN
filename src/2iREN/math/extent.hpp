@@ -81,7 +81,7 @@ inline auto Extent3::to_string() const -> std::string {
 }
 
 constexpr auto Extent3::volume() const -> usize {
-    return x * y * z;
+    return static_cast<usize>(x) * y * z;
 }
 
 } // namespace siren

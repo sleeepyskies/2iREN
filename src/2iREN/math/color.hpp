@@ -99,7 +99,7 @@ struct Rgba {
     /// @brief Returns the memory address of this Rgba.
     template <typename Self>
     [[nodiscard]]
-    constexpr auto data(this Self&& self) noexcept -> auto&& {
+    constexpr auto data(this Self&& self) noexcept -> auto {
         return &std::forward<Self>(self).r;
     }
 };
