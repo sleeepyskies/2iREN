@@ -37,7 +37,6 @@ public:
     }
 
     /// @brief Makes a new buffer containing the given list of items.
-    template <typename T>
     [[nodiscard]]
     static constexpr inline auto with_size_bytes(const u32 size_bytes) -> ByteBuffer {
         auto buf = ByteBuffer{};
@@ -196,7 +195,7 @@ public:
     /// @brief Returns a non owning sub-view into this buffer.
     [[nodiscard]]
     constexpr auto subview(const Range<usize> range) const noexcept -> ByteBufferView {
-        return view().subspan(range.begin, range.length());
+        return view().subspan(range.begin, range.size());
     }
 
 private:

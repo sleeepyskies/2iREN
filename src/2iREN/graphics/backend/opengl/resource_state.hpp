@@ -1,8 +1,9 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <glad/gl.h>
+#include <GL/gl.h>
 
-#include "2iREN/graphics/backend/opengl/opengl.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
@@ -15,8 +16,14 @@
 namespace siren::opengl {
 
 struct SwapchainDetails {
-    SwapchainDescriptor descriptor;
+    SwapchainInfo info;
     GLFWwindow* native_handle;
+    std::optional<ImageHandle> acquired_image;
+};
+
+struct ImageDetails {
+    ImageDescriptor descriptor;
+    bool default_framebuffer = false;
 };
 
 struct QueryDetails {
@@ -30,7 +37,7 @@ struct ResourceState {
     using Table = RenderResourceTable<ID, R, D>;
 
     Table<GLuint, Buffer, BufferDescriptor> buffers;
-    Table<GLuint, Image, ImageDescriptor> images;
+    Table<GLuint, Image, ImageDetails> images;
     Table<GLuint, Sampler, SamplerDescriptor> samplers;
     Table<GLuint, Shader, ShaderDescriptor> shaders;
     /// @note The GLuint stored here is not of the Pipeline, but rather the
@@ -41,7 +48,7 @@ struct ResourceState {
     Table<void*, Swapchain, SwapchainDetails> swapchains;
     /// @brief Manages fetching cached OpenGL framebuffers based on images.
     /// TODO: uncomment this!!
-    // mutable FramebufferCache framebuffer_cache{image_table};
+    //  mutable FramebufferCache framebuffer_cache{image_table};
 };
 
 } // namespace siren::opengl

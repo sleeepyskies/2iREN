@@ -1,5 +1,6 @@
 #pragma once
 
+#include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/commands.hpp"
 
 namespace siren::opengl {
@@ -66,47 +67,30 @@ public:
     auto render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
         -> void override;
 
-    auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range = {}) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `fill_buffer` is not implemented.");
-    }
+    auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range = {}) -> void override;
 
-    auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `write_buffer` is not implemented.");
-    }
+    auto write_buffer(BufferHandle dst, usize dst_offset, ByteBufferView data) -> void override;
 
-    auto write_image(ImageHandle dest, ByteBufferView data, u32 layer = 0) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `write_image` is not implemented.");
-    }
+    auto WriteBuffer();
+
+    auto write_image(ImageHandle dst, ByteBufferView data, u32 layer = 0) -> void override;
 
     auto copy_buffer_to_buffer(
         BufferHandle src,
         Range<usize> src_range,
-        BufferHandle dest,
-        usize dest_offset
-    ) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `copy_buffer_to_buffer` is not implemented.");
-    }
+        BufferHandle dst,
+        usize dst_offset
+    ) -> void override;
 
-    auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `copy_buffer_to_image` is not implemented.");
-    }
+    auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst) -> void override;
 
     auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
-        -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `copy_image_to_buffer` is not implemented.");
-    }
+        -> void override;
 
-    auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override {
-        // TODO: Implement this pure virtual method.
-        static_assert(false, "Method `copy_image_to_image` is not implemented.");
-    }
+    auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override;
+
+private:
+    const ResourceState& m_state;
 };
 
 } // namespace siren::opengl

@@ -129,7 +129,7 @@ public:
 
     /// @brief Returns information about the swapchain.
     [[nodiscard]]
-    virtual auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& = 0;
+    virtual auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo = 0;
 
     /// @brief Returns the next @ref Image target managed by this framebuffer to
     /// render to.

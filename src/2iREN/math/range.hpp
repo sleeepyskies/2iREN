@@ -51,9 +51,9 @@ struct Range {
         };
     }
 
-    /// @brief Returns the length of the range.
+    /// @brief Returns the size of the range.
     [[nodiscard]]
-    constexpr auto length() const noexcept -> T {
+    constexpr auto size() const noexcept -> T {
         return end - begin;
     }
 

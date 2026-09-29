@@ -22,7 +22,6 @@ class ConanApplication(ConanFile):
         tc.generate()
 
     def requirements(self):
-        self.requires("opengl/system")
         self.requires("glfw/3.4")
 
         self.requires("cgltf/1.15")
@@ -33,6 +32,7 @@ class ConanApplication(ConanFile):
             self.requires("metal-cpp/26")
 
         if self.settings.os in ("Windows", "Linux"):
+            self.requires("opengl/system")
             self.requires(
                 "glad/2.0.8",
                 options={

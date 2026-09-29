@@ -148,15 +148,15 @@ public:
 
     virtual auto fill_buffer(BufferHandle buffer, u8 value, Range<usize> range = {}) -> void = 0;
 
-    virtual auto write_buffer(BufferHandle dest, usize dest_offset, ByteBufferView data)
+    virtual auto write_buffer(BufferHandle dst, usize dst_offset, ByteBufferView data)
         -> void                                                                            = 0;
-    virtual auto write_image(ImageHandle dest, ByteBufferView data, u32 layer = 0) -> void = 0;
+    virtual auto write_image(ImageHandle dst, ByteBufferView data, u32 layer = 0) -> void = 0;
 
     virtual auto copy_buffer_to_buffer(
         BufferHandle src,
         Range<usize> src_range,
-        BufferHandle dest,
-        usize dest_offset
+        BufferHandle dst,
+        usize dst_offset
     ) -> void = 0;
     virtual auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
         -> void = 0;

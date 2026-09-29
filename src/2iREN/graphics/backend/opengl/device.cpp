@@ -1,16 +1,16 @@
 #include "device.hpp"
 
-#include <OpenGL/gl.h>
-#include <mach/mig.h>
+#include <GLFW/glfw3.h>
 #include <optional>
 #include <utility>
 
+#include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/opengl/mappings.hpp"
-#include "2iREN/graphics/commands.hpp"
+#include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/device.hpp"
-
 #include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/backend/opengl/commands.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/query.hpp"
@@ -141,7 +141,7 @@ auto OpenGLDevice::make_image(const ImageDescriptor& descriptor) -> Image {
         default: PANIC("Unsupported texture target");
     }
 
-    const auto handle = m_state.images.reserve_link(image, ImageDescriptor{descriptor});
+    const auto handle = m_state.images.reserve_link(image, ImageDetails{.descriptor = descriptor});
 
     log::trace("{} made", handle);
     return Image{this, handle};
@@ -228,32 +228,22 @@ auto OpenGLDevice::make_shader(const ShaderDescriptor& descriptor) -> Shader {
 // FIXME: this doesnt work at all, need to figure out a way to handle swapchains in gl
 auto OpenGLDevice::make_swapchain(const Window& window, const SwapchainDescriptor& descriptor)
     -> Swapchain {
-    GLuint framebuffer;
-    glCreateFramebuffers(1, &framebuffer);
-
-    // TODO: if we add triple buffering, create more images here!
-    auto image = make_image({
-        .label  = "Swapchain Image 01",
-        .format = descriptor.image_format.value_or(ImageFormat::RGBA8),
-        .extent = descriptor.extent.value_or(window.extent()).to_extent3(),
-        .flags  = ImageFlags::make(ImageFlag::RenderAttachment),
-    });
-
-    auto attachment = TargetColorAttachment{.image = image.handle()};
+    const auto info = SwapchainInfo {
+        .extent       = descriptor.extent.value_or(window.framebuffer_extent()),
+        .vsync        = descriptor.vsync.value_or(true),
+        .image_format = descriptor.image_format.value_or(ImageFormat::RGBA8),
+    };
 
     const auto handle = m_state.swapchains.reserve_link(
         nullptr,
         SwapchainDetails{
-            .descriptor    = descriptor,
+            .info = info,
             .native_handle = window.native_handle(),
-            .target        = SwapchainDetails::Target{
-                .render_target = RenderTarget{.colors = {attachment}},
-                .image         = std::move(image),
-            },
+            .acquired_image = std::nullopt,
         }
     );
 
-    glfwSwapInterval(descriptor.vsync);
+    reconfigure_swapchain(handle, descriptor);
 
     log::trace("{} made", handle);
     return Swapchain{this, handle};
@@ -263,15 +253,34 @@ auto OpenGLDevice::reconfigure_swapchain(
     SwapchainHandle handle,
     const SwapchainDescriptor& new_values
 ) -> void {
-    UNIMPLEMENTED();
+    auto& details = m_state.swapchains.details(handle);
+
+    if (new_values.extent) {
+        // need to call glViewport once starting a new render pass tho :D
+        details.info.extent = *new_values.extent;
+    }
+
+    if (new_values.vsync) {
+        glfwSwapInterval(*new_values.vsync);
+    }
+
+    if (const auto format = new_values.image_format; new_values.image_format.has_value()) {
+        ASSERT(
+            format.value() == details.info.image_format,
+            "cannot update the image format on opengl backend"
+        );
+    }
+
+    log::trace("updated swapchain {}", handle);
 }
 
 auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descriptor)
     -> GraphicsPipeline {
-    // check the shader exists
     // FIXME: we shouldn't crash here on failure imo
-    const auto program_handle = m_state.shader_table.fetch(descriptor.shader);
-    ASSERT(program_handle != 0, "cannot make GraphicsPipeline with invalid Shader");
+    ASSERT(
+        m_state.shaders.fetch(descriptor.shader) != 0, 
+        "cannot make GraphicsPipeline with invalid Shader"
+    );
 
     GLuint vao;
     glCreateVertexArrays(1, &vao);
@@ -281,7 +290,7 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
         glObjectLabel(GL_VERTEX_ARRAY, vao, label->size(), label->data());
     }
 
-    for (u32 i = 0; i < descriptor.layout.attributes; i++) {
+    for (u32 i = 0; i < descriptor.layout.attributes.size(); i++) {
         auto& attribute = descriptor.layout.attributes[i];
 
         // enables some element aka the layout(location = n) shader side
@@ -290,7 +299,7 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
         // describe the element
         glVertexArrayAttribFormat(
             vao,
-            index,
+            i,
             attribute.size,
             siren_datatype_to_gl(attribute.type),
             false,
@@ -303,11 +312,10 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
         // assumes a single vertex buffer per graphics pipeline.
         // if a pipeline were to expect multiple, we would need to
         // update how we handle binding vaos here.
-        glVertexArrayAttribBinding(vao, index, 0);
+        glVertexArrayAttribBinding(vao, i, 0);
     }
 
     const auto handle = m_state.pipelines.reserve_link(
-        pipeline_handle,
         vao,
         GraphicsPipelineDescriptor{descriptor}
     );
@@ -316,7 +324,7 @@ auto OpenGLDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& desc
     return GraphicsPipeline{this, handle};
 }
 
-auto OpenGLDevice::make_query(const QueryDescriptor& descriptor) -> Query {
+auto OpenGLDevice::make_query(const QueryDescriptor&) -> Query {
     // TODO: how do we want to impl queries in gl? using query buffer instead?
     UNIMPLEMENTED();
     /*
@@ -327,7 +335,7 @@ auto OpenGLDevice::make_query(const QueryDescriptor& descriptor) -> Query {
     */
 }
 
-auto OpenGLDevice::make_command_buffer() const -> std::unique_ptr<::siren::CommandBuffer> {
+auto OpenGLDevice::make_command_buffer() const noexcept -> std::unique_ptr<::siren::CommandBuffer> {
     return std::make_unique<opengl::CommandBuffer>(m_state);
 }
 
@@ -356,7 +364,7 @@ auto OpenGLDevice::destroy_shader(const ShaderHandle handle) -> void {
 }
 
 auto OpenGLDevice::destroy_swapchain(const SwapchainHandle handle) -> void {
-    std::ignore = m_state.swapchain_table.fetch_release(handle);
+    m_state.swapchains.fetch_release(handle);
     log::trace("{} deleted.", handle);
 }
 
@@ -366,7 +374,7 @@ auto OpenGLDevice::destroy_graphics_pipeline(const GraphicsPipelineHandle handle
     log::trace("{} deleted.", handle);
 }
 
-auto OpenGLDevice::destroy_query(const QueryHandle handle) -> void {
+auto OpenGLDevice::destroy_query(const QueryHandle) -> void {
     // TODO: how to impl queries
     /*
     const auto glhandle = m_state.query_table.fetch_release(handle);
@@ -376,7 +384,7 @@ auto OpenGLDevice::destroy_query(const QueryHandle handle) -> void {
 }
 
 auto OpenGLDevice::buffer_descriptor(const BufferHandle handle) const -> const BufferDescriptor& {
-    return m_state.buffers.details(handle).descriptor;
+    return m_state.buffers.details(handle);
 }
 
 auto OpenGLDevice::image_descriptor(const ImageHandle handle) const -> const ImageDescriptor& {
@@ -385,79 +393,67 @@ auto OpenGLDevice::image_descriptor(const ImageHandle handle) const -> const Ima
 
 auto OpenGLDevice::sampler_descriptor(const SamplerHandle handle) const
     -> const SamplerDescriptor& {
-    return m_state.samplers.details(handle).descriptor;
+    return m_state.samplers.details(handle);
 }
 
 auto OpenGLDevice::shader_descriptor(const ShaderHandle handle) const -> const ShaderDescriptor& {
-    return m_state.shaders.details(handle).descriptor;
+    return m_state.shaders.details(handle);
 }
 
 auto OpenGLDevice::graphics_pipeline_descriptor(const GraphicsPipelineHandle handle) const
     -> const GraphicsPipelineDescriptor& {
-    return m_state.pipelines.details(handle).descriptor;
+    return m_state.pipelines.details(handle);
 }
 
-auto OpenGLDevice::swapchain_descriptor(const SwapchainHandle handle) const
-    -> const SwapchainDescriptor& {
-    return m_state.swapchains.details(handle).descriptor;
-}
-
-auto OpenGLDevice::query_descriptor(const QueryHandle handle) const -> const QueryDescriptor& {
+auto OpenGLDevice::query_descriptor(const QueryHandle) const -> const QueryDescriptor& {
     UNIMPLEMENTED();
     // TODO: impl this shit nigga
     //
     // return m_state.query_table.details(handle).descriptor;
 }
 
-auto OpenGLDevice::reconfigure_swapchain(
-    SwapchainHandle handle,
-    const SwapchainDescriptor& new_values
-) -> void {
-    UNIMPLEMENTED();
-}
-
-auto OpenGLDevice::swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& {
-    UNIMPLEMENTED();
+auto OpenGLDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo {
+    return m_state.swapchains.details(handle).info;
 }
 
 auto OpenGLDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageHandle {
-    UNIMPLEMENTED();
+    auto& details = m_state.swapchains.details(handle);
+
+    ASSERT(!details.acquired_image.has_value());
+
+    details.acquired_image = m_state.images.reserve_link(0, ImageDetails{
+        .descriptor = ImageDescriptor{
+            .label = "Swapchain Image",
+            .format = details.info.image_format,
+            .extent = details.info.extent.to_extent3(),
+            /// TODO: should we enabled shader read and write here??
+            .flags = ImageFlags::make(ImageFlag::RenderAttachment, ImageFlag::ShaderRead, ImageFlag::ShaderWrite),
+        },
+        .default_framebuffer = true,
+    });
+
+    return *details.acquired_image;
 }
 
-auto OpenGLDevice::submit(std::unique_ptr<CommandBuffer>&& command_buffer) -> void { }
-
-auto OpenGLDevice::present(const SwapchainHandle handle, OverlayFunction&& overlay) -> void {
-    // blit the offscreen image to the default framebuffer, then swap buffers
-    auto* window         = m_state.swapchains.details(handle).native_handle;
-    const auto& target   = m_state.swapchains.details(handle).target->render_target;
-    const auto [w, h, _] = m_state.images.details(target.colors[0].image).descriptor.extent;
-
-    // basically, we just blit swapchain image fbo to default fbo
-    const auto offscreen_fb = m_state.framebuffer_cache.get_create_for(target);
-
-    // iff there is an overlay, we have to bind its fbo so it can perform the
-    // custom render logic
-    if (overlay) {
-        glBindFramebuffer(GL_FRAMEBUFFER, offscreen_fb);
-        glViewport(0, 0, w, h);
-        overlay();
-    }
-
-    // clang-format off
-    glBlitNamedFramebuffer(
-        /* from */ offscreen_fb, /* to */ GL_DEFAULT_FRAMEBUFFER,
-        0, 0, w, h,
-        0, 0, w, h,
-        GL_COLOR_BUFFER_BIT, GL_NEAREST
-    );
-    // clang-format on
-    glfwSwapBuffers(window);
+auto OpenGLDevice::submit(std::unique_ptr<::siren::CommandBuffer>&&) const -> void {
+    // TODO: 
+    // atm, we perform opengl commands as they are recorded, so here theres nothing to do :D
+    // however, this isnt the best. eventually a vk backend would replace opengl and then we can 
+    // have consistent behaviour across backends
 }
 
-auto OpenGLDevice::present(SwapchainHandle handle, std::unique_ptr<CommandBuffer>&& command_buffer)
-    -> void {
-    //
-    UNIMPLEMENTED();
+auto OpenGLDevice::present(const SwapchainHandle handle) -> void {
+    auto& details = m_state.swapchains.details(handle);
+
+    ASSERT(details.acquired_image.has_value(), "cannot present swapchain without an acquired image");
+
+    glfwSwapBuffers(details.native_handle);
+    details.acquired_image.reset(); // calls destroy_image in dtor for us
+}
+
+auto OpenGLDevice::present(SwapchainHandle handle, std::unique_ptr<::siren::CommandBuffer>&& cmds) -> void {
+    submit(std::move(cmds)); // does nothing, work is already done by this point
+    present(handle);
 }
 
 auto OpenGLDevice::read_buffer(BufferHandle buffer) const -> ByteBuffer {
@@ -465,7 +461,7 @@ auto OpenGLDevice::read_buffer(BufferHandle buffer) const -> ByteBuffer {
     ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot read from private buffer");
 
     const auto glhandle = m_state.buffers.fetch(buffer);
-    auto byte_buffer    = ByteBuffer::size_bytes(descriptor.size);
+    auto byte_buffer    = ByteBuffer::with_size_bytes(descriptor.size);
     glGetNamedBufferSubData(glhandle, 0, byte_buffer.size_bytes(), byte_buffer.data());
 
     return byte_buffer;

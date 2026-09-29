@@ -215,9 +215,13 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                     .dimension     = ImageDimension::D2,
                     .mipmap_levels = mipmap_levels,
                     .flags         = ImageFlags::make(), // TODO: what flags here?
-                },
-                bytebuffer.view()
+                }
             );
+
+            auto cmds = ctx.device().make_command_buffer();
+            cmds->write_image(img.handle(), bytebuffer.view());
+            ctx.device().submit(std::move(cmds));
+
 
             handle = ctx.add_labeled_asset<Texture>(
                 name,
@@ -586,7 +590,7 @@ static auto load_index_buffer(const cgltf_accessor* indices, Device& device)
                 .label        = std::format("Index Buffer {}", bufferid),
                 .size         = buffer.size_bytes(),
                 .usage        = BufferFlags::make(BufferFlag::Index),
-                .memory_usage = MemoryUsage::CpuAndGpu,
+                .memory_usage = MemoryUsage::Shared,
             },
             buffer.view()
         ),
@@ -707,7 +711,7 @@ static auto load_vertex_buffer(const cgltf_primitive& primitive, Device& device)
                 .label        = std::format("Vertex Buffer {}", bufferid++),
                 .size         = buffer.size_bytes(),
                 .usage        = BufferFlags::make(BufferFlag::Vertex),
-                .memory_usage = MemoryUsage::CpuAndGpu,
+                .memory_usage = MemoryUsage::Shared,
             },
             buffer.view()
         ),

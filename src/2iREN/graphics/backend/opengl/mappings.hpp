@@ -1,6 +1,8 @@
 #pragma once
 
-#include "2iREN/graphics/backend/opengl/opengl.hpp"
+#include <glad/gl.h>
+#include <GL/gl.h>
+
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/query.hpp"
@@ -104,6 +106,28 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
     UNREACHABLE();
 }
 
+[[nodiscard]]
+constexpr auto image_format_channel_type(const ImageFormat format) -> GLenum {
+    switch (format) {
+        case ImageFormat::Unknown: return GL_INVALID_ENUM;
+
+        case ImageFormat::R32UI: return GL_UNSIGNED_INT;
+
+        case ImageFormat::sRGBA8:
+        case ImageFormat::BGRA8:
+        case ImageFormat::RGBA8:
+        case ImageFormat::R8: return GL_UNSIGNED_BYTE;
+
+        case ImageFormat::RGBA16f: return GL_HALF_FLOAT;
+
+        case ImageFormat::Depth32f:
+        case ImageFormat::RG32f: return GL_FLOAT;
+
+        case ImageFormat::Depth24Stencil8: return GL_UNSIGNED_INT_24_8;
+    }
+    UNREACHABLE();
+}
+
 /// @brief Converts an OpenGL internal format constant back to a 2iREN
 /// ImageFormat.
 [[nodiscard]] constexpr auto img_format_from_gl_internal(const GLenum internal_format)
@@ -136,7 +160,7 @@ constexpr auto img_format_to_gl_internal(const ImageFormat format) -> GLenum {
         case ImageFormat::RGBA16f:
         case ImageFormat::sRGBA8: return GL_RGBA;
 
-        case ImageFormat::BGRA8: return GL_BGRA_EXT;
+        case ImageFormat::BGRA8: return GL_BGRA;
 
         case ImageFormat::Depth24Stencil8:
         case ImageFormat::Depth32f: return GL_DEPTH_STENCIL;

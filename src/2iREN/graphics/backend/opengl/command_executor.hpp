@@ -2,6 +2,7 @@
 
 #include <glad/gl.h>
 
+#include "2iREN/graphics/backend/opengl/resource_state.hpp"
 #include "2iREN/graphics/command_executor.hpp"
 #include "2iREN/graphics/statistics.hpp"
 

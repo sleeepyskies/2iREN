@@ -1,6 +1,7 @@
 #pragma once
 
-#include "2iREN/graphics/backend/opengl/opengl.hpp"
+#include <glad/gl.h>
+#include <GL/gl.h>
 
 #include "2iREN/container/byte_buffer.hpp"
 #include "2iREN/graphics/backend/opengl/resource_state.hpp"
@@ -79,7 +80,7 @@ public:
         -> const GraphicsPipelineDescriptor& override;
 
     [[nodiscard]]
-    auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& override;
+    auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo override;
 
     [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;

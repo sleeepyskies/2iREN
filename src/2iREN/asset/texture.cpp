@@ -144,17 +144,17 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const usize data_size = width * height * channels;
 
     auto bytebuffer = ByteBuffer{std::span(data, data_size)};
-    auto image      = ctx.device().make_image(
-        {
-            .label         = iname,
-            .format        = format,
-            .extent        = extent,
-            .dimension     = ImageDimension::D2,
-            .mipmap_levels = mipmap_levels,
-            .flags         = ImageFlags::make(),
-        },
-        bytebuffer.view()
-    );
+    auto image      = ctx.device().make_image({
+        .label         = iname,
+        .format        = format,
+        .extent        = extent,
+        .dimension     = ImageDimension::D2,
+        .mipmap_levels = mipmap_levels,
+        .flags         = ImageFlags::make(),
+    });
+    auto cmds = ctx.device().make_command_buffer();
+    cmds->write_image(image.handle(), bytebuffer.view());
+    ctx.device().submit(std::move(cmds));
 
     stbi_image_free(data);
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config->sampler)));
