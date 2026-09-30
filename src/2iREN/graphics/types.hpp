@@ -147,6 +147,8 @@ public:
 
             case Unknown: return "Unknown";
         }
+
+        UNREACHABLE();
     }
 
     /// @brief Returns the number of bytes per pixel for this format.
@@ -167,6 +169,8 @@ public:
 
             case Unknown: PANIC("bytes_per_pixel called on ImageFormat::Unknown.");
         }
+
+        UNREACHABLE();
     }
 
     /// @brief Returns the number of components this format can hold.
@@ -187,6 +191,8 @@ public:
 
             case Unknown: PANIC("num_components called on ImageFormat::Unknown.");
         }
+
+        UNREACHABLE();
     }
 };
 

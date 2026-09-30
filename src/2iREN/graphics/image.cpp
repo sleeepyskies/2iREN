@@ -30,7 +30,7 @@ auto Image::descriptor() const noexcept -> const ImageDescriptor& {
     return m_device->image_descriptor(m_handle);
 }
 
-auto Image::upload(const ByteBufferView, u32) -> void {
+auto Image::write(const ByteBufferView, u32) -> void {
     UNIMPLEMENTED();
 }
 } // namespace siren

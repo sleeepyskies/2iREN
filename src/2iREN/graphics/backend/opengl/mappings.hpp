@@ -150,10 +150,12 @@ constexpr auto image_format_channel_type(const ImageFormat format) -> GLenum {
 
 /// @brief Maps a 2iREN format to the OpenGL pixel layout (format/type).
 /// @details Defines the expected structure of CPU-side pixel data.
-[[nodiscard]] constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
+[[nodiscard]] 
+constexpr auto img_format_to_gl_layout(const ImageFormat format) -> GLenum {
     switch (format) {
-        case ImageFormat::R32UI:
         case ImageFormat::R8: return GL_RED;
+
+        case ImageFormat::R32UI: return GL_RED_INTEGER;
 
         case ImageFormat::RG32f: return GL_RG;
 
@@ -166,8 +168,9 @@ constexpr auto image_format_channel_type(const ImageFormat format) -> GLenum {
         case ImageFormat::Depth24Stencil8: return GL_DEPTH_STENCIL;
         case ImageFormat::Depth32f: return GL_DEPTH_COMPONENT;
 
-        case ImageFormat::Unknown: PANIC(); break;
+        case ImageFormat::Unknown: PANIC("cannot convert Unknown format"); break;
     }
+
     UNREACHABLE();
 }
 

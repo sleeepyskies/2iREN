@@ -16,6 +16,7 @@ struct ContextDescriptor {
     /// @brief Sets the minimum log severity level emitted by the framework.
     log::Level level;
     /// @brief Whether to enable validation layers for the backend.
+    /// TODO: this has no effect as of yet
     bool validation;
 };
 

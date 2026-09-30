@@ -50,7 +50,7 @@ struct ImageDescriptor {
     Extent3 extent;
     /// @brief The dimensionality of the image.
     ImageDimension dimension = ImageDimension::D2;
-    /// @brief Defines if the Cpu and the Gpu mauy access to image.
+    /// @brief Defines if the Cpu and the Gpu may access to image.
     MemoryUsage memory_usage = MemoryUsage::Shared;
     /// @brief Flags specifying how the @ref Image will be used.
     ImageFlags flags         = ImageFlags::make();
@@ -71,7 +71,7 @@ public:
     auto descriptor() const noexcept -> const ImageDescriptor&;
 
     /// @brief Uploads data into the image at the given mipmap level.
-    auto upload(const ByteBufferView data, u32 level = 0) -> void;
+    auto write(const ByteBufferView data, u32 level = 0) -> void;
 };
 
 } // namespace siren

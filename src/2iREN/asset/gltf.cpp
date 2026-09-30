@@ -181,7 +181,7 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
                 &width,
                 &height,
                 &channels,
-                STBI_default
+                STBI_rgb_alpha // 2iREN prefers 4 channel over 3 channel
             );
             DEFER {
                 stbi_image_free(image_data);
@@ -190,25 +190,14 @@ static auto load_textures(const cgltf_data* data, LoadContext& ctx)
             if (!image_data) {
                 return std::unexpected(AssetErrorCode::AssetCorrupted);
             }
-            const usize img_data_size = width * height * channels;
-
-            // todo: put into a function, also this might not be enough? how do we know if 3
-            // channels is rgb or srgb?
-            const auto format = channels == 1 ? ImageFormat::R8
-                : channels == 4               ? ImageFormat::RGBA8
-                                              : ImageFormat::Unknown;
-
-            const auto extent = Extent3{width, height, 1};
-
-            // todo: add name?
-
+            const usize img_data_size = width * height * STBI_rgb_alpha;
             auto bytebuffer = ByteBuffer{std::span(image_data, img_data_size)};
 
             auto img = ctx.device().make_image(
                 {
                     .label         = std::nullopt,
-                    .format        = format,
-                    .extent        = extent,
+                    .format        = ImageFormat::RGBA8,
+                    .extent        = Extent3{width, height, 1},
                     .dimension     = ImageDimension::D2,
                     .flags         = ImageFlags::make(), // TODO: what flags here?
                 }

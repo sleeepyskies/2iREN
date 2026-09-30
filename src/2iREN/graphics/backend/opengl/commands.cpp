@@ -484,9 +484,15 @@ auto CommandBuffer::render_pass(
 
 auto CommandBuffer::fill_buffer(BufferHandle buffer, u8 value, Range<usize> range) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
-    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot clear private buffer");
     const auto glbuffer = m_state.buffers.fetch(buffer);
-    glClearNamedBufferSubData(glbuffer, GL_R8UI, range.begin, range.size(), GL_RED_INTEGER, GL_UNSIGNED_BYTE, &value);
+
+    const auto size = range.is_litnu() ? descriptor.size.get() - range.begin : range.size();
+
+    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot clear private buffer");
+    ASSERT(size <= descriptor.size.get(), "buffer is not large enough to hold the requested data");
+    ASSERT(range.begin <= descriptor.size.get(), "data offset is too large for buffer");
+
+    glClearNamedBufferSubData(glbuffer, GL_R8UI, range.begin, size, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &value);
 }
 
 auto CommandBuffer::write_buffer(BufferHandle dst, usize dst_offset, ByteBufferView data) -> void {

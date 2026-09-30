@@ -7,6 +7,7 @@
 #include "2iREN/asset/asset_server.hpp"
 #include "2iREN/container/bytebuffer.hpp"
 #include "2iREN/core/base.hpp"
+#include "2iREN/core/defer.hpp"
 #include "2iREN/graphics/device.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/utility/filesystem.hpp"
@@ -141,10 +142,12 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     const auto format = determine_format(*config, ctx.path().extension());
 
     i32 width = 0, height = 0, channels = 0;
-    u8* data                = stbi_load(path->c_str(), &width, &height, &channels, 0);
+    u8* data                = stbi_load(path->c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    DEFER { stbi_image_free(data); };
     const auto extent       = Extent3{width, height, 1};
     if (!data) {
         log::warn("could not load, reason: {}", stbi_failure_reason());
+        return std::unexpected(AssetErrorCode::AssetCorrupted);
     }
     const usize data_size = width * height * channels;
 
@@ -160,7 +163,6 @@ auto TextureLoader::load(LoadContext&& ctx, std::optional<ConfigType> config) co
     cmds->write_image(image.handle(), bytebuffer.view());
     ctx.device().submit(std::move(cmds));
 
-    stbi_image_free(data);
     ctx.finish(std::make_unique<Texture>(tname, std::move(image), std::move(config->sampler)));
 
     return {};
@@ -199,22 +201,19 @@ auto TextureLoader::load_cubemap(LoadContext&& ctx, ConfigType&& config, const P
             const auto face_path = *FileSystem::to_physical(base_dir / node.as<std::string>());
             log::trace("Attempting to load cube map face from {}", face_path.string());
 
-            u8* data = stbi_load(face_path.c_str(), &width, &height, &channels, 4);
+            u8* data = stbi_load(face_path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+            DEFER { stbi_image_free(data); };
 
             if (size == 0) {
                 size = width;
             }
 
             if (!data or width != size or height != size) {
-                if (data) {
-                    stbi_image_free(data);
-                }
                 log::warn("Could not load image data, reason: {}", stbi_failure_reason());
+                    return std::unexpected(AssetErrorCode::AssetCorrupted);
             }
 
             data_buffer = ByteBuffer{std::span<const u8>(data, data + (size * size * 4))};
-
-            stbi_image_free(data);
         }
     } catch (const YAML::ParserException& e) {
         return invalid_format(path.string(), e.msg);
