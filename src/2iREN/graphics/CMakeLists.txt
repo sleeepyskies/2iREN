@@ -1,5 +1,7 @@
 target_sources(2iREN PRIVATE
     device.cpp
+    commands.cpp
+
     buffer.cpp
     graphics_pipeline.cpp
     image.cpp

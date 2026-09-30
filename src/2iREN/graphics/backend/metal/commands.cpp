@@ -352,7 +352,7 @@ auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, Ima
         ASSERT(src_offset % format.size_bytes() == 0, "unaligned source buffer offset.");
         ASSERT(
             src_offset <= mtlsrc->length() and size_bytes <= mtlsrc->length() - src_offset,
-            "source buffer({}bytes) is too small to copy the image({}bytes).",
+            "source buffer ({} bytes) is too small to copy the image ({} bytes).",
             mtlsrc->length() - src_offset,
             size_bytes
         );
