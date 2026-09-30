@@ -8,15 +8,14 @@
 #include <memory>
 
 #include "2iREN/container/bytebuffer.hpp"
-#include "2iREN/core/base.hpp"
-#include "2iREN/graphics/backend/metal/commands.hpp"
-#include "2iREN/graphics/buffer.hpp"
-#include "2iREN/graphics/fwd.hpp"
-
 #include "2iREN/core/assert.hpp"
+#include "2iREN/core/base.hpp"
 #include "2iREN/graphics/backend/metal/adapter.hpp"
+#include "2iREN/graphics/backend/metal/commands.hpp"
 #include "2iREN/graphics/backend/metal/mappings.hpp"
 #include "2iREN/graphics/backend/metal/util.hpp"
+#include "2iREN/graphics/buffer.hpp"
+#include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/graphics_pipeline.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/limits.hpp"
@@ -103,11 +102,11 @@ auto MetalDevice::make_buffer(
 
         if (initial.has_value()) {
             switch (descriptor.memory_usage) {
-                case MemoryUsage::CpuAndGpu: {
+                case MemoryUsage::Shared: {
                     bufcpy(*initial, buffer->contents());
                     break;
                 }
-                case MemoryUsage::GpuOnly: {
+                case MemoryUsage::Private: {
                     auto staging = transfer_ptr(m_device->newBuffer(
                         initial->data(),
                         initial->size(),
@@ -145,10 +144,7 @@ auto MetalDevice::destroy_buffer(BufferHandle handle) -> void {
     log::trace("destroyed buffer {}", handle);
 }
 
-auto MetalDevice::make_image(
-    const ImageDescriptor& descriptor,
-    std::optional<ByteBufferView> initial
-) -> Image {
+auto MetalDevice::make_image(const ImageDescriptor& descriptor) -> Image {
     if (descriptor.dimension == ImageDimension::Cube) {
         ASSERT(descriptor.extent.x == descriptor.extent.y, "cube map must have square dimenions.");
         ASSERT(descriptor.extent.z == 6, "cube map must have 6 layers.");
@@ -162,17 +158,11 @@ auto MetalDevice::make_image(
         texture_desc->setPixelFormat(pixel_format(descriptor.format));
         texture_desc->setWidth(descriptor.extent.x);
         texture_desc->setHeight(descriptor.extent.y);
-        texture_desc->setMipmapLevelCount(descriptor.mipmap_levels);
         texture_desc->setResourceOptions(resource_options(descriptor.memory_usage));
         texture_desc->setUsage(texture_usage(descriptor.flags));
 
         auto texture = transfer_ptr(m_device->newTexture(texture_desc.get()));
         set_label(texture, descriptor.label);
-
-        if (initial.has_value()) {
-            const auto bytes_per_row = descriptor.extent.x * descriptor.format.size_bytes();
-            texture->replaceRegion(region(descriptor.extent), 0, initial->data(), bytes_per_row);
-        }
 
         const auto handle = m_state.images.reserve_link(texture, ImageDescriptor{descriptor});
 
@@ -398,9 +388,9 @@ auto MetalDevice::make_graphics_pipeline(const GraphicsPipelineDescriptor& descr
         {
             auto* layout = MTL::VertexDescriptor::alloc()->init();
 
-            for (usize i = 0; i < descriptor.layout.components.size(); i++) {
+            for (usize i = 0; i < descriptor.layout.attributes.size(); i++) {
                 auto* vertex    = layout->attributes()->object(i);
-                auto& component = descriptor.layout.components[i];
+                auto& component = descriptor.layout.attributes[i];
                 vertex->setFormat(vertex_format(component));
                 vertex->setOffset(component.offset);
                 // HACK: we use 30 as a sentinel value for vertex buffer binding.
@@ -478,7 +468,7 @@ auto MetalDevice::graphics_pipeline_descriptor(GraphicsPipelineHandle handle) co
     return m_state.pipelines.details(handle);
 }
 
-auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& {
+auto MetalDevice::swapchain_info(SwapchainHandle handle) const -> SwapchainInfo {
     auto& info       = m_state.swapchains.details(handle).descriptor;
     const auto layer = m_state.swapchains.fetch(handle);
 
@@ -526,15 +516,13 @@ auto MetalDevice::acquire_next_swapchain_image(SwapchainHandle handle) -> ImageH
     auto texture  = drawable->texture();
 
     details.drawable = drawable;
-    const auto size  = layer->drawableSize();
 
     details.image = m_state.images.reserve_link(
         retain_ptr(drawable->texture()),
         ImageDescriptor{
-            .label         = "swapchain image",
-            .format        = image_format(layer->pixelFormat()),
-            .extent        = Extent2{size.width, size.height}.to_extent3(),
-            .mipmap_levels = static_cast<u32>(texture->mipmapLevelCount()),
+            .label  = "swapchain image",
+            .format = image_format(texture->pixelFormat()),
+            .extent = Extent2{texture->width(), texture->height()}.to_extent3(),
         }
     );
 

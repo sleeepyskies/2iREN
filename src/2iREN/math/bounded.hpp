@@ -149,11 +149,9 @@ public:
         return other.m_value <=> m_value;
     }
 
-    template <typename S>
-        requires(CanConvert<Type, std::remove_cvref_t<S>>)
     [[nodiscard]]
-    constexpr operator S() const noexcept {
-        return get();
+    constexpr operator Type() const noexcept {
+        return m_value;
     }
 
 private:

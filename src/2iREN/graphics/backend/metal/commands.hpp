@@ -12,7 +12,7 @@
 
 namespace siren::metal {
 
-// TODO: again here, it would be nice to have a general 2iREN validation layer 
+// TODO: again here, it would be nice to have a general 2iREN validation layer
 // that checks calls, and then forwards to the api.
 
 /// @brief Metal implementation of the siren::RenderCommandEncoder.
@@ -24,12 +24,12 @@ public:
     ) : m_state(state), m_encoder(encoder) { }
 
     auto bind_graphics_pipeline(GraphicsPipelineHandle pipeline) -> void override;
-    auto bind_vertex_buffer(BufferHandle buffer, Slot slot, Range<usize> range) -> void override;
+    auto bind_vertex_buffer(BufferHandle buffer, Slot slot, u32 offset) -> void override;
     auto bind_index_buffer(BufferHandle buffer, IndexType type) -> void override;
-    auto bind_uniform_buffer(BufferHandle buffer, Slot slot, Range<usize> range) -> void override;
-    auto bind_storage_buffer(BufferHandle buffer, Slot slot, Range<usize> range) -> void override;
-    auto bind_image(ImageHandle image, Slot slot) -> void override;
-    auto bind_sampler(SamplerHandle sampler, Slot slot) -> void override;
+    auto bind_uniform_buffer(BufferHandle buffer, Slot slot, u32 offset) -> void override;
+    auto bind_storage_buffer(BufferHandle buffer, Slot slot, u32 offset) -> void override;
+    auto bind_sampled_image(ImageHandle image, SamplerHandle sampler, Slot slot) -> void override;
+    auto bind_storage_image(ImageHandle image, Slot slot) -> void override;
     auto draw(u32 count, u32 start, u32 instance_count, u32 instance_start) -> void override;
     auto draw_indexed(u32 count, u32 start) -> void override;
 

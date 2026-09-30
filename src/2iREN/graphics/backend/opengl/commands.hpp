@@ -30,7 +30,8 @@ public:
 
     auto bind_storage_image(ImageHandle image, Slot slot) -> void override;
 
-    auto draw(u32 count, u32 start = 0, u32 instance_count = 1, u32 instance_start = 0) -> void override;
+    auto draw(u32 count, u32 start = 0, u32 instance_count = 1, u32 instance_start = 0)
+        -> void override;
 
     auto draw_indexed(u32 count, u32 start = 0) -> void override;
 
@@ -44,8 +45,8 @@ private:
 
     mutable struct TrackedState {
         std::optional<GraphicsPipelineHandle> bound_pipeline = std::nullopt;
-        std::optional<GLuint> bound_vao                         = std::nullopt;
-        std::optional<IndexBinding> bound_index                 = std::nullopt;
+        std::optional<GLuint> bound_vao                      = std::nullopt;
+        std::optional<IndexBinding> bound_index              = std::nullopt;
 
         auto reset() -> void {
             bound_pipeline.reset();
@@ -83,25 +84,22 @@ public:
 
     auto copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst) -> void override;
 
-    auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
-        -> void override;
+    auto copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset) -> void override;
 
     auto copy_image_to_image(ImageHandle src, ImageHandle dst) -> void override;
 
 private:
     struct RenderPassState {
-        GLuint framebuffer          = 0;
-        bool default_framebuffer    = false;
-        bool has_depth_attachment   = false;
+        GLuint framebuffer        = 0;
+        bool default_framebuffer  = false;
+        bool has_depth_attachment = false;
     };
 
     [[nodiscard]]
     auto begin_render_pass(const RenderPassDescriptor& descriptor) const -> RenderPassState;
 
-    auto end_render_pass(
-        const RenderPassDescriptor& descriptor,
-        const RenderPassState& state
-    ) const -> void;
+    auto end_render_pass(const RenderPassDescriptor& descriptor, const RenderPassState& state) const
+        -> void;
 
     const ResourceState& m_state;
     FramebufferCache& m_framebuffer_cache;

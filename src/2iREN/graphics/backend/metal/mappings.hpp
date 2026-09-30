@@ -16,9 +16,9 @@ namespace siren::metal {
 
 /// @brief Maps a @ref Component to its corresponding MTL::VertexFormat
 /// enumeration value.
-constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
-    if (component.size == 1) {
-        switch (component.type) {
+constexpr auto vertex_format(const Attribute& attribute) -> MTL::VertexFormat {
+    if (attribute.size == 1) {
+        switch (attribute.type) {
             case DataType::Int8: return MTL::VertexFormatChar;
             case DataType::Int16: return MTL::VertexFormatShort;
             case DataType::Int32: return MTL::VertexFormatInt;
@@ -34,8 +34,8 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
             case DataType::UInt64:
             case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
-    } else if (component.size == 2) {
-        switch (component.type) {
+    } else if (attribute.size == 2) {
+        switch (attribute.type) {
             case DataType::Int8: return MTL::VertexFormatChar2;
             case DataType::Int16: return MTL::VertexFormatShort2;
             case DataType::Int32: return MTL::VertexFormatInt2;
@@ -51,8 +51,8 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
             case DataType::UInt64:
             case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
-    } else if (component.size == 3) {
-        switch (component.type) {
+    } else if (attribute.size == 3) {
+        switch (attribute.type) {
             case DataType::Int8: return MTL::VertexFormatChar3;
             case DataType::Int16: return MTL::VertexFormatShort3;
             case DataType::Int32: return MTL::VertexFormatInt3;
@@ -68,8 +68,8 @@ constexpr auto vertex_format(const Component& component) -> MTL::VertexFormat {
             case DataType::UInt64:
             case DataType::Float64: PANIC("64-bit vertex attributes are not supported by metal.");
         }
-    } else if (component.size == 4) {
-        switch (component.type) {
+    } else if (attribute.size == 4) {
+        switch (attribute.type) {
             case DataType::Int8: return MTL::VertexFormatChar4;
             case DataType::Int16: return MTL::VertexFormatShort4;
             case DataType::Int32: return MTL::VertexFormatInt4;
@@ -236,8 +236,8 @@ constexpr auto texture_type(const ImageDimension dimension) -> MTL::TextureType 
 [[nodiscard]]
 constexpr auto resource_options(const MemoryUsage memory_usage) -> MTL::ResourceOptions {
     switch (memory_usage) {
-        case MemoryUsage::CpuAndGpu: return MTL::ResourceStorageModeShared;
-        case MemoryUsage::GpuOnly: return MTL::ResourceStorageModePrivate;
+        case MemoryUsage::Shared: return MTL::ResourceStorageModeShared;
+        case MemoryUsage::Private: return MTL::ResourceStorageModePrivate;
     }
 }
 

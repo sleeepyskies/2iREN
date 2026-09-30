@@ -28,8 +28,7 @@ public:
         -> Buffer override;
 
     [[nodiscard]]
-    auto make_image(const ImageDescriptor& descriptor, std::optional<ByteBufferView> initial)
-        -> Image override;
+    auto make_image(const ImageDescriptor& descriptor) -> Image override;
 
     [[nodiscard]]
     auto make_sampler(const SamplerDescriptor& descriptor) -> Sampler override;
@@ -82,7 +81,7 @@ public:
         -> const GraphicsPipelineDescriptor& override;
 
     [[nodiscard]]
-    auto swapchain_info(SwapchainHandle handle) const -> const SwapchainInfo& override;
+    auto swapchain_info(SwapchainHandle handle) const -> SwapchainInfo override;
 
     [[nodiscard]]
     auto query_descriptor(QueryHandle handle) const -> const QueryDescriptor& override;

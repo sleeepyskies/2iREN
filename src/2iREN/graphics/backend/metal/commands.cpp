@@ -81,86 +81,91 @@ auto RenderCommandEncoder::bind_graphics_pipeline(GraphicsPipelineHandle pipelin
 auto RenderCommandEncoder::bind_vertex_buffer(
     const BufferHandle buffer,
     [[maybe_unused]] const Slot slot,
-    const Range<usize> range
+    const u32 offset
 ) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        descriptor.usage.test(BufferFlag::Vertex),
+        descriptor.flags.test(BufferFlag::Vertex),
         "buffer must have BufferFlag::Vertex to be bound as a vetex buffer."
     );
 
     auto* buf = m_state.buffers.fetch(buffer).get();
-    ASSERT(
-        range.is_litnu() or range.length() <= buf->length(),
-        "binding invalid range of vertex buffer."
-    );
+    ASSERT(offset <= descriptor.size, "binding invalid range of vertex buffer.");
 
     // HACK: we choose 30 as sentinel value for vertex buffers.
     // see MetalDevice::make_graphics_pipeline() as well
-    m_encoder->setVertexBuffer(buf, range.begin, 30);
+    m_encoder->setVertexBuffer(buf, offset, 30);
 }
 
 auto RenderCommandEncoder::bind_index_buffer(BufferHandle buffer, IndexType type) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        descriptor.usage.test(BufferFlag::Index),
+        descriptor.flags.test(BufferFlag::Index),
         "buffer must have BufferFlag::Index to be bound as an index buffer."
     );
     m_bindings.index = BindIdxBuf{buffer, type};
 }
 
-auto RenderCommandEncoder::bind_uniform_buffer(BufferHandle buffer, Slot slot, Range<usize> range)
-    -> void {
+auto RenderCommandEncoder::bind_uniform_buffer(
+    const BufferHandle buffer,
+    const Slot slot,
+    const u32 offset
+) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        descriptor.usage.test(BufferFlag::Uniform),
+        descriptor.flags.test(BufferFlag::Uniform),
         "buffer must have BufferFlag::Uniform to be bound as a uniform buffer."
     );
 
     auto* buf = m_state.buffers.fetch(buffer).get();
-    ASSERT(
-        range.is_litnu() or range.length() <= buf->length(),
-        "binding invalid range of uniform buffer."
-    );
+    ASSERT(offset <= descriptor.size, "binding invalid range of uniform buffer.");
 
-    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
-    m_encoder->setFragmentBuffer(buf, range.begin, slot.value);
+    m_encoder->setVertexBuffer(buf, offset, slot.value);
+    m_encoder->setFragmentBuffer(buf, offset, slot.value);
 }
 
 auto RenderCommandEncoder::bind_storage_buffer(
     const BufferHandle buffer,
     const Slot slot,
-    const Range<usize> range
+    const u32 offset
 ) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
     ASSERT(
-        descriptor.usage.test(BufferFlag::Storage),
+        descriptor.flags.test(BufferFlag::Storage),
         "buffer must have BufferFlag::Storage to be bound as a storage buffer."
     );
 
     auto* buf = m_state.buffers.fetch(buffer).get();
-    ASSERT(
-        range.is_litnu() or range.length() <= buf->length(),
-        "binding invalid range of storage buffer."
-    );
+    ASSERT(offset <= descriptor.size, "binding invalid range of storage buffer.");
 
-    m_encoder->setVertexBuffer(buf, range.begin, slot.value);
-    m_encoder->setFragmentBuffer(buf, range.begin, slot.value);
+    m_encoder->setVertexBuffer(buf, offset, slot.value);
+    m_encoder->setFragmentBuffer(buf, offset, slot.value);
 }
 
-auto RenderCommandEncoder::bind_image(const ImageHandle image, const Slot slot) -> void {
+auto RenderCommandEncoder::bind_sampled_image(
+    const ImageHandle image,
+    const SamplerHandle sampler,
+    const Slot slot
+) -> void {
     // TODO: do we want this in the fragment too/instead?
     // TODO: do we want to bind always to all stages?
-    auto img = m_state.images.fetch(image).get();
-    m_encoder->setVertexTexture(img, slot.value);
-    m_encoder->setFragmentTexture(img, slot.value);
+    const auto* mslimage   = m_state.images.fetch(image).get();
+    const auto* mslsampler = m_state.samplers.fetch(sampler).get();
+
+    m_encoder->setVertexTexture(mslimage, slot.value);
+    m_encoder->setFragmentTexture(mslimage, slot.value);
+
+    m_encoder->setVertexSamplerState(mslsampler, slot.value);
+    m_encoder->setFragmentSamplerState(mslsampler, slot.value);
 }
 
-auto RenderCommandEncoder::bind_sampler(const SamplerHandle sampler, const Slot slot) -> void {
+auto RenderCommandEncoder::bind_storage_image(const ImageHandle image, const Slot slot) -> void {
+    // TODO: do we want this in the fragment too/instead?
     // TODO: do we want to bind always to all stages?
-    auto* ss = m_state.samplers.fetch(sampler).get();
-    m_encoder->setVertexSamplerState(ss, slot.value);
-    m_encoder->setFragmentSamplerState(ss, slot.value);
+    const auto* mslimage = m_state.images.fetch(image).get();
+
+    m_encoder->setVertexTexture(mslimage, slot.value);
+    m_encoder->setFragmentTexture(mslimage, slot.value);
 }
 
 auto RenderCommandEncoder::draw(u32 count, u32 start, u32 instance_count, u32 instance_start)
@@ -249,7 +254,7 @@ auto CommandBuffer::write_buffer(
 ) -> void {
     const auto& desc = m_state.buffers.details(buffer);
 
-    ASSERT(desc.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
+    ASSERT(desc.memory_usage != MemoryUsage::Private, "cannot upload to Private buffer.");
     ASSERT(
         buffer_offset <= desc.size.get() and data.size() <= desc.size.get() - buffer_offset,
         "buffer is too small to write the requested data."
@@ -268,7 +273,7 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
     AUTORELEASE {
         const auto& descriptor = m_state.buffers.details(buffer);
 
-        ASSERT(descriptor.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly buffer.");
+        ASSERT(descriptor.memory_usage != MemoryUsage::Private, "cannot upload to GpuOnly buffer.");
 
         auto* buf = m_state.buffers.fetch(buffer).get();
 
@@ -278,11 +283,11 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
             actual_range = {0, buf->length()};
         } else {
             ASSERT(
-                range.length() <= buf->length(),
+                range.size() <= buf->length(),
                 "buffer is not large enough to write the requested amount of data."
             );
         }
-        encoder->fillBuffer(buf, NS::Range(actual_range.begin, actual_range.length()), value);
+        encoder->fillBuffer(buf, NS::Range(actual_range.begin, actual_range.size()), value);
         encoder->endEncoding();
     }
 }
@@ -290,7 +295,7 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
 auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView data, const u32 layer)
     -> void {
     const auto& descriptor = m_state.images.details(image);
-    ASSERT(descriptor.memory_usage != MemoryUsage::GpuOnly, "cannot upload to GpuOnly image.");
+    ASSERT(descriptor.memory_usage != MemoryUsage::Private, "cannot upload to Private image.");
     ASSERT(
         descriptor.extent.volume() >= data.size(),
         "image is too small to write the requested data."
@@ -330,7 +335,7 @@ auto CommandBuffer::copy_buffer_to_buffer(
         auto mtlsrc   = m_state.buffers.fetch(src).get();
         auto mtldst   = m_state.buffers.fetch(dst).get();
         auto* encoder = m_cmdbuffer->blitCommandEncoder();
-        encoder->copyFromBuffer(mtlsrc, src_range.begin, mtldst, dst_offset, src_range.length());
+        encoder->copyFromBuffer(mtlsrc, src_range.begin, mtldst, dst_offset, src_range.size());
         encoder->endEncoding();
     }
 }

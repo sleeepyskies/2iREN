@@ -5,9 +5,9 @@
 
 #include "2iREN/core/assert.hpp"
 #include "2iREN/core/base.hpp"
+#include "2iREN/graphics/backend/opengl/mappings.hpp"
 #include "2iREN/graphics/buffer.hpp"
 #include "2iREN/graphics/commands.hpp"
-#include "2iREN/graphics/backend/opengl/mappings.hpp"
 #include "2iREN/graphics/fwd.hpp"
 #include "2iREN/graphics/image.hpp"
 #include "2iREN/graphics/types.hpp"
@@ -119,7 +119,7 @@ auto RenderCommandEncoder::bind_vertex_buffer(
         "cannot bind opengl vertex buffer without a bound pipeline"
     );
 
-    const auto vbo                   = m_state.buffers.fetch(buffer);
+    const auto vbo                  = m_state.buffers.fetch(buffer);
     const auto& pipeline_descriptor = m_state.pipelines.details(*m_tracked.bound_pipeline);
 
     // HACK:
@@ -133,7 +133,8 @@ auto RenderCommandEncoder::bind_vertex_buffer(
     );
 }
 
-auto RenderCommandEncoder::bind_index_buffer(const BufferHandle buffer, const IndexType type) -> void {
+auto RenderCommandEncoder::bind_index_buffer(const BufferHandle buffer, const IndexType type)
+    -> void {
     const auto ibo         = m_state.buffers.fetch(buffer);
     const auto& descriptor = m_state.buffers.details(buffer);
 
@@ -216,10 +217,7 @@ auto RenderCommandEncoder::bind_sampled_image(
     glBindSampler(slot.value, glsampler);
 }
 
-auto RenderCommandEncoder::bind_storage_image(
-    const ImageHandle image,
-    const Slot slot
-) -> void {
+auto RenderCommandEncoder::bind_storage_image(const ImageHandle image, const Slot slot) -> void {
     const auto texture      = m_state.images.fetch(image);
     const auto& image_state = m_state.images.details(image);
     const auto& descriptor  = image_state.descriptor;
@@ -236,12 +234,15 @@ auto RenderCommandEncoder::bind_storage_image(
     const auto readable = descriptor.flags.test(ImageFlag::ShaderRead);
     const auto writable = descriptor.flags.test(ImageFlag::ShaderWrite);
     const auto access   = readable and writable ? GL_READ_WRITE
-        : readable                             ? GL_READ_ONLY
-                                               : GL_WRITE_ONLY;
+        : readable                              ? GL_READ_ONLY
+                                                : GL_WRITE_ONLY;
 
-    const auto layered = descriptor.dimension == ImageDimension::D3
-        or descriptor.dimension == ImageDimension::Cube
-        or descriptor.extent.z > 1;
+    const auto layered = descriptor.dimension
+        == ImageDimension::D3
+        or descriptor.dimension
+        == ImageDimension::Cube
+        or descriptor.extent.z
+        > 1;
 
     glBindImageTexture(
         slot.value,
@@ -291,9 +292,8 @@ auto RenderCommandEncoder::draw_indexed(const u32 count, const u32 start) -> voi
 
 // == CommandBuffer ==
 
-auto CommandBuffer::begin_render_pass(
-    const RenderPassDescriptor& descriptor
-) const -> RenderPassState {
+auto CommandBuffer::begin_render_pass(const RenderPassDescriptor& descriptor) const
+    -> RenderPassState {
     // reset some state ty imgui
     glDisable(GL_SCISSOR_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -326,12 +326,11 @@ auto CommandBuffer::begin_render_pass(
         "render pass requires at least one attachment"
     );
 
-    const auto first_image = !target->colors.empty()
-        ? target->colors.front().image
-        : target->depth_stencil->image;
-    const auto extent = m_state.images.details(first_image).descriptor.extent.to_extent2();
+    const auto first_image = !target->colors.empty() ? target->colors.front().image
+                                                     : target->depth_stencil->image;
+    const auto extent      = m_state.images.details(first_image).descriptor.extent.to_extent2();
 
-    auto uses_default_framebuffer = false;
+    auto uses_default_framebuffer  = false;
     const auto validate_attachment = [&](const ImageHandle image) {
         const auto& details = m_state.images.details(image);
 
@@ -357,7 +356,8 @@ auto CommandBuffer::begin_render_pass(
     GLuint framebuffer = 0;
     if (uses_default_framebuffer) {
         ASSERT(
-            target->colors.size() == 1
+            target->colors.size()
+                == 1
                 and m_state.images.details(target->colors.front().image).default_framebuffer,
             "the default framebuffer must be the only color attachment"
         );
@@ -401,7 +401,12 @@ auto CommandBuffer::begin_render_pass(
                 break;
             }
             case ImageFormat::Depth24Stencil8: {
-                glClearBufferfi(GL_DEPTH_STENCIL, 0, attachment.clear_depth, (GLint)attachment.clear_stencil);
+                glClearBufferfi(
+                    GL_DEPTH_STENCIL,
+                    0,
+                    attachment.clear_depth,
+                    (GLint)attachment.clear_stencil
+                );
                 break;
             }
 
@@ -425,19 +430,14 @@ auto CommandBuffer::end_render_pass(
             }
 
             invalidated.push_back(
-                state.default_framebuffer
-                    ? GL_COLOR
-                    : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index)
+                state.default_framebuffer ? GL_COLOR
+                                          : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index)
             );
         }
 
-        if (
-            target->depth_stencil
-            && target->depth_stencil->end_operation == EndOperation::Fuckit
-        ) {
-            const auto format = m_state.images
-                .details(target->depth_stencil->image)
-                .descriptor.format;
+        if (target->depth_stencil && target->depth_stencil->end_operation == EndOperation::Fuckit) {
+            const auto format = m_state.images.details(target->depth_stencil->image)
+                                    .descriptor.format;
 
             if (state.default_framebuffer) {
                 invalidated.push_back(GL_DEPTH);
@@ -468,10 +468,8 @@ auto CommandBuffer::end_render_pass(
     }
 }
 
-auto CommandBuffer::render_pass(
-    const RenderPassDescriptor& descriptor,
-    RenderPassFunction&& encode
-) -> void {
+auto CommandBuffer::render_pass(const RenderPassDescriptor& descriptor, RenderPassFunction&& encode)
+    -> void {
     const auto state = begin_render_pass(descriptor);
 
     {
@@ -484,7 +482,7 @@ auto CommandBuffer::render_pass(
 
 auto CommandBuffer::fill_buffer(BufferHandle buffer, u8 value, Range<usize> range) -> void {
     const auto& descriptor = m_state.buffers.details(buffer);
-    const auto glbuffer = m_state.buffers.fetch(buffer);
+    const auto glbuffer    = m_state.buffers.fetch(buffer);
 
     const auto size = range.is_litnu() ? descriptor.size.get() - range.begin : range.size();
 
@@ -492,18 +490,26 @@ auto CommandBuffer::fill_buffer(BufferHandle buffer, u8 value, Range<usize> rang
     ASSERT(size <= descriptor.size.get(), "buffer is not large enough to hold the requested data");
     ASSERT(range.begin <= descriptor.size.get(), "data offset is too large for buffer");
 
-    glClearNamedBufferSubData(glbuffer, GL_R8UI, range.begin, size, GL_RED_INTEGER, GL_UNSIGNED_BYTE, &value);
+    glClearNamedBufferSubData(
+        glbuffer,
+        GL_R8UI,
+        range.begin,
+        size,
+        GL_RED_INTEGER,
+        GL_UNSIGNED_BYTE,
+        &value
+    );
 }
 
 auto CommandBuffer::write_buffer(BufferHandle dst, usize dst_offset, ByteBufferView data) -> void {
     const auto& descriptor = m_state.buffers.details(dst);
-    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot write to private buffer");
+    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot write to Private buffer");
     const auto glbuffer = m_state.buffers.fetch(dst);
     glNamedBufferSubData(glbuffer, dst_offset, data.size(), data.data());
 }
 
 auto CommandBuffer::write_image(ImageHandle dst, ByteBufferView data, u32 layer) -> void {
-    const auto glimage = m_state.images.fetch(dst);
+    const auto glimage     = m_state.images.fetch(dst);
     const auto& descriptor = m_state.images.details(dst).descriptor;
 
     switch (descriptor.dimension) {
@@ -589,10 +595,11 @@ auto CommandBuffer::copy_buffer_to_buffer(
     glCopyNamedBufferSubData(srchandle, dsthandle, src_range.begin, dst_offset, src_range.size());
 }
 
-auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst) -> void {
-    const auto glbuffer = m_state.buffers.fetch(src);
+auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, ImageHandle dst)
+    -> void {
+    const auto glbuffer    = m_state.buffers.fetch(src);
     const auto& descriptor = m_state.images.details(dst).descriptor;
-    const auto glimage = m_state.images.fetch(dst);
+    const auto glimage     = m_state.images.fetch(dst);
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glbuffer);
     glTextureSubImage2D(
@@ -611,19 +618,19 @@ auto CommandBuffer::copy_buffer_to_image(BufferHandle src, usize src_offset, Ima
 
 auto CommandBuffer::copy_image_to_buffer(ImageHandle src, BufferHandle dst, usize dst_offset)
     -> void {
-    const auto glimage = m_state.images.fetch(src);
+    const auto glimage         = m_state.images.fetch(src);
     const auto& img_descriptor = m_state.images.details(src).descriptor;
 
-    const auto glbuffer = m_state.buffers.fetch(dst);
+    const auto glbuffer        = m_state.buffers.fetch(dst);
     const auto& buf_descriptor = m_state.buffers.details(dst);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, glbuffer);
-    
+
     glGetTextureSubImage(
         glimage,
         0,
-        0, 
-        0, 
+        0,
+        0,
         0,
         img_descriptor.extent.x,
         img_descriptor.extent.y,
@@ -633,13 +640,13 @@ auto CommandBuffer::copy_image_to_buffer(ImageHandle src, BufferHandle dst, usiz
         buf_descriptor.size.get() - dst_offset,
         (void*)(dst_offset)
     );
-    
+
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
 auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> void {
-    const auto srchandle = m_state.images.fetch(src);
-    const auto dsthandle = m_state.images.fetch(dst);
+    const auto srchandle      = m_state.images.fetch(src);
+    const auto dsthandle      = m_state.images.fetch(dst);
     const auto& src_desriptor = m_state.images.details(src).descriptor;
     const auto& dst_desriptor = m_state.images.details(dst).descriptor;
 
@@ -672,4 +679,4 @@ auto CommandBuffer::copy_image_to_image(ImageHandle src, ImageHandle dst) -> voi
     );
 }
 
-} // namespace siren
+} // namespace siren::opengl
