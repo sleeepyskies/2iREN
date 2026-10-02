@@ -1,5 +1,7 @@
 # 2iREN
 
+This repository has migrated to https://git.sleeepy.dev/sleeepy/2iREN.
+
 2iREN is a c++23 rendering framework. The code originates from the [siren](https://github.com/sleeepyskies/siren)
 game engine, but has since evolved further.
 
