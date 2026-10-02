@@ -37,7 +37,7 @@ struct BufferDescriptor {
     /// @brief The initial size of the buffer in bytes.
     NonZeroUsize size;
     /// @brief Flag set of this buffers uses.
-    BufferFlags flags = BufferFlags::make();
+    BufferFlags flags        = BufferFlags::make();
     /// @brief Denotes what components may access the buffer.
     MemoryUsage memory_usage = MemoryUsage::Shared;
 };

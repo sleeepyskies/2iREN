@@ -237,7 +237,7 @@ constexpr auto texture_type(const ImageDimension dimension) -> MTL::TextureType 
 constexpr auto resource_options(const MemoryUsage memory_usage) -> MTL::ResourceOptions {
     switch (memory_usage) {
         case MemoryUsage::Shared: return MTL::ResourceStorageModeShared;
-        case MemoryUsage::Private: return MTL::ResourceStorageModePrivate;
+        case MemoryUsage::Device: return MTL::ResourceStorageModePrivate;
     }
 }
 

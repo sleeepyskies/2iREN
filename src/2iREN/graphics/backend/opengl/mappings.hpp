@@ -14,7 +14,7 @@ namespace siren::opengl {
 [[nodiscard]]
 constexpr auto buffer_bitfield(const MemoryUsage usage) -> GLbitfield {
     switch (usage) {
-        case MemoryUsage::Private: return 0;
+        case MemoryUsage::Device: return 0;
         case MemoryUsage::Shared:
             return GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_DYNAMIC_STORAGE_BIT;
     }

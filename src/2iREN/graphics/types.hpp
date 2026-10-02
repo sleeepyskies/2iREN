@@ -10,10 +10,10 @@ namespace siren {
 
 /// @brief Specifies the GPU and CPU access permissions.
 enum class MemoryUsage {
-    /// @brief The resources memory may only be accessed by the Gpu.
-    Private,
     /// @brief The resources memory is accessible via the Gpu and the Cpu.
     Shared,
+    /// @brief The resources memory may only be accessed by the Gpu.
+    Device,
 };
 
 /// @brief General type representing various numeric data types.
@@ -58,6 +58,7 @@ struct DataType {
         }
         UNREACHABLE();
     }
+
     /// @brief Returns the string representation of this value.
     [[nodiscard]]
     constexpr auto to_string() const -> std::string_view {

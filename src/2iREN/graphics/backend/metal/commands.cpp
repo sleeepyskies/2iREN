@@ -1,8 +1,10 @@
 #include "commands.hpp"
 
 #include <Foundation/Foundation.hpp>
+#include <Metal/MTLRenderCommandEncoder.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
+
 #include <variant>
 
 #include "2iREN/container/bytebuffer.hpp"
@@ -195,19 +197,19 @@ auto CommandBuffer::render_pass(
     const RenderPassDescriptor& descriptor,
     RenderPassFunction&& function
 ) -> void {
-    auto desc = transfer_ptr(MTL::RenderPassDescriptor::alloc()->init());
+    auto mtldescriptor = transfer_ptr(MTL::RenderPassDescriptor::alloc()->init());
 
     if (auto* target = std::get_if<RenderTargetless>(&descriptor.target)) {
-        desc->setRenderTargetWidth(target->extent.x);
-        desc->setRenderTargetHeight(target->extent.y);
-        desc->setDefaultRasterSampleCount(1);
+        mtldescriptor->setRenderTargetWidth(target->extent.x);
+        mtldescriptor->setRenderTargetHeight(target->extent.y);
+        mtldescriptor->setDefaultRasterSampleCount(1);
     } else if (auto* target = std::get_if<RenderTarget>(&descriptor.target)) {
         ASSERT(!target->colors.empty() or target->depth_stencil.has_value());
 
         // setarget tup color attachments
         for (usize i = 0; i < target->colors.size(); i++) {
             auto& attachment     = target->colors[i];
-            auto* mtl_attachment = desc->colorAttachments()->object(i);
+            auto* mtl_attachment = mtldescriptor->colorAttachments()->object(i);
             auto mtl_texture     = m_state.images.fetch(attachment.image);
 
             const auto& rgba = attachment.clear_color;
@@ -221,9 +223,9 @@ auto CommandBuffer::render_pass(
         // setup depth stencil
         if (target->depth_stencil) {
             auto& attachment = *target->depth_stencil;
-            auto* depth      = desc->depthAttachment();
+            auto* depth      = mtldescriptor->depthAttachment();
             auto depth_txt   = m_state.images.fetch(attachment.image);
-            auto* stencil    = desc->stencilAttachment();
+            auto* stencil    = mtldescriptor->stencilAttachment();
             auto stencil_txt = m_state.images.fetch(attachment.image);
 
             depth->setTexture(depth_txt.get());
@@ -254,7 +256,7 @@ auto CommandBuffer::write_buffer(
 ) -> void {
     const auto& desc = m_state.buffers.details(buffer);
 
-    ASSERT(desc.memory_usage != MemoryUsage::Private, "cannot upload to Private buffer.");
+    ASSERT(desc.memory_usage != MemoryUsage::Device, "cannot upload to Device buffer.");
     ASSERT(
         buffer_offset <= desc.size.get() and data.size() <= desc.size.get() - buffer_offset,
         "buffer is too small to write the requested data."
@@ -273,7 +275,7 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
     AUTORELEASE {
         const auto& descriptor = m_state.buffers.details(buffer);
 
-        ASSERT(descriptor.memory_usage != MemoryUsage::Private, "cannot upload to GpuOnly buffer.");
+        ASSERT(descriptor.memory_usage != MemoryUsage::Device, "cannot upload to GpuOnly buffer.");
 
         auto* buf = m_state.buffers.fetch(buffer).get();
 
@@ -295,7 +297,7 @@ auto CommandBuffer::fill_buffer(const BufferHandle buffer, const u8 value, const
 auto CommandBuffer::write_image(const ImageHandle image, const ByteBufferView data, const u32 layer)
     -> void {
     const auto& descriptor = m_state.images.details(image);
-    ASSERT(descriptor.memory_usage != MemoryUsage::Private, "cannot upload to Private image.");
+    ASSERT(descriptor.memory_usage != MemoryUsage::Device, "cannot upload to Device image.");
     ASSERT(
         descriptor.extent.volume() >= data.size(),
         "image is too small to write the requested data."

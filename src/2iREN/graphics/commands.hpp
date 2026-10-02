@@ -129,8 +129,16 @@ public:
     /// @brief count The number of vertices to read from the index buffer.
     /// @brief start The first index of the index buffer to read from.
     virtual auto draw_indexed(u32 count, u32 start = 0) -> void = 0;
+
+    /// @brief Starts a query accumulation scope. Result are gathered until
+    /// the next call to RenderCommandEncoder::end_query()
+    virtual auto begin_query() -> void = 0;
+
+    /// @brief Ends a query accumulation scope.
+    virtual auto end_query() -> void = 0;
 };
 
+/// @brief Function type used to record commands into a @ref RenderCommandEncoder.
 using RenderPassFunction = std::function<void(RenderCommandEncoder&)>;
 
 /// @brief Handles recording commands into a command buffer. Once commands

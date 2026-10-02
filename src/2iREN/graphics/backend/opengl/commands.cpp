@@ -503,7 +503,7 @@ auto CommandBuffer::fill_buffer(BufferHandle buffer, u8 value, Range<usize> rang
 
 auto CommandBuffer::write_buffer(BufferHandle dst, usize dst_offset, ByteBufferView data) -> void {
     const auto& descriptor = m_state.buffers.details(dst);
-    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot write to Private buffer");
+    ASSERT(descriptor.memory_usage == MemoryUsage::Shared, "cannot write to Device buffer");
     const auto glbuffer = m_state.buffers.fetch(dst);
     glNamedBufferSubData(glbuffer, dst_offset, data.size(), data.data());
 }

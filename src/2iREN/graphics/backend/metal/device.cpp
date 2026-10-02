@@ -81,10 +81,6 @@ MetalDevice::~MetalDevice() {
     // wait_idle();
 }
 
-auto MetalDevice::wait_idle() const noexcept -> void {
-    UNIMPLEMENTED();
-}
-
 auto MetalDevice::make_buffer(
     const BufferDescriptor& descriptor,
     std::optional<ByteBufferView> initial
@@ -106,7 +102,7 @@ auto MetalDevice::make_buffer(
                     bufcpy(*initial, buffer->contents());
                     break;
                 }
-                case MemoryUsage::Private: {
+                case MemoryUsage::Device: {
                     auto staging = transfer_ptr(m_device->newBuffer(
                         initial->data(),
                         initial->size(),
